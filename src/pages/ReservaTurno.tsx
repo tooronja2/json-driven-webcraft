@@ -1,11 +1,10 @@
-
 import SEOHead from "@/components/SEOHead";
 import GoogleFormEmbed from "@/components/GoogleFormEmbed";
 import { useBusiness } from "@/context/BusinessContext";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import React, { useEffect } from "react";
 
-const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/embed?src=automatizacionesvexilode%40gmail.com&ctz=America%2FArgentina%2FBuenos_Aires";
+const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true";
 
 const ReservaTurno = () => {
   const { config } = useBusiness();
