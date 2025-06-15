@@ -9,7 +9,7 @@ const BannerHero = () => {
   const banner = config?.banner_principal;
   const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
 
-  // Mostrar SIEMPRE un placeholder visible mientras loading o config no está (mayor eficiencia percibida)
+  // Placeholder
   if (loading || !config) {
     return (
       <section
@@ -29,7 +29,7 @@ const BannerHero = () => {
     );
   }
 
-  // Si hay error o el banner no está activo, deja un área vacía, pero nunca blanca (usa el fondo de la app para continuidad visual)
+  // Si hay error o el banner no está activo, área continua
   if (error || !banner?.activo) {
     return (
       <section
@@ -39,10 +39,17 @@ const BannerHero = () => {
     );
   }
 
-  // Siempre mostrar el banner real si config y banner.activo existen, y revealed SOLO afecta la animación
+  // Animación
   const animSection = useMemo(() => (
     revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-12"
   ), [revealed]);
+
+  // Corrección de navegación para el botón
+  let linkDestino = banner.link_boton;
+  let botonTexto = banner.texto_boton?.trim().toLowerCase();
+  if (botonTexto === "reservar turno" || botonTexto === "reservá tu turno") {
+    linkDestino = "/reservar-turno"; // Si el botón indica reservar, siempre navega correctamente
+  }
 
   return (
     <section
@@ -51,7 +58,7 @@ const BannerHero = () => {
       style={{ minHeight: 390 }}
       aria-label="banner"
     >
-      {/* Fondo de imagen con gradiente */}
+      {/* Fondo de imagen */}
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
         <img
           src={banner.imagen_url}
@@ -62,7 +69,7 @@ const BannerHero = () => {
         />
         <div className="absolute inset-0 bg-gradient-to-r from-zinc-900/90 via-zinc-900/70 to-transparent" />
       </div>
-      {/* Contenido de texto con animaciones */}
+      {/* Contenido de texto */}
       <div className="relative z-10 flex flex-col justify-center px-8 py-16 md:px-16 w-full md:max-w-xl">
         <h1
           className={`text-4xl md:text-5xl font-extrabold mb-2 text-white drop-shadow transition-all duration-700 ${
@@ -82,8 +89,8 @@ const BannerHero = () => {
             {banner.subtitulo}
           </p>
         )}
-        {banner.texto_boton && banner.link_boton && (
-          <Link to={banner.link_boton} className="self-start">
+        {banner.texto_boton && linkDestino && (
+          <Link to={linkDestino} className="self-start">
             <button
               className="bg-white/95 text-zinc-900 px-8 py-3 rounded-full font-semibold text-lg shadow-lg hover:scale-105 hover:bg-zinc-200 active:scale-100 border border-white/70 transition-all focus:outline-none focus:ring-4 focus:ring-zinc-300 animate-pulseButton"
               style={{ marginTop: 8, transitionDelay: revealed ? "350ms" : "0ms" }}
@@ -93,7 +100,7 @@ const BannerHero = () => {
           </Link>
         )}
       </div>
-      {/* Imagen destacada a derecha, solo desktop */}
+      {/* Imagen destacada */}
       <div className="hidden md:block relative w-[45%] z-10">
         <img
           src={banner.imagen_url}
