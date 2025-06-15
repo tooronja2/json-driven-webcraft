@@ -28,19 +28,19 @@ const Home = () => {
       <main className="bg-zinc-50 min-h-screen pt-2 flex flex-col gap-4">
         <BannerHero />
 
-        {/* Sección Sobre Nosotros MEJORADA */}
-        <section className="max-w-2xl mx-auto mt-12 px-3 md:px-0">
-          <div className="relative bg-white rounded-3xl shadow-lg border border-zinc-100 px-6 py-8 md:py-10 flex flex-col items-center">
-            <div className="flex items-center gap-3 mb-3">
-              <span className="h-7 w-1 rounded bg-emerald-500 block" />
-              <h2 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight">
+        {/* Sección Sobre Nosotros - rediseñada y refinada */}
+        <section className="max-w-2xl mx-auto mt-12 px-2 md:px-0">
+          <div className="relative bg-white rounded-[2.2rem] shadow-[0_6px_32px_0_rgba(38,45,55,0.13)] border border-zinc-100 px-5 md:px-10 py-9 flex flex-col items-center">
+            <div className="flex items-center gap-3 mb-5">
+              <span className="h-8 w-1.5 rounded bg-emerald-500 block" />
+              <h2 className="text-2xl md:text-3xl font-extrabold text-zinc-900 tracking-tight">
                 Sobre nosotros
               </h2>
             </div>
-            <p className="text-zinc-700 text-base md:text-lg leading-relaxed text-center font-medium max-w-2xl">
-              En Barbería Central honramos la tradición pero abrazamos la innovación: somos un equipo apasionado que busca que cada cliente viva mucho más que un simple corte. 
-              Creamos un ambiente auténtico, relajado y de confianza, donde el detalle y la atención personalizada son nuestro sello distintivo. 
-              Te invitamos a compartir nuestra filosofía de conectar, potenciar tu estilo y disfrutar de una verdadera experiencia barberil &mdash; ¡Bienvenido!
+            <p className="text-zinc-700 text-[1.17rem] md:text-xl leading-relaxed text-center font-medium max-w-[40rem]">
+              En Barbería Central honramos la tradición pero abrazamos la innovación: somos un equipo apasionado que busca que cada cliente viva mucho más que un simple corte.
+              Creamos un ambiente auténtico, relajado y de confianza, donde el detalle y la atención personalizada son nuestro sello distintivo.<br className="hidden sm:block" />
+              Te invitamos a compartir nuestra filosofía de conectar, potenciar tu estilo y disfrutar de una verdadera experiencia barberil&nbsp;—&nbsp;<span className="font-semibold text-zinc-900">¡Bienvenido!</span>
             </p>
           </div>
         </section>
