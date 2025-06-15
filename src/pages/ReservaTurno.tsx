@@ -1,3 +1,4 @@
+
 import SEOHead from "@/components/SEOHead";
 import GoogleFormEmbed from "@/components/GoogleFormEmbed";
 import { useBusiness } from "@/context/BusinessContext";
@@ -40,8 +41,17 @@ const GOOGLE_CALENDARS = [
 
 const ReservaTurno = () => {
   const { config, contenido } = useBusiness();
-  const [paso, setPaso] = useState<1 | 2 | 3>(1);
-  const [servicio, setServicio] = useState<string | null>(null);
+  // Leemos la preselección desde localStorage solo UNA vez al arrancar
+  const [servicio, setServicio] = useState<string | null>(() => {
+    if (typeof window !== "undefined") {
+      const pre = localStorage.getItem("servicioSeleccionado");
+      localStorage.removeItem("servicioSeleccionado");
+      return pre || null;
+    }
+    return null;
+  });
+  // Si hay preseleccion, arrancar paso 2; si no, el 1:
+  const [paso, setPaso] = useState<1 | 2 | 3>(servicio ? 2 : 1);
   const [staff, setStaff] = useState<number | null>(null);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
