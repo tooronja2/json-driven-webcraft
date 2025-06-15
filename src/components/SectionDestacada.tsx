@@ -1,6 +1,7 @@
 
 import { useBusiness, ContenidoItem } from "@/context/BusinessContext";
 import { Link } from "react-router-dom";
+import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 
 interface SectionDestacadaProps {
   seccion: {
@@ -12,25 +13,32 @@ interface SectionDestacadaProps {
 
 const SectionDestacada: React.FC<SectionDestacadaProps> = ({ seccion }) => {
   const { contenido, loading, error, config } = useBusiness();
+  const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
 
   if (loading || !contenido) return null;
   if (error) return <div className="text-red-700">{error}</div>;
 
-  // Ejemplo filtro, expandible por "criterio"
   let items: ContenidoItem[] = contenido;
   if (seccion.criterio === "populares") {
     items = contenido.slice(0, seccion.limite);
   }
 
   return (
-    <section className="max-w-5xl mx-auto mt-12 mb-6">
+    <section
+      ref={ref}
+      className={`max-w-5xl mx-auto mt-12 mb-6 transition-all duration-700 ${
+        revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-10"
+      }`}
+    >
       <h2 className="text-2xl font-bold mb-5 tracking-tight">{seccion.titulo}</h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-        {items.map((item) => (
+        {items.map((item, i) => (
           <Link
             to={`/servicios/${item.slug_url}`}
             key={item.id}
-            className="group bg-white rounded-lg shadow p-6 hover:shadow-lg transition"
+            className={`group bg-white rounded-lg shadow p-6 hover:shadow-lg transition 
+              ${revealed ? "animate-slide-in-right opacity-100" : "opacity-0 translate-x-8"}`}
+            style={{ animationDelay: `${i * 80}ms` }}
           >
             <img
               src={item.imagenes[0]?.url}

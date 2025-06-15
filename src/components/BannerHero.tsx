@@ -1,15 +1,20 @@
 
 import { useBusiness } from "@/context/BusinessContext";
 import { Link } from "react-router-dom";
+import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 
 const BannerHero = () => {
   const { config } = useBusiness();
   const banner = config?.banner_principal;
+  const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
+
   if (!banner?.activo) return null;
 
   return (
     <section
-      className="relative w-full max-w-7xl mx-auto mt-6 overflow-hidden rounded-xl shadow"
+      ref={ref}
+      className={`relative w-full max-w-7xl mx-auto mt-6 overflow-hidden rounded-xl shadow transition-all duration-700 
+        ${revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-10"}`}
       style={{ background: "#fafbfc", minHeight: 320 }}
     >
       <img
