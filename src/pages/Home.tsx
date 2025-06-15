@@ -1,4 +1,3 @@
-
 import SEOHead from "@/components/SEOHead";
 import BannerHero from "@/components/BannerHero";
 import { useBusiness } from "@/context/BusinessContext";
@@ -29,14 +28,21 @@ const Home = () => {
       <main className="bg-zinc-50 min-h-screen pt-2 flex flex-col gap-4">
         <BannerHero />
 
-        {/* Sección Sobre Nosotros */}
-        <section className="max-w-4xl mx-auto mt-10 px-4 md:px-0 bg-white rounded-xl shadow-md py-8 mb-2">
-          <h2 className="text-2xl md:text-3xl font-bold mb-3 text-zinc-900">Sobre nosotros</h2>
-          <p className="text-zinc-700 text-base md:text-lg leading-relaxed">
-            Fundada por apasionados del arte de la barbería, Barbería Central combina tradición y modernidad para que cada cliente viva una experiencia única. 
-            Nuestro equipo busca no solo ofrecer los mejores cortes y afeitados clásicos, sino crear un espacio de confianza y calidez, donde el detalle y la atención personalizada son nuestro sello. 
-            Creemos que cada visita es una oportunidad para conectar, compartir y potenciar tu estilo, en un ambiente relajado y auténtico. ¡Te esperamos para vivir juntos la experiencia Barbería Central!
-          </p>
+        {/* Sección Sobre Nosotros MEJORADA */}
+        <section className="max-w-2xl mx-auto mt-12 px-3 md:px-0">
+          <div className="relative bg-white rounded-3xl shadow-lg border border-zinc-100 px-6 py-8 md:py-10 flex flex-col items-center">
+            <div className="flex items-center gap-3 mb-3">
+              <span className="h-7 w-1 rounded bg-emerald-500 block" />
+              <h2 className="text-2xl md:text-3xl font-black text-zinc-900 tracking-tight">
+                Sobre nosotros
+              </h2>
+            </div>
+            <p className="text-zinc-700 text-base md:text-lg leading-relaxed text-center font-medium max-w-2xl">
+              En Barbería Central honramos la tradición pero abrazamos la innovación: somos un equipo apasionado que busca que cada cliente viva mucho más que un simple corte. 
+              Creamos un ambiente auténtico, relajado y de confianza, donde el detalle y la atención personalizada son nuestro sello distintivo. 
+              Te invitamos a compartir nuestra filosofía de conectar, potenciar tu estilo y disfrutar de una verdadera experiencia barberil &mdash; ¡Bienvenido!
+            </p>
+          </div>
         </section>
 
         {/* Mostrar todos los servicios */}
@@ -137,4 +143,3 @@ const Home = () => {
 };
 
 export default Home;
-
