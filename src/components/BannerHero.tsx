@@ -2,14 +2,14 @@
 import { useBusiness } from "@/context/BusinessContext";
 import { Link } from "react-router-dom";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
-import React from "react";
+import React, { useMemo } from "react";
 
 const BannerHero = () => {
   const { config, loading, error } = useBusiness();
   const banner = config?.banner_principal;
   const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
 
-  // Siempre mostrar un placeholder mientras loading o config no está
+  // Placeholder: solo se muestra si está cargando o no hay config
   if (loading || !config) {
     return (
       <section
@@ -29,24 +29,30 @@ const BannerHero = () => {
     );
   }
 
-  // Seguridad: si hay error o el banner no está activo, muestra nada, nunca blanco
+  // Seguridad: si hay error o el banner no está activo, muestra área vacía (no blanco)
   if (error || !banner?.activo) {
     return (
       <section className="w-full max-w-7xl mx-auto mt-8 mb-10 min-h-[390px]" aria-label="sin banner"></section>
     );
   }
 
-  // Banner visible correctamente
+  // Usar revealed SOLO si hay config y el banner está activo.
+  // Memorizar la clase de animación que usamos solo para evitar un render cambiado por error
+  const animSection = useMemo(() => (
+    revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-12"
+  ), [revealed]);
+
   return (
     <section
       ref={ref}
       className={`relative w-full max-w-7xl mx-auto mt-8 mb-10 overflow-hidden rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-stretch bg-zinc-900 transition-all duration-700
-        ${revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-12"}
+        ${animSection}
       `}
       style={{ minHeight: 390 }}
+      aria-label="banner"
     >
       {/* Fondo de imagen con gradiente */}
-      <div className="absolute inset-0 w-full h-full z-0">
+      <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
         <img
           src={banner.imagen_url}
           alt={banner.alt_text}
@@ -62,7 +68,7 @@ const BannerHero = () => {
           className={`text-4xl md:text-5xl font-extrabold mb-2 text-white drop-shadow transition-all duration-700 ${
             revealed ? "animate-slide-in-right" : "opacity-0 -translate-x-6"
           }`}
-          style={{ transitionDelay: "100ms" }}
+          style={{ transitionDelay: revealed ? "100ms" : "0ms" }}
         >
           {banner.titulo}
         </h1>
@@ -71,7 +77,7 @@ const BannerHero = () => {
             className={`text-lg md:text-2xl mb-8 font-medium text-zinc-200 drop-shadow-sm transition-all duration-700 ${
               revealed ? "animate-fade-in" : "opacity-0"
             }`}
-            style={{ transitionDelay: "250ms" }}
+            style={{ transitionDelay: revealed ? "250ms" : "0ms" }}
           >
             {banner.subtitulo}
           </p>
@@ -80,7 +86,7 @@ const BannerHero = () => {
           <Link to={banner.link_boton} className="self-start">
             <button
               className="bg-white/95 text-zinc-900 px-8 py-3 rounded-full font-semibold text-lg shadow-lg hover:scale-105 hover:bg-zinc-200 active:scale-100 border border-white/70 transition-all focus:outline-none focus:ring-4 focus:ring-zinc-300 animate-pulseButton"
-              style={{ marginTop: 8, transitionDelay: "350ms" }}
+              style={{ marginTop: 8, transitionDelay: revealed ? "350ms" : "0ms" }}
             >
               {banner.texto_boton}
             </button>
@@ -96,7 +102,7 @@ const BannerHero = () => {
             revealed ? "scale-100 animate-scale-in opacity-100" : "scale-95 opacity-0"
           }`}
           loading="lazy"
-          style={{ transitionDelay: "400ms" }}
+          style={{ transitionDelay: revealed ? "400ms" : "0ms" }}
         />
       </div>
     </section>
