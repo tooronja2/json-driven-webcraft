@@ -1,5 +1,6 @@
 
 import { useBusiness } from "@/context/BusinessContext";
+import { Instagram, Facebook } from "lucide-react";
 
 const Footer = () => {
   const { config } = useBusiness();
@@ -21,17 +22,19 @@ const Footer = () => {
         <div className="flex gap-3">
           {config.links_redes_sociales.instagram && (
             <a href={config.links_redes_sociales.instagram} target="_blank" rel="noopener noreferrer">
-              <img src="/instagram.svg" alt="Instagram" className="h-6 w-6" />
+              <Instagram className="h-6 w-6" style={{ color: config.colores_tema.primario }} />
             </a>
           )}
           {config.links_redes_sociales.facebook && (
             <a href={config.links_redes_sociales.facebook} target="_blank" rel="noopener noreferrer">
-              <img src="/facebook.svg" alt="Facebook" className="h-6 w-6" />
+              <Facebook className="h-6 w-6" style={{ color: config.colores_tema.primario }} />
             </a>
           )}
+          {/* Si hay Tiktok, podrías poner un "?" o dejar vacío */}
           {config.links_redes_sociales.tiktok && (
             <a href={config.links_redes_sociales.tiktok} target="_blank" rel="noopener noreferrer">
-              <img src="/tiktok.svg" alt="Tiktok" className="h-6 w-6" />
+              {/* No hay icono oficial, se deja un placeholder o texto */}
+              <span className="font-semibold text-xs" style={{ color: config.colores_tema.primario }}>TikTok</span>
             </a>
           )}
         </div>
