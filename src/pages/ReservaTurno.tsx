@@ -4,7 +4,7 @@ import { useBusiness } from "@/context/BusinessContext";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import React, { useEffect } from "react";
 
-const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true";
+const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires";
 
 const ReservaTurno = () => {
   const { config } = useBusiness();
