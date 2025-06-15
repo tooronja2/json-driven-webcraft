@@ -3,9 +3,11 @@ import SEOHead from "@/components/SEOHead";
 import BannerHero from "@/components/BannerHero";
 import { useBusiness } from "@/context/BusinessContext";
 import { Link } from "react-router-dom";
+import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 
 const Home = () => {
   const { config, contenido, loading, error } = useBusiness();
+  const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
 
   return (
     <>
@@ -13,8 +15,13 @@ const Home = () => {
       <main className="bg-zinc-50 min-h-screen pt-2 flex flex-col gap-4">
         <BannerHero />
         {/* Mostrar todos los servicios */}
-        <section className="max-w-6xl mx-auto mt-10 mb-10 px-4 md:px-0">
-          <h2 className="text-3xl font-bold mb-8 tracking-tight text-center text-zinc-900">
+        <section
+          ref={ref}
+          className={`max-w-6xl mx-auto mt-10 mb-10 px-4 md:px-0 transition-all duration-700
+          ${revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-10"}
+        `}
+        >
+          <h2 className="text-3xl font-bold mb-8 tracking-tight text-center text-zinc-900 animate-fade-in" style={{ transitionDelay: "120ms" }}>
             Nuestros Servicios
           </h2>
           {loading && <div className="text-center py-6 text-zinc-500">Cargando servicios...</div>}
@@ -25,8 +32,11 @@ const Home = () => {
                 <Link
                   to={`/servicios/${item.slug_url}`}
                   key={item.id}
-                  className="group bg-white rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-transform duration-300"
-                  style={{ animationDelay: `${180 + i * 100}ms` }}
+                  className={`
+                    group bg-white rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-transform duration-300
+                    ${revealed ? "animate-fade-in animate-slide-in-right animate-scale-in opacity-100" : "opacity-0 translate-x-8"}
+                  `}
+                  style={{ animationDelay: `${180 + i * 120}ms` }}
                 >
                   <img
                     src={item.imagenes[0]?.url}
@@ -56,7 +66,7 @@ const Home = () => {
                         </span>
                       )}
                     </div>
-                    <button className="mt-4 px-4 py-2 rounded-full bg-zinc-900 text-white font-medium text-sm shadow hover:bg-zinc-700 transition focus:ring-2 focus:ring-primary">
+                    <button className="mt-4 px-4 py-2 rounded-full bg-zinc-900 text-white font-medium text-sm shadow hover:bg-zinc-700 transition focus:ring-2 focus:ring-primary animate-pulseButton">
                       Reservar
                     </button>
                   </div>

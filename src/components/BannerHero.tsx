@@ -28,7 +28,6 @@ const BannerHero = () => {
     );
   }
 
-  // Si hay error o el banner no está activo
   if (error || !banner?.activo) {
     return (
       <section
@@ -37,11 +36,6 @@ const BannerHero = () => {
       ></section>
     );
   }
-
-  // Animación
-  const animSection = useMemo(() => (
-    revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-12"
-  ), [revealed]);
 
   // Corrección para el botón
   let linkDestino = banner.link_boton;
@@ -56,7 +50,9 @@ const BannerHero = () => {
   return (
     <section
       ref={ref}
-      className={`relative w-full max-w-7xl mx-auto mt-8 mb-10 overflow-hidden rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-stretch bg-zinc-900 transition-all duration-700 ${animSection}`}
+      className={`relative w-full max-w-7xl mx-auto mt-8 mb-10 overflow-hidden rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-stretch bg-zinc-900 transition-all duration-700
+      ${revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-12"}
+      `}
       style={{ minHeight: 390 }}
       aria-label="banner"
     >
@@ -65,7 +61,7 @@ const BannerHero = () => {
         <img
           src={banner.imagen_url}
           alt={banner.alt_text}
-          className="object-cover w-full h-full brightness-[.75] scale-105 transition-transform duration-700"
+          className="object-cover w-full h-full brightness-[.7] scale-105 transition-transform duration-700"
           loading="lazy"
           style={{ objectPosition: "center" }}
         />
@@ -74,18 +70,22 @@ const BannerHero = () => {
       {/* Contenido del banner */}
       <div className="relative z-10 flex flex-col justify-center px-6 py-20 md:px-24 w-full md:max-w-xl items-center md:items-start">
         <h1
-          className={`text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight leading-tight text-center md:text-left transition-all duration-700 ${
-            revealed ? "animate-slide-in-right" : "opacity-0 -translate-x-6"
-          }`}
+          className={`
+            text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight leading-tight
+            text-center md:text-left transition-all duration-700
+            ${revealed ? "animate-slide-in-right animate-fade-in animate-scale-in opacity-100" : "opacity-0 -translate-x-10"}
+          `}
           style={{ transitionDelay: revealed ? "100ms" : "0ms" }}
         >
           {banner.titulo}
         </h1>
         {banner.subtitulo && (
           <p
-            className={`text-lg md:text-2xl mb-9 font-medium text-zinc-100 drop-shadow-sm text-center md:text-left transition-all duration-700 ${
-              revealed ? "animate-fade-in" : "opacity-0"
-            }`}
+            className={`
+              text-lg md:text-2xl mb-9 font-medium text-zinc-100 drop-shadow-sm text-center md:text-left
+              transition-all duration-700
+              ${revealed ? "animate-fade-in animate-slide-in-right opacity-100" : "opacity-0 -translate-x-6"}
+            `}
             style={{ transitionDelay: revealed ? "250ms" : "0ms" }}
           >
             {banner.subtitulo}
@@ -94,7 +94,14 @@ const BannerHero = () => {
         {banner.texto_boton && linkDestino && (
           <Link to={linkDestino} className="self-center md:self-start">
             <button
-              className="bg-emerald-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:bg-emerald-600 hover:scale-105 active:scale-100 border-2 border-emerald-500 transition-all focus:outline-none focus:ring-4 focus:ring-emerald-200 animate-pulseButton"
+              className={
+                `
+                  bg-emerald-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg
+                  hover:bg-emerald-600 hover:scale-105 active:scale-100 border-2 border-emerald-500
+                  transition-all focus:outline-none focus:ring-4 focus:ring-emerald-200 animate-pulseButton
+                  ${revealed ? "animate-scale-in animate-fade-in" : "opacity-0 scale-95"}
+                `
+              }
               style={{ marginTop: 8, minWidth: 200, transitionDelay: revealed ? "350ms" : "0ms" }}
             >
               {banner.texto_boton}
@@ -102,14 +109,15 @@ const BannerHero = () => {
           </Link>
         )}
       </div>
-      {/* Imagen destacada a la derecha, solo desktop */}
+      {/* Imagen destacada a la derecha (solo desktop) */}
       <div className="hidden md:block relative w-[45%] z-10">
         <img
           src={banner.imagen_url}
           alt={banner.alt_text}
-          className={`h-full object-cover w-full rounded-r-2xl shadow-xl transition-all duration-1000 ${
-            revealed ? "scale-100 animate-scale-in opacity-100" : "scale-95 opacity-0"
-          }`}
+          className={`
+            h-full object-cover w-full rounded-r-2xl shadow-xl transition-all duration-1000
+            ${revealed ? "scale-100 animate-scale-in animate-fade-in opacity-100" : "scale-95 opacity-0"}
+          `}
           loading="lazy"
           style={{ transitionDelay: revealed ? "400ms" : "0ms" }}
         />
