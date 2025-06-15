@@ -3,13 +3,18 @@ import SEOHead from "@/components/SEOHead";
 import GoogleFormEmbed from "@/components/GoogleFormEmbed";
 import { useBusiness } from "@/context/BusinessContext";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
-import React from "react";
+import React, { useEffect } from "react";
 
 const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfWgTOpruebaFormularioEmbed/viewform?embedded=true";
 
 const ReservaTurno = () => {
   const { config } = useBusiness();
   const { ref: formRef, revealed: formVisible } = useRevealOnScroll<HTMLDivElement>();
+
+  // Forzar scroll al tope cuando se carga la página
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
   return (
     <>
