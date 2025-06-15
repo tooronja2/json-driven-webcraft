@@ -1,10 +1,11 @@
+
 import SEOHead from "@/components/SEOHead";
 import GoogleFormEmbed from "@/components/GoogleFormEmbed";
 import { useBusiness } from "@/context/BusinessContext";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import React, { useEffect } from "react";
 
-const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfWgTOpruebaFormularioEmbed/viewform?embedded=true";
+const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/embed?src=automatizacionesvexilode%40gmail.com&ctz=America%2FArgentina%2FBuenos_Aires";
 
 const ReservaTurno = () => {
   const { config } = useBusiness();
@@ -26,7 +27,7 @@ const ReservaTurno = () => {
           }`}
         >
           <h1 className="text-3xl md:text-4xl font-bold mb-4 text-center text-zinc-900">Reservá tu turno</h1>
-          <GoogleFormEmbed formUrl={GOOGLE_FORM_URL} />
+          <GoogleFormEmbed formUrl={GOOGLE_CALENDAR_URL} />
           <p className="mx-auto mt-3 max-w-lg text-center text-gray-600 text-md">
             Al reservar, tus datos serán gestionados por la cuenta Google <b>{config?.google_workspace_account}</b> en el proyecto <b>{config?.google_project_id}</b>.
           </p>
