@@ -1,3 +1,4 @@
+
 import SEOHead from "@/components/SEOHead";
 import BannerHero from "@/components/BannerHero";
 import { useBusiness } from "@/context/BusinessContext";
@@ -18,8 +19,15 @@ const BARBERIA_IMAGES = [
   "/lovable-uploads/1bbc1778-07ae-4750-ba3c-20216d2b8c60.png",
 ];
 
+const aboutLines = [
+  "En Barbería Central honramos la tradición y también abrazamos la innovación. Somos un equipo apasionado que busca que cada cliente viva mucho más que un simple corte.",
+  "Creemos en crear un ambiente auténtico, relajado y de confianza, donde el detalle y la atención personalizada son nuestro sello distintivo.",
+  "Te invitamos a compartir nuestra filosofía de conectar, potenciar tu estilo y disfrutar de una experiencia barberil única. ¡Bienvenido!",
+];
+
 const Home = () => {
   const { config, contenido, loading, error } = useBusiness();
+  const { ref: aboutRef, revealed: aboutRevealed } = useRevealOnScroll<HTMLDivElement>();
   const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
 
   return (
@@ -28,8 +36,11 @@ const Home = () => {
       <main className="bg-zinc-50 min-h-screen pt-2 flex flex-col gap-4">
         <BannerHero />
 
-        {/* Sección Sobre Nosotros - refinada */}
-        <section className="max-w-xl mx-auto mt-14 px-3 md:px-0">
+        {/* Sección Sobre Nosotros - ahora con fade-in progresivo por línea */}
+        <section
+          ref={aboutRef}
+          className="max-w-xl mx-auto mt-14 px-3 md:px-0"
+        >
           <div className="relative bg-white rounded-2xl shadow-[0_2px_16px_0_rgba(38,45,55,0.11)] border border-zinc-100 px-5 md:px-8 py-6 flex flex-col items-center">
             <div className="flex items-center gap-2 mb-3">
               <span className="h-5 w-1 rounded bg-emerald-400/80 block" />
@@ -37,13 +48,27 @@ const Home = () => {
                 Sobre nosotros
               </h2>
             </div>
-            <p className="text-zinc-600 text-[0.96rem] md:text-base leading-relaxed text-center font-normal max-w-lg">
-              En Barbería Central honramos la tradición y también abrazamos la innovación. Somos un equipo apasionado que busca que cada cliente viva mucho más que un simple corte.
-              <br className="hidden sm:block" />
-              Creemos en crear un ambiente auténtico, relajado y de confianza, donde el detalle y la atención personalizada son nuestro sello distintivo.
-              <br className="hidden sm:block" />
-              Te invitamos a compartir nuestra filosofía de conectar, potenciar tu estilo y disfrutar de una experiencia barberil única. <span className="font-semibold text-zinc-800">¡Bienvenido!</span>
-            </p>
+            <div className="w-full flex flex-col items-center gap-2">
+              {aboutLines.map((line, idx) => (
+                <p
+                  key={idx}
+                  className={
+                    `text-zinc-600 text-[0.93rem] md:text-base leading-relaxed text-center font-normal max-w-lg transition-all 
+                    ${
+                      aboutRevealed
+                        ? "opacity-100 translate-y-0 animate-fade-in"
+                        : "opacity-0 translate-y-3"
+                    }`
+                  }
+                  style={{
+                    transitionDelay: aboutRevealed ? `${100 + idx * 220}ms` : "0ms",
+                    animationDelay: aboutRevealed ? `${100 + idx * 220}ms` : "0ms",
+                  }}
+                >
+                  {line}
+                </p>
+              ))}
+            </div>
           </div>
         </section>
 
@@ -145,3 +170,4 @@ const Home = () => {
 };
 
 export default Home;
+
