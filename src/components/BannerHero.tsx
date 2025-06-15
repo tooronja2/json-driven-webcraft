@@ -9,7 +9,6 @@ const BannerHero = () => {
   const banner = config?.banner_principal;
   const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
 
-  // Placeholder
   if (loading || !config) {
     return (
       <section
@@ -29,7 +28,7 @@ const BannerHero = () => {
     );
   }
 
-  // Si hay error o el banner no está activo, área continua
+  // Si hay error o el banner no está activo
   if (error || !banner?.activo) {
     return (
       <section
@@ -44,11 +43,14 @@ const BannerHero = () => {
     revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-12"
   ), [revealed]);
 
-  // Corrección de navegación para el botón
+  // Corrección para el botón
   let linkDestino = banner.link_boton;
-  let botonTexto = banner.texto_boton?.trim().toLowerCase();
-  if (botonTexto === "reservar turno" || botonTexto === "reservá tu turno") {
-    linkDestino = "/reservar-turno"; // Si el botón indica reservar, siempre navega correctamente
+  let botonTexto = banner.texto_boton?.trim();
+  if (
+    botonTexto?.toLowerCase() === "reservar turno" ||
+    botonTexto?.toLowerCase() === "reservá tu turno"
+  ) {
+    linkDestino = "/reservar-turno";
   }
 
   return (
@@ -58,21 +60,21 @@ const BannerHero = () => {
       style={{ minHeight: 390 }}
       aria-label="banner"
     >
-      {/* Fondo de imagen */}
+      {/* Imagen de fondo oscurecida */}
       <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
         <img
           src={banner.imagen_url}
           alt={banner.alt_text}
-          className="object-cover w-full h-full brightness-85 scale-105 transition-transform duration-700"
+          className="object-cover w-full h-full brightness-[.75] scale-105 transition-transform duration-700"
           loading="lazy"
           style={{ objectPosition: "center" }}
         />
-        <div className="absolute inset-0 bg-gradient-to-r from-zinc-900/90 via-zinc-900/70 to-transparent" />
+        <div className="absolute inset-0 bg-zinc-900/80" />
       </div>
-      {/* Contenido de texto */}
-      <div className="relative z-10 flex flex-col justify-center px-8 py-16 md:px-16 w-full md:max-w-xl">
+      {/* Contenido del banner */}
+      <div className="relative z-10 flex flex-col justify-center px-6 py-20 md:px-24 w-full md:max-w-xl items-center md:items-start">
         <h1
-          className={`text-4xl md:text-5xl font-extrabold mb-2 text-white drop-shadow transition-all duration-700 ${
+          className={`text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight leading-tight text-center md:text-left transition-all duration-700 ${
             revealed ? "animate-slide-in-right" : "opacity-0 -translate-x-6"
           }`}
           style={{ transitionDelay: revealed ? "100ms" : "0ms" }}
@@ -81,7 +83,7 @@ const BannerHero = () => {
         </h1>
         {banner.subtitulo && (
           <p
-            className={`text-lg md:text-2xl mb-8 font-medium text-zinc-200 drop-shadow-sm transition-all duration-700 ${
+            className={`text-lg md:text-2xl mb-9 font-medium text-zinc-100 drop-shadow-sm text-center md:text-left transition-all duration-700 ${
               revealed ? "animate-fade-in" : "opacity-0"
             }`}
             style={{ transitionDelay: revealed ? "250ms" : "0ms" }}
@@ -90,17 +92,17 @@ const BannerHero = () => {
           </p>
         )}
         {banner.texto_boton && linkDestino && (
-          <Link to={linkDestino} className="self-start">
+          <Link to={linkDestino} className="self-center md:self-start">
             <button
-              className="bg-white/95 text-zinc-900 px-8 py-3 rounded-full font-semibold text-lg shadow-lg hover:scale-105 hover:bg-zinc-200 active:scale-100 border border-white/70 transition-all focus:outline-none focus:ring-4 focus:ring-zinc-300 animate-pulseButton"
-              style={{ marginTop: 8, transitionDelay: revealed ? "350ms" : "0ms" }}
+              className="bg-emerald-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg hover:bg-emerald-600 hover:scale-105 active:scale-100 border-2 border-emerald-500 transition-all focus:outline-none focus:ring-4 focus:ring-emerald-200 animate-pulseButton"
+              style={{ marginTop: 8, minWidth: 200, transitionDelay: revealed ? "350ms" : "0ms" }}
             >
               {banner.texto_boton}
             </button>
           </Link>
         )}
       </div>
-      {/* Imagen destacada */}
+      {/* Imagen destacada a la derecha, solo desktop */}
       <div className="hidden md:block relative w-[45%] z-10">
         <img
           src={banner.imagen_url}
