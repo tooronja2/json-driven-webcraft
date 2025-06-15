@@ -11,6 +11,16 @@ interface SectionDestacadaProps {
   };
 }
 
+// Simulación: Si el item no trae .reservas, asignar un valor random fijo para ejemplificar.
+// En producción, tu backend debe agregar el valo real de “reservas” a cada servicio.
+function withReservas(items: ContenidoItem[]): (ContenidoItem & { reservas: number })[] {
+  // Asignamos un valor fijo por id para la demo – reproducible
+  return items.map((item, i) => ({
+    ...item,
+    reservas: i === 0 ? 30 : i === 1 ? 25 : 10 + i * 3 // Primeros dos: más populares
+  }));
+}
+
 const SectionDestacada: React.FC<SectionDestacadaProps> = ({ seccion }) => {
   const { contenido, loading, error, config } = useBusiness();
   const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
@@ -19,8 +29,14 @@ const SectionDestacada: React.FC<SectionDestacadaProps> = ({ seccion }) => {
   if (error) return <div className="text-red-700">{error}</div>;
 
   let items: ContenidoItem[] = contenido;
+
   if (seccion.criterio === "populares") {
-    items = contenido.slice(0, seccion.limite);
+    // Simula campo reservas para ejemplo:
+    const withR = withReservas(contenido);
+    // Ordena por más reservas y toma los primeros N (limite)
+    items = withR
+      .sort((a, b) => b.reservas - a.reservas)
+      .slice(0, seccion.limite);
   }
 
   return (
@@ -80,3 +96,4 @@ const SectionDestacada: React.FC<SectionDestacadaProps> = ({ seccion }) => {
 };
 
 export default SectionDestacada;
+

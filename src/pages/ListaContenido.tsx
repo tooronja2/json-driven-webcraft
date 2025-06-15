@@ -6,21 +6,22 @@ import { useBusiness } from "@/context/BusinessContext";
 
 const ListaContenido = () => {
   const { contenido, config } = useBusiness();
-  const { tipo } = useParams<{ tipo: string }>();
+  // Remueve el filtro por “tipo”, ya que queremos siempre mostrar TODOS los servicios:
+  // const { tipo } = useParams<{ tipo: string }>();
   if (!contenido || !config) return null;
 
-  // Ej. sólo aquellos de la categoría pedida (ej: "servicios")
-  const items = contenido.filter(item => item.categoria.toLowerCase() === (tipo || "").toLowerCase());
+  // Mostrar todos los servicios/productos disponibles (sin filtro de populares)
+  const items = contenido; 
 
   return (
     <>
       <SEOHead
-        title={`Lista de ${tipo} | ${config.nombre_negocio}`}
+        title={`Servicios | ${config.nombre_negocio}`}
         description={config.meta_descripcion}
       />
       <main className="max-w-5xl mx-auto pt-12">
         <h1 className="text-3xl font-bold mb-6">
-          {tipo?.charAt(0).toUpperCase() + (tipo?.slice(1) || "")}
+          Nuestros Servicios
         </h1>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {items.map(item => (
