@@ -1,4 +1,3 @@
-
 import SEOHead from "@/components/SEOHead";
 import BannerHero from "@/components/BannerHero";
 import { useBusiness } from "@/context/BusinessContext";
@@ -7,6 +6,8 @@ import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 
 // NUEVA imagen personalizada para "Corte de Barba"
 const CORTE_BARBA_IMG = "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png";
+// Imagen personalizada para "Corte de pelo y barba"
+const CORTE_PELO_BARBA_IMG = "/lovable-uploads/c749b507-8002-4fd8-9d5d-20b9c3903632.png";
 
 // Mantener el resto de imágenes locales para los otros servicios
 const BARBERIA_IMAGES = [
@@ -54,6 +55,8 @@ const Home = () => {
                     src={
                       item.id === "corte-barba"
                         ? CORTE_BARBA_IMG
+                        : item.id === "corte-pelo-barba"
+                        ? CORTE_PELO_BARBA_IMG
                         : BARBERIA_IMAGES[i % BARBERIA_IMAGES.length]
                     }
                     alt={item.nombre}
@@ -121,4 +124,3 @@ const Home = () => {
 };
 
 export default Home;
-

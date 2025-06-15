@@ -5,6 +5,8 @@ import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import React, { useEffect, useState } from "react";
 
 const CORTE_BARBA_IMG = "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png";
+const CORTE_PELO_BARBA_IMG = "/lovable-uploads/c749b507-8002-4fd8-9d5d-20b9c3903632.png";
+
 const BARBERIA_IMAGES = [
   CORTE_BARBA_IMG,
   "/lovable-uploads/fc94f399-5202-49cf-8b59-4e5432fc8431.png",
@@ -60,6 +62,8 @@ const ReservaTurno = () => {
                 src={
                   item.id === "corte-barba"
                     ? CORTE_BARBA_IMG
+                    : item.id === "corte-pelo-barba"
+                    ? CORTE_PELO_BARBA_IMG
                     : BARBERIA_IMAGES[idx % BARBERIA_IMAGES.length]
                 }
                 alt={item.nombre}

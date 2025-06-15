@@ -1,128 +1,37 @@
-
 import { useBusiness } from "@/context/BusinessContext";
 import { Link } from "react-router-dom";
-import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
-import React, { useMemo } from "react";
 
 const BannerHero = () => {
-  const { config, loading, error } = useBusiness();
-  const banner = config?.banner_principal;
-  const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
-
-  if (loading || !config) {
-    return (
-      <section
-        className="relative w-full max-w-7xl mx-auto mt-8 mb-10 overflow-hidden rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-stretch bg-zinc-300 animate-pulse"
-        style={{ minHeight: 390 }}
-        aria-label="banner loading"
-      >
-        <div className="flex-1 flex flex-col justify-center px-8 py-16 md:px-16 w-full md:max-w-xl">
-          <div className="h-9 w-60 mb-2 bg-zinc-200 rounded animate-pulse" />
-          <div className="h-7 w-40 mb-8 bg-zinc-200 rounded animate-pulse" />
-          <div className="h-12 w-44 bg-zinc-300 rounded-full animate-pulse" />
-        </div>
-        <div className="hidden md:block w-[45%]">
-          <div className="h-full w-full bg-zinc-200 animate-pulse rounded-r-2xl" />
-        </div>
-      </section>
-    );
-  }
-
-  if (error || !banner?.activo) {
-    return (
-      <section
-        className="w-full max-w-7xl mx-auto mt-8 mb-10 min-h-[390px] bg-zinc-50"
-        aria-label="sin banner"
-      ></section>
-    );
-  }
-
-  // Corrección para el botón
-  let linkDestino = banner.link_boton;
-  let botonTexto = banner.texto_boton?.trim();
-  if (
-    botonTexto?.toLowerCase() === "reservar turno" ||
-    botonTexto?.toLowerCase() === "reservá tu turno"
-  ) {
-    linkDestino = "/reservar-turno";
-  }
+  const { config } = useBusiness();
 
   return (
-    <section
-      ref={ref}
-      className={`relative w-full max-w-7xl mx-auto mt-8 mb-10 overflow-hidden rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-stretch bg-zinc-900 transition-all duration-700
-      ${revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-12"}
-      `}
-      style={{ minHeight: 390 }}
-      aria-label="banner"
-    >
-      {/* Imagen de fondo oscurecida */}
-      <div className="absolute inset-0 w-full h-full z-0 pointer-events-none">
-        <img
-          src={banner.imagen_url}
-          alt={banner.alt_text}
-          className="object-cover w-full h-full brightness-[.7] scale-105 transition-transform duration-700"
-          loading="lazy"
-          style={{ objectPosition: "center" }}
-        />
-        <div className="absolute inset-0 bg-zinc-900/80" />
-      </div>
+    <div className="relative w-full bg-zinc-900 mb-3 mt-2 rounded-xl overflow-hidden shadow-xl max-w-6xl mx-auto">
+      {/* Imagen de fondo NUEVA (foto del local) */}
+      <img 
+        src="/lovable-uploads/c3696121-578a-4be5-b41c-0c2ba0298c01.png"
+        alt="Foto del local"
+        className="absolute inset-0 w-full h-full object-cover opacity-70"
+        loading="eager"
+      />
+
+      {/* Overlay semi-transparente */}
+      <div className="absolute inset-0 bg-zinc-900 opacity-30"></div>
+
       {/* Contenido del banner */}
-      <div className="relative z-10 flex flex-col justify-center px-6 py-20 md:px-24 w-full md:max-w-xl items-center md:items-start">
-        <h1
-          className={`
-            text-4xl md:text-6xl font-extrabold mb-4 text-white drop-shadow-lg tracking-tight leading-tight
-            text-center md:text-left transition-all duration-700
-            ${revealed ? "animate-slide-in-right animate-fade-in animate-scale-in opacity-100" : "opacity-0 -translate-x-10"}
-          `}
-          style={{ transitionDelay: revealed ? "100ms" : "0ms" }}
-        >
-          {banner.titulo}
+      <div className="relative p-8 md:p-12 lg:p-16 flex flex-col items-start justify-center h-full text-white">
+        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-4 tracking-tight">
+          {config?.banner_principal.titulo}
         </h1>
-        {banner.subtitulo && (
-          <p
-            className={`
-              text-lg md:text-2xl mb-9 font-medium text-zinc-100 drop-shadow-sm text-center md:text-left
-              transition-all duration-700
-              ${revealed ? "animate-fade-in animate-slide-in-right opacity-100" : "opacity-0 -translate-x-6"}
-            `}
-            style={{ transitionDelay: revealed ? "250ms" : "0ms" }}
-          >
-            {banner.subtitulo}
-          </p>
-        )}
-        {banner.texto_boton && linkDestino && (
-          <Link to={linkDestino} className="self-center md:self-start">
-            <button
-              className={
-                `
-                  bg-emerald-500 text-white px-8 py-4 rounded-full font-bold text-lg shadow-lg
-                  hover:bg-emerald-600 hover:scale-105 active:scale-100 border-2 border-emerald-500
-                  transition-all focus:outline-none focus:ring-4 focus:ring-emerald-200 animate-pulseButton
-                  ${revealed ? "animate-scale-in animate-fade-in" : "opacity-0 scale-95"}
-                `
-              }
-              style={{ marginTop: 8, minWidth: 200, transitionDelay: revealed ? "350ms" : "0ms" }}
-            >
-              {banner.texto_boton}
-            </button>
-          </Link>
-        )}
+        <p className="text-lg md:text-xl mb-5 md:mb-7">
+          {config?.banner_principal.subtitulo}
+        </p>
+        <Link to={config?.banner_principal.link_boton || "/"}>
+          <button className="bg-white text-zinc-900 px-6 py-3 rounded-full text-base font-semibold shadow-md hover:bg-zinc-100 transition-colors">
+            {config?.banner_principal.texto_boton}
+          </button>
+        </Link>
       </div>
-      {/* Imagen destacada a la derecha (solo desktop) */}
-      <div className="hidden md:block relative w-[45%] z-10">
-        <img
-          src={banner.imagen_url}
-          alt={banner.alt_text}
-          className={`
-            h-full object-cover w-full rounded-r-2xl shadow-xl transition-all duration-1000
-            ${revealed ? "scale-100 animate-scale-in animate-fade-in opacity-100" : "scale-95 opacity-0"}
-          `}
-          loading="lazy"
-          style={{ transitionDelay: revealed ? "400ms" : "0ms" }}
-        />
-      </div>
-    </section>
+    </div>
   );
 };
 
