@@ -19,7 +19,7 @@ const ReservaTurno = () => {
   return (
     <>
       <SEOHead title="Reservar turno" description="Reserva tu turno online de manera fácil y rápida." />
-      <main className="bg-zinc-50 min-h-screen pt-2">
+      <main className="bg-amber-50 min-h-screen pt-2">
         <section
           ref={formRef}
           className={`max-w-4xl mx-auto my-16 transition-all duration-700 ${
