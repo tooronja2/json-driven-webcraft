@@ -1,14 +1,17 @@
-// Update this page (the content is just a fallback if you fail to update the page)
 
-const Index = () => {
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="text-4xl font-bold mb-4">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
-    </div>
-  );
-};
+import { BusinessProvider } from "@/context/BusinessContext";
+import Header from "@/components/Header";
+import Footer from "@/components/Footer";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
+import { Outlet } from "react-router-dom";
+
+const Index = () => (
+  <BusinessProvider>
+    <GoogleAnalytics />
+    <Header />
+    <Outlet />
+    <Footer />
+  </BusinessProvider>
+);
 
 export default Index;

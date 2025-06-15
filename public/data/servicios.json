@@ -1,0 +1,55 @@
+
+[
+  {
+    "id": "corte-1",
+    "nombre": "Corte Clásico",
+    "categoria": "Cortes",
+    "precio": 3000,
+    "precio_oferta": null,
+    "en_oferta": false,
+    "descripcion_breve": "Corte de pelo tradicional con detalles a navaja.",
+    "descripcion_larga": "Transformá tu look con nuestro corte clásico realizado por barberos expertos. Incluye lavado y acabado a navaja.",
+    "seo_titulo": "Corte Clásico profesional | Barbería Central",
+    "seo_descripcion": "Descubrí el corte clásico de Barbería Central: precisión, estilo y acabado profesional. Reservá tu turno hoy.",
+    "imagenes": [
+      {
+        "url": "https://images.unsplash.com/photo-1517048676732-d65bc937f952",
+        "alt": "Corte clásico en Barbería Central"
+      }
+    ],
+    "disponible": true,
+    "detalles": {
+      "duracion": "30 min",
+      "incluye": ["Lavado", "Corte", "Navaja"],
+      "requisitos": "Ninguno"
+    },
+    "etiquetas": ["clásico", "hombres", "corte"],
+    "slug_url": "corte-clasico"
+  },
+  {
+    "id": "corte-barba-2",
+    "nombre": "Corte y Barba",
+    "categoria": "Cortes",
+    "precio": 4500,
+    "precio_oferta": 4000,
+    "en_oferta": true,
+    "descripcion_breve": "Un paquete completo con corte y perfilado de barba.",
+    "descripcion_larga": "Luce impecable con corte de pelo y barba, detallado y perfilado a medida.",
+    "seo_titulo": "Corte y Barba con descuento | Barbería Central",
+    "seo_descripcion": "Paquete especial de Corte y Barba en Barbería Central. Promoción limitada. ¡Reservá ya!",
+    "imagenes": [
+      {
+        "url": "https://images.unsplash.com/photo-1517430816045-df4b7de11d1a",
+        "alt": "Combo Corte y Barba en Barbería Central"
+      }
+    ],
+    "disponible": true,
+    "detalles": {
+      "duracion": "50 min",
+      "incluye": ["Corte", "Barba", "Perfilado", "Navaja"],
+      "requisitos": "Ninguno"
+    },
+    "etiquetas": ["combo", "barba", "oferta"],
+    "slug_url": "corte-barba"
+  }
+]

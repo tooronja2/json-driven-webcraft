@@ -1,0 +1,53 @@
+
+{
+  "nombre_negocio": "Barbería Central",
+  "meta_titulo": "Estilo y Precisión en Barbería Central",
+  "meta_descripcion": "Tu barbería de confianza con los mejores cortes, afeitados clásicos y atención personalizada.",
+  "meta_keywords": "barbería, corte de pelo, afeitado, barber Central, reserva online",
+  "telefono_contacto": "+54 11 1234-5678",
+  "email_contacto": "contacto@barberiacentral.com",
+  "direccion_fisica": "Av. Corrientes 1234, Buenos Aires, Argentina",
+  "whatsapp_numero": "+54 911 2345-6789",
+  "google_analytics_id": "G-XXXXXXXXXX",
+  "banner_principal": {
+    "activo": true,
+    "imagen_url": "https://images.unsplash.com/photo-1517841905240-472988babdf9",
+    "alt_text": "Barber cortando cabello a un cliente",
+    "titulo": "Barbería Central",
+    "subtitulo": "Donde el estilo cobra vida.",
+    "texto_boton": "Reservar Turno",
+    "link_boton": "/#turnos"
+  },
+  "seo_configuracion": {
+    "favicon_url": "/favicon.ico",
+    "og_image": "https://images.unsplash.com/photo-1517841905240-472988babdf9",
+    "twitter_card": "summary_large_image",
+    "sitemap_activo": true,
+    "robots_txt_personalizado": "User-agent: *\nAllow: /"
+  },
+  "secciones_destacadas": [
+    { "titulo": "Servicios Populares", "criterio": "populares", "limite": 4 }
+  ],
+  "links_redes_sociales": {
+    "instagram": "https://instagram.com/barberiacentral",
+    "facebook": "https://facebook.com/barberiacentral",
+    "tiktok": "https://tiktok.com/@barberiacentral"
+  },
+  "menu_navegacion": [
+    { "texto": "Inicio", "url": "/" },
+    { "texto": "Servicios", "url": "/servicios" },
+    { "texto": "Reserva tu Turno", "url": "/#turnos" },
+    { "texto": "Contacto", "url": "/contacto" }
+  ],
+  "footer_links": [
+    { "texto": "Política de Privacidad", "url": "/privacidad" },
+    { "texto": "Términos y Condiciones", "url": "/terminos" }
+  ],
+  "moneda_simbolo": "$",
+  "colores_tema": {
+    "primario": "#1a202c",
+    "secundario": "#e2e8f0"
+  },
+  "google_workspace_account": "tuejemplo@gmail.com",
+  "google_project_id": "gc-proyecto-barberia-001"
+}
