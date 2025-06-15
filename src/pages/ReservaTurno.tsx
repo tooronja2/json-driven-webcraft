@@ -29,7 +29,7 @@ const ReservaTurno = () => {
       <SEOHead title="Reservar turno" description="Reserva tu turno online de manera fácil y rápida." />
       <main className="bg-zinc-50 min-h-screen pt-2">
         <section
-          ref={(node) => {
+          ref={(node: HTMLDivElement | null) => {
             // Permite ambas refs: la del scroll y la animación
             (formRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
             scrollAnchorRef.current = node;
@@ -51,4 +51,3 @@ const ReservaTurno = () => {
 };
 
 export default ReservaTurno;
-
