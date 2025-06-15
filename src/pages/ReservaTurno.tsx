@@ -106,24 +106,22 @@ const ReservaTurno = () => {
     );
   }
 
-  // Paso 3: Mostrar botón Google Calendar del staff seleccionado
+  // Paso 3: Mostrar Google Calendar embebido del staff seleccionado
   if (paso === 3 && staff !== null) {
     const miembro = GOOGLE_CALENDARS[staff];
     return (
       <main className="max-w-sm mx-auto pt-10 text-center">
-        <button className="mb-5 text-blue-600 text-sm" onClick={() => setPaso(2)}>← Elegir otro staff</button>
-        <h3 className="text-lg font-bold mb-2">Completá tu reserva en Google Calendar</h3>
+        <button className="mb-5 text-blue-600 text-sm" onClick={() => setPaso(2)}>
+          ← Elegir otro staff
+        </button>
+        <h3 className="text-lg font-bold mb-2">Completá tu reserva</h3>
         <img src={miembro.foto} alt={miembro.nombre} className="h-16 w-16 mx-auto rounded-full border mb-2" />
         <div className="font-medium mb-4">{miembro.nombre}</div>
-        <a
-          href={miembro.calendarUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-block bg-blue-600 text-white px-8 py-4 rounded-lg font-medium hover:bg-blue-700 transition-colors text-lg shadow-md"
-        >
-          Reservar con {miembro.nombre}
-        </a>
-        <div className="text-sm text-gray-500 mt-5">La reserva se hace en el calendario oficial de {miembro.nombre}. Si no abre correctamente, revisá los permisos de tu navegador.</div>
+        <div className="flex w-full justify-center">
+          <div className="w-full">
+            <GoogleFormEmbed formUrl={miembro.calendarUrl} height={650} />
+          </div>
+        </div>
       </main>
     );
   }
