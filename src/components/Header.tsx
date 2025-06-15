@@ -90,9 +90,9 @@ const Header = () => {
                 >
                   {item.texto}
                 </Link>
-                {item.subcategorias && (
+                {Array.isArray((item as any).subcategorias) && (
                   <ul className="ml-2">
-                    {item.subcategorias.map((sub, j) => (
+                    {(item as any).subcategorias.map((sub: { texto: string; url: string }, j: number) => (
                       <li key={j}>
                         <Link to={sub.url} className="text-sm hover:underline" style={{ color: config.colores_tema.secundario }}>
                           {sub.texto}
