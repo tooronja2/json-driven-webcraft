@@ -28,6 +28,17 @@ const Home = () => {
       <SEOHead />
       <main className="bg-zinc-50 min-h-screen pt-2 flex flex-col gap-4">
         <BannerHero />
+
+        {/* Sección Sobre Nosotros */}
+        <section className="max-w-4xl mx-auto mt-10 px-4 md:px-0 bg-white rounded-xl shadow-md py-8 mb-2">
+          <h2 className="text-2xl md:text-3xl font-bold mb-3 text-zinc-900">Sobre nosotros</h2>
+          <p className="text-zinc-700 text-base md:text-lg leading-relaxed">
+            Fundada por apasionados del arte de la barbería, Barbería Central combina tradición y modernidad para que cada cliente viva una experiencia única. 
+            Nuestro equipo busca no solo ofrecer los mejores cortes y afeitados clásicos, sino crear un espacio de confianza y calidez, donde el detalle y la atención personalizada son nuestro sello. 
+            Creemos que cada visita es una oportunidad para conectar, compartir y potenciar tu estilo, en un ambiente relajado y auténtico. ¡Te esperamos para vivir juntos la experiencia Barbería Central!
+          </p>
+        </section>
+
         {/* Mostrar todos los servicios */}
         <section
           ref={ref}
