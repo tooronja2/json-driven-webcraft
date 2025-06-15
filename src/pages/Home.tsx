@@ -1,3 +1,4 @@
+
 import SEOHead from "@/components/SEOHead";
 import BannerHero from "@/components/BannerHero";
 import { useBusiness } from "@/context/BusinessContext";
@@ -42,8 +43,7 @@ const Home = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
             {contenido &&
               contenido.map((item, i) => (
-                <Link
-                  to={`/servicios/${item.slug_url}`}
+                <div
                   key={item.id}
                   className={`
                     group bg-white rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-transform duration-300
@@ -85,11 +85,13 @@ const Home = () => {
                         </span>
                       )}
                     </div>
-                    <button className="mt-4 px-4 py-2 rounded-full bg-zinc-900 text-white font-medium text-sm shadow hover:bg-zinc-700 transition focus:ring-2 focus:ring-primary animate-pulseButton">
-                      Reservar
-                    </button>
+                    <Link to="/reservar-turno">
+                      <button className="mt-4 px-4 py-2 rounded-full bg-zinc-900 text-white font-medium text-sm shadow hover:bg-zinc-700 transition focus:ring-2 focus:ring-primary animate-pulseButton w-full">
+                        Reservar
+                      </button>
+                    </Link>
                   </div>
-                </Link>
+                </div>
               ))}
           </div>
         </section>
@@ -124,3 +126,4 @@ const Home = () => {
 };
 
 export default Home;
+
