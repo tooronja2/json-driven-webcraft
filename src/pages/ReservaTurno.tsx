@@ -4,6 +4,15 @@ import { useBusiness } from "@/context/BusinessContext";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import React, { useEffect, useState } from "react";
 
+const CORTE_BARBA_IMG = "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png";
+const BARBERIA_IMAGES = [
+  CORTE_BARBA_IMG,
+  "/lovable-uploads/fc94f399-5202-49cf-8b59-4e5432fc8431.png",
+  "/lovable-uploads/a0053cdf-42ff-4f6f-bf69-cd415ed3e773.png",
+  "/lovable-uploads/6eb39621-7c2f-44a9-b43b-937dab14bcc2.png",
+  "/lovable-uploads/1bbc1778-07ae-4750-ba3c-20216d2b8c60.png",
+];
+
 const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires";
 
 const GOOGLE_CALENDARS = [
@@ -47,7 +56,15 @@ const ReservaTurno = () => {
               className={`flex items-center gap-4 w-full bg-white px-4 py-3 rounded-xl border shadow hover:bg-gray-100 transition ${servicio === item.id ? "border-blue-400 shadow-lg scale-105" : ""}`}
               onClick={() => { setServicio(item.id); setPaso(2); }}
             >
-              <img src={item.imagenes[0]?.url} alt={item.nombre} className="h-12 w-12 rounded object-cover border" />
+              <img
+                src={
+                  item.id === "corte-barba"
+                    ? CORTE_BARBA_IMG
+                    : BARBERIA_IMAGES[idx % BARBERIA_IMAGES.length]
+                }
+                alt={item.nombre}
+                className="h-12 w-12 rounded object-cover border"
+              />
               <div>
                 <div className="font-semibold">{item.nombre}</div>
                 <div className="text-xs text-gray-500">{item.detalles?.duracion || "15min"} · {config?.moneda_simbolo}{item.precio_oferta ?? item.precio}</div>

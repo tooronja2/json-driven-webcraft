@@ -1,11 +1,16 @@
+
 import SEOHead from "@/components/SEOHead";
 import BannerHero from "@/components/BannerHero";
 import { useBusiness } from "@/context/BusinessContext";
 import { Link } from "react-router-dom";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 
+// NUEVA imagen personalizada para "Corte de Barba"
+const CORTE_BARBA_IMG = "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png";
+
+// Mantener el resto de imágenes locales para los otros servicios
 const BARBERIA_IMAGES = [
-  "/lovable-uploads/8610763d-98ed-4f91-a835-44f77b5e6f80.png",
+  CORTE_BARBA_IMG,
   "/lovable-uploads/fc94f399-5202-49cf-8b59-4e5432fc8431.png",
   "/lovable-uploads/a0053cdf-42ff-4f6f-bf69-cd415ed3e773.png",
   "/lovable-uploads/6eb39621-7c2f-44a9-b43b-937dab14bcc2.png",
@@ -46,7 +51,11 @@ const Home = () => {
                   style={{ animationDelay: `${180 + i * 120}ms` }}
                 >
                   <img
-                    src={BARBERIA_IMAGES[i % BARBERIA_IMAGES.length]}
+                    src={
+                      item.id === "corte-barba"
+                        ? CORTE_BARBA_IMG
+                        : BARBERIA_IMAGES[i % BARBERIA_IMAGES.length]
+                    }
                     alt={item.nombre}
                     className="rounded-t-2xl mb-0 w-full object-cover h-48 border-b border-zinc-200 transition-transform duration-300 group-hover:scale-105"
                     loading="lazy"
@@ -112,3 +121,4 @@ const Home = () => {
 };
 
 export default Home;
+
