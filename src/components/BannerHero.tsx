@@ -4,9 +4,28 @@ import { Link } from "react-router-dom";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 
 const BannerHero = () => {
-  const { config } = useBusiness();
+  const { config, loading } = useBusiness();
   const banner = config?.banner_principal;
   const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
+
+  // Mostrar un placeholder animado mientras carga el config inicialmente
+  if (loading || !config) {
+    return (
+      <section
+        className="relative w-full max-w-7xl mx-auto mt-8 mb-10 overflow-hidden rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-stretch bg-zinc-300 animate-pulse"
+        style={{ minHeight: 390 }}
+      >
+        <div className="flex-1 flex flex-col justify-center px-8 py-16 md:px-16 w-full md:max-w-xl">
+          <div className="h-9 w-60 mb-2 bg-zinc-200 rounded animate-pulse" />
+          <div className="h-7 w-40 mb-8 bg-zinc-200 rounded animate-pulse" />
+          <div className="h-12 w-44 bg-zinc-300 rounded-full animate-pulse" />
+        </div>
+        <div className="hidden md:block w-[45%]">
+          <div className="h-full w-full bg-zinc-200 animate-pulse rounded-r-2xl" />
+        </div>
+      </section>
+    );
+  }
 
   if (!banner?.activo) return null;
 
