@@ -3,39 +3,20 @@ import SEOHead from "@/components/SEOHead";
 import GoogleFormEmbed from "@/components/GoogleFormEmbed";
 import { useBusiness } from "@/context/BusinessContext";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
-import React, { useEffect, useRef } from "react";
+import React from "react";
 
 const GOOGLE_FORM_URL = "https://docs.google.com/forms/d/e/1FAIpQLSfWgTOpruebaFormularioEmbed/viewform?embedded=true";
 
 const ReservaTurno = () => {
   const { config } = useBusiness();
   const { ref: formRef, revealed: formVisible } = useRevealOnScroll<HTMLDivElement>();
-  // Creamos una referencia directa al formulario para controlar el scroll
-  const scrollAnchorRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Solo hacer scroll si venimos de una navegación interna con hash específico
-    // y si estamos en la parte superior de la página
-    if (window.location.hash === "#turnos" && window.scrollY === 0 && scrollAnchorRef.current) {
-      // Pequeño timeout para asegurarnos que el DOM esté renderizado
-      setTimeout(() => {
-        // Scroll suave al ancla
-        scrollAnchorRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 200);
-    }
-  }, []);
 
   return (
     <>
       <SEOHead title="Reservar turno" description="Reserva tu turno online de manera fácil y rápida." />
       <main className="bg-zinc-50 min-h-screen pt-2">
         <section
-          ref={(node: HTMLDivElement | null) => {
-            // Permite ambas refs: la del scroll y la animación
-            (formRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
-            scrollAnchorRef.current = node;
-          }}
-          id="turnos"
+          ref={formRef}
           className={`max-w-4xl mx-auto my-16 transition-all duration-700 ${
             formVisible ? "animate-fade-in opacity-100" : "opacity-0 translate-y-10"
           }`}

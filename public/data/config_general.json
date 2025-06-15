@@ -16,7 +16,7 @@
     "titulo": "Barbería Central",
     "subtitulo": "Donde el estilo cobra vida.",
     "texto_boton": "Reservar Turno",
-    "link_boton": "/#turnos"
+    "link_boton": "/reservar-turno"
   },
   "seo_configuracion": {
     "favicon_url": "/favicon.ico",
@@ -36,7 +36,7 @@
   "menu_navegacion": [
     { "texto": "Inicio", "url": "/" },
     { "texto": "Servicios", "url": "/servicios" },
-    { "texto": "Reserva tu Turno", "url": "/#turnos" },
+    { "texto": "Reserva tu Turno", "url": "/reservar-turno" },
     { "texto": "Contacto", "url": "/contacto" }
   ],
   "footer_links": [
