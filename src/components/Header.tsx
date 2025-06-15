@@ -1,7 +1,8 @@
+
 import { useBusiness } from "@/context/BusinessContext";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { Menu, X } from "lucide-react";
+import { Menu } from "lucide-react";
 import { useState } from "react";
 import {
   DropdownMenu,
@@ -10,19 +11,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
+// --- Quitamos "Servicios" y "Dirección" ---
 const extraMenu = [
-  { texto: "Servicios", url: "/servicios" },
   { texto: "Equipo", url: "/equipo" },
-  { texto: "Reseñas", url: "/resenas" },
-  { texto: "Dirección", url: "/direccion" },
+  { texto: "Reseñas", url: "/resenas" }
 ];
 
 const Header = () => {
   const { config } = useBusiness();
   const isMobile = useIsMobile();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  
+
   if (!config) return null;
+
+  // --- Nueva lista combinada, sin "Servicios" ni "Dirección" ni duplicados ---
+  // Además, filtramos duplicado de "Servicios" si existiera en menu_navegacion
+  const cleanNav = [
+    ...extraMenu,
+    ...config.menu_navegacion.filter(
+      m =>
+        m.texto.trim().toLowerCase() !== "servicios" &&
+        m.texto.trim().toLowerCase() !== "dirección" &&
+        m.texto.trim().toLowerCase() !== "direccion"
+    ),
+  ];
 
   if (isMobile) {
     return (
@@ -34,7 +46,7 @@ const Header = () => {
           <div className="flex items-center gap-2 font-bold text-lg" style={{ color: config.colores_tema.primario }}>
             {config.nombre_negocio}
           </div>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="p-2" style={{ color: config.colores_tema.primario }}>
@@ -42,7 +54,7 @@ const Header = () => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 z-50 bg-white">
-              {[...extraMenu, ...config.menu_navegacion].map((item, i) => {
+              {cleanNav.map((item, i) => {
                 const url =
                   item.texto.trim().toLowerCase() === "reserva tu turno"
                     ? "/reservar-turno"
@@ -76,7 +88,7 @@ const Header = () => {
           {config.nombre_negocio}
         </div>
         <ul className="flex items-center gap-6">
-          {[...extraMenu, ...config.menu_navegacion].map((item, i) => {
+          {cleanNav.map((item, i) => {
             const url =
               item.texto.trim().toLowerCase() === "reserva tu turno"
                 ? "/reservar-turno"
@@ -90,9 +102,9 @@ const Header = () => {
                 >
                   {item.texto}
                 </Link>
-                {Array.isArray((item as any).subcategorias) && (
+                {"subcategorias" in item && Array.isArray(item.subcategorias) && (
                   <ul className="ml-2">
-                    {(item as any).subcategorias.map((sub: { texto: string; url: string }, j: number) => (
+                    {item.subcategorias.map((sub: { texto: string; url: string }, j: number) => (
                       <li key={j}>
                         <Link to={sub.url} className="text-sm hover:underline" style={{ color: config.colores_tema.secundario }}>
                           {sub.texto}
