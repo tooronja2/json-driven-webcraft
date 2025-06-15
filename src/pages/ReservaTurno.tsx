@@ -14,8 +14,9 @@ const ReservaTurno = () => {
   const scrollAnchorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    // Al montar, si el hash es #turnos (o cualquier otro que usemos), hacemos scroll cómodo
-    if (window.location.hash === "#turnos" && scrollAnchorRef.current) {
+    // Solo hacer scroll si venimos de una navegación interna con hash específico
+    // y si estamos en la parte superior de la página
+    if (window.location.hash === "#turnos" && window.scrollY === 0 && scrollAnchorRef.current) {
       // Pequeño timeout para asegurarnos que el DOM esté renderizado
       setTimeout(() => {
         // Scroll suave al ancla
