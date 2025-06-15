@@ -26,23 +26,27 @@ const SectionDestacada: React.FC<SectionDestacadaProps> = ({ seccion }) => {
   return (
     <section
       ref={ref}
-      className={`max-w-6xl mx-auto mt-16 mb-10 px-4 md:px-0 transition-all duration-700
-        ${revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-10"}`}
+      className={`max-w-6xl mx-auto mt-16 mb-10 px-4 md:px-0 transition-all duration-700 ${
+        revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-10"
+      }`}
     >
-      <h2 className="text-3xl font-bold mb-8 tracking-tight text-zinc-900">{seccion.titulo}</h2>
+      <h2 className="text-3xl font-bold mb-8 tracking-tight text-zinc-900 animate-fade-in" style={{ transitionDelay: "120ms" }}>
+        {seccion.titulo}
+      </h2>
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
         {items.map((item, i) => (
           <Link
             to={`/servicios/${item.slug_url}`}
             key={item.id}
-            className={`group bg-white rounded-2xl shadow-xl hover:shadow-2xl transition hover:scale-[1.025]
-              ${revealed ? "animate-slide-in-right opacity-100" : "opacity-0 translate-x-8"}`}
-            style={{ animationDelay: `${i * 80}ms` }}
+            className={`group bg-white rounded-2xl shadow-xl hover:shadow-2xl hover:scale-105 transition-transform duration-300 animate-slide-in-right ${
+              revealed ? "opacity-100" : "opacity-0 translate-x-8"
+            }`}
+            style={{ animationDelay: `${180 + i * 100}ms` }}
           >
             <img
               src={item.imagenes[0]?.url}
               alt={item.imagenes[0]?.alt}
-              className="rounded-t-2xl mb-0 w-full object-cover h-48 border-b border-zinc-200"
+              className="rounded-t-2xl mb-0 w-full object-cover h-48 border-b border-zinc-200 transition-transform duration-300 group-hover:scale-105"
               loading="lazy"
             />
             <div className="flex flex-col gap-2 p-5">
@@ -64,7 +68,7 @@ const SectionDestacada: React.FC<SectionDestacadaProps> = ({ seccion }) => {
                   <span className="line-through text-sm text-zinc-400">{config?.moneda_simbolo}{item.precio}</span>
                 )}
               </div>
-              <button className="mt-4 px-4 py-2 rounded-full bg-zinc-900 text-white font-medium text-sm shadow hover:bg-zinc-700 transition">
+              <button className="mt-4 px-4 py-2 rounded-full bg-zinc-900 text-white font-medium text-sm shadow hover:bg-zinc-700 transition focus:ring-2 focus:ring-primary animate-pulseButton">
                 Reservar
               </button>
             </div>
