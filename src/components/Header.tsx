@@ -11,10 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-// --- Quitamos "Servicios" y "Dirección" ---
-const extraMenu = [
+// --- Nuevo menú principal en el orden correcto (Inicio primero) ---
+const orderedMenu = [
+  { texto: "Inicio", url: "/" },
   { texto: "Equipo", url: "/equipo" },
-  { texto: "Reseñas", url: "/resenas" }
+  { texto: "Reseñas", url: "/resenas" },
+  { texto: "Reserva tu Turno", url: "/reservar-turno" },
+  { texto: "Contacto", url: "/contacto" },
 ];
 
 const Header = () => {
@@ -23,18 +26,6 @@ const Header = () => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   if (!config) return null;
-
-  // --- Nueva lista combinada, sin "Servicios" ni "Dirección" ni duplicados ---
-  // Además, filtramos duplicado de "Servicios" si existiera en menu_navegacion
-  const cleanNav = [
-    ...extraMenu,
-    ...config.menu_navegacion.filter(
-      m =>
-        m.texto.trim().toLowerCase() !== "servicios" &&
-        m.texto.trim().toLowerCase() !== "dirección" &&
-        m.texto.trim().toLowerCase() !== "direccion"
-    ),
-  ];
 
   if (isMobile) {
     return (
@@ -46,7 +37,6 @@ const Header = () => {
           <div className="flex items-center gap-2 font-bold text-lg" style={{ color: config.colores_tema.primario }}>
             {config.nombre_negocio}
           </div>
-
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <button className="p-2" style={{ color: config.colores_tema.primario }}>
@@ -54,23 +44,18 @@ const Header = () => {
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48 z-50 bg-white">
-              {cleanNav.map((item, i) => {
-                const url =
-                  item.texto.trim().toLowerCase() === "reserva tu turno"
-                    ? "/reservar-turno"
-                    : item.url;
-                return (
-                  <DropdownMenuItem key={i} asChild>
-                    <Link
-                      to={url}
-                      className="w-full cursor-pointer"
-                      style={{ color: config.colores_tema.primario }}
-                    >
-                      {item.texto === "Reserva tu Turno" ? "Reservar" : item.texto}
-                    </Link>
-                  </DropdownMenuItem>
-                );
-              })}
+              {orderedMenu.map((item, i) => (
+                <DropdownMenuItem key={i} asChild>
+                  <Link
+                    to={item.url}
+                    className="w-full cursor-pointer"
+                    style={{ color: config.colores_tema.primario }}
+                  >
+                    {/* Para UX: Mostrar "Reservar" en vez de "Reserva tu Turno" en el menú mobile */}
+                    {item.texto === "Reserva tu Turno" ? "Reservar" : item.texto}
+                  </Link>
+                </DropdownMenuItem>
+              ))}
             </DropdownMenuContent>
           </DropdownMenu>
         </nav>
@@ -87,35 +72,18 @@ const Header = () => {
         <div className="flex items-center gap-2 font-bold text-xl" style={{ color: config.colores_tema.primario }}>
           {config.nombre_negocio}
         </div>
-        <ul className="flex items-center gap-6">
-          {cleanNav.map((item, i) => {
-            const url =
-              item.texto.trim().toLowerCase() === "reserva tu turno"
-                ? "/reservar-turno"
-                : item.url;
-            return (
-              <li key={i}>
-                <Link
-                  to={url}
-                  className="hover:underline transition-all text-base"
-                  style={{ color: config.colores_tema.primario }}
-                >
-                  {item.texto}
-                </Link>
-                {"subcategorias" in item && Array.isArray(item.subcategorias) && (
-                  <ul className="ml-2">
-                    {item.subcategorias.map((sub: { texto: string; url: string }, j: number) => (
-                      <li key={j}>
-                        <Link to={sub.url} className="text-sm hover:underline" style={{ color: config.colores_tema.secundario }}>
-                          {sub.texto}
-                        </Link>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </li>
-            );
-          })}
+        <ul className="flex items-center gap-12">
+          {orderedMenu.map((item, i) => (
+            <li key={i}>
+              <Link
+                to={item.url}
+                className="hover:underline transition-all text-xl"
+                style={{ color: config.colores_tema.primario }}
+              >
+                {item.texto}
+              </Link>
+            </li>
+          ))}
         </ul>
       </nav>
     </header>
