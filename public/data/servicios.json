@@ -1,55 +1,113 @@
 
 [
   {
-    "id": "corte-1",
-    "nombre": "Corte Clásico",
-    "categoria": "Cortes",
-    "precio": 3000,
+    "id": "barba",
+    "nombre": "Corte de Barba",
+    "categoria": "Servicios",
+    "precio": 6500,
     "precio_oferta": null,
     "en_oferta": false,
-    "descripcion_breve": "Corte de pelo tradicional con detalles a navaja.",
-    "descripcion_larga": "Transformá tu look con nuestro corte clásico realizado por barberos expertos. Incluye lavado y acabado a navaja.",
-    "seo_titulo": "Corte Clásico profesional | Barbería Central",
-    "seo_descripcion": "Descubrí el corte clásico de Barbería Central: precisión, estilo y acabado profesional. Reservá tu turno hoy.",
+    "descripcion_breve": "Perfilado y corte profesional de barba.",
+    "descripcion_larga": "Armonizá tu rostro con nuestro servicio a navaja y máquina, adaptado a tu estilo y preferencia.",
+    "seo_titulo": "Corte de barba profesional | Barbería Central",
+    "seo_descripcion": "Dale forma perfecta a tu barba. Servicio con terminaciones a navaja.",
     "imagenes": [
       {
-        "url": "https://images.unsplash.com/photo-1517048676732-d65bc937f952",
-        "alt": "Corte clásico en Barbería Central"
+        "url": "https://images.unsplash.com/photo-1511367461989-f85a21fda167",
+        "alt": "Corte de barba"
       }
     ],
     "disponible": true,
-    "detalles": {
-      "duracion": "30 min",
-      "incluye": ["Lavado", "Corte", "Navaja"],
-      "requisitos": "Ninguno"
-    },
-    "etiquetas": ["clásico", "hombres", "corte"],
-    "slug_url": "corte-clasico"
+    "detalles": { "duracion": "15min", "incluye": ["Corte de barba"], "requisitos": "" },
+    "etiquetas": ["barba", "corte", "perfilado"],
+    "slug_url": "corte-barba"
   },
   {
-    "id": "corte-barba-2",
-    "nombre": "Corte y Barba",
-    "categoria": "Cortes",
-    "precio": 4500,
-    "precio_oferta": 4000,
-    "en_oferta": true,
-    "descripcion_breve": "Un paquete completo con corte y perfilado de barba.",
-    "descripcion_larga": "Luce impecable con corte de pelo y barba, detallado y perfilado a medida.",
-    "seo_titulo": "Corte y Barba con descuento | Barbería Central",
-    "seo_descripcion": "Paquete especial de Corte y Barba en Barbería Central. Promoción limitada. ¡Reservá ya!",
+    "id": "corte-pelo",
+    "nombre": "Corte de Pelo",
+    "categoria": "Servicios",
+    "precio": 8500,
+    "precio_oferta": null,
+    "en_oferta": false,
+    "descripcion_breve": "Corte de pelo personalizado.",
+    "descripcion_larga": "Corte a tijera o máquina, asesoramiento de imagen y lavado opcional.",
+    "seo_titulo": "Corte de pelo exclusivo | Barbería Central",
+    "seo_descripcion": "Renová tu estilo. Profesionales expertos en las últimas tendencias.",
     "imagenes": [
       {
-        "url": "https://images.unsplash.com/photo-1517430816045-df4b7de11d1a",
-        "alt": "Combo Corte y Barba en Barbería Central"
+        "url": "https://images.unsplash.com/photo-1517841905240-472988babdf9",
+        "alt": "Corte de pelo"
       }
     ],
     "disponible": true,
-    "detalles": {
-      "duracion": "50 min",
-      "incluye": ["Corte", "Barba", "Perfilado", "Navaja"],
-      "requisitos": "Ninguno"
-    },
-    "etiquetas": ["combo", "barba", "oferta"],
-    "slug_url": "corte-barba"
+    "detalles": { "duracion": "15min", "incluye": ["Corte de pelo"], "requisitos": "" },
+    "etiquetas": ["corte", "pelo", "look"],
+    "slug_url": "corte-pelo"
+  },
+  {
+    "id": "todo-maquina",
+    "nombre": "Corte todo máquina (rapado).",
+    "categoria": "Servicios",
+    "precio": 8000,
+    "precio_oferta": null,
+    "en_oferta": false,
+    "descripcion_breve": "Rapado a máquina en todo el cabello.",
+    "descripcion_larga": "Corte rápido y preciso. Look uniforme y moderno.",
+    "seo_titulo": "Corte todo máquina | Barbería Central",
+    "seo_descripcion": "Rapado completo para un look práctico y prolijo.",
+    "imagenes": [
+      {
+        "url": "https://images.unsplash.com/photo-1522337660859-02fbefca4702",
+        "alt": "Corte a máquina"
+      }
+    ],
+    "disponible": true,
+    "detalles": { "duracion": "15min", "incluye": ["Rapado"], "requisitos": "" },
+    "etiquetas": ["rapado", "maquina", "corte"],
+    "slug_url": "todo-maquina"
+  },
+  {
+    "id": "combo-corte-barba",
+    "nombre": "Corte + Barba",
+    "categoria": "Servicios",
+    "precio": 9000,
+    "precio_oferta": null,
+    "en_oferta": false,
+    "descripcion_breve": "Corte de pelo y barba en una sola sesión.",
+    "descripcion_larga": "Realzá tu apariencia con nuestro combo completo de corte y perfilado.",
+    "seo_titulo": "Corte y barba | Barbería Central",
+    "seo_descripcion": "Lucí impecable en una sola visita.",
+    "imagenes": [
+      {
+        "url": "https://images.unsplash.com/photo-1517423440428-a5a00ad493e8",
+        "alt": "Combo corte y barba"
+      }
+    ],
+    "disponible": true,
+    "detalles": { "duracion": "15min", "incluye": ["Corte de pelo", "Corte de barba"], "requisitos": "" },
+    "etiquetas": ["combo", "corte", "barba"],
+    "slug_url": "corte-barba-combo"
+  },
+  {
+    "id": "disenos-dibujos",
+    "nombre": "Diseños y dibujos",
+    "categoria": "Otro",
+    "precio": 6500,
+    "precio_oferta": null,
+    "en_oferta": false,
+    "descripcion_breve": "Arte y creatividad en tu corte.",
+    "descripcion_larga": "Solicitá diseños personalizados, líneas o dibujos en tu corte.",
+    "seo_titulo": "Diseños de barbería | Barbería Central",
+    "seo_descripcion": "Marcá la diferencia con diseños exclusivos.",
+    "imagenes": [
+      {
+        "url": "https://images.unsplash.com/photo-1464983953574-0892a716854b",
+        "alt": "Diseños y dibujos"
+      }
+    ],
+    "disponible": true,
+    "detalles": { "duracion": "15min", "incluye": ["Diseños personalizados"], "requisitos": "" },
+    "etiquetas": ["diseños", "arte", "dibujos"],
+    "slug_url": "disenos-dibujos"
   }
 ]
