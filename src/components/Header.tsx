@@ -1,4 +1,3 @@
-
 import { useBusiness } from "@/context/BusinessContext";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -10,6 +9,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+
+const extraMenu = [
+  { texto: "Servicios", url: "/servicios" },
+  { texto: "Equipo", url: "/equipo" },
+  { texto: "Reseñas", url: "/resenas" },
+  { texto: "Dirección", url: "/direccion" },
+];
 
 const Header = () => {
   const { config } = useBusiness();
@@ -35,8 +41,8 @@ const Header = () => {
                 <Menu size={20} />
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              {config.menu_navegacion.map((item, i) => {
+            <DropdownMenuContent align="end" className="w-48 z-50 bg-white">
+              {[...extraMenu, ...config.menu_navegacion].map((item, i) => {
                 const url =
                   item.texto.trim().toLowerCase() === "reserva tu turno"
                     ? "/reservar-turno"
@@ -70,7 +76,7 @@ const Header = () => {
           {config.nombre_negocio}
         </div>
         <ul className="flex items-center gap-6">
-          {config.menu_navegacion.map((item, i) => {
+          {[...extraMenu, ...config.menu_navegacion].map((item, i) => {
             const url =
               item.texto.trim().toLowerCase() === "reserva tu turno"
                 ? "/reservar-turno"
