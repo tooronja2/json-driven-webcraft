@@ -9,7 +9,7 @@ const BannerHero = () => {
   const banner = config?.banner_principal;
   const { ref, revealed } = useRevealOnScroll<HTMLDivElement>();
 
-  // Placeholder: solo se muestra si está cargando o no hay config
+  // Mostrar SIEMPRE un placeholder visible mientras loading o config no está (mayor eficiencia percibida)
   if (loading || !config) {
     return (
       <section
@@ -29,15 +29,17 @@ const BannerHero = () => {
     );
   }
 
-  // Seguridad: si hay error o el banner no está activo, muestra área vacía (no blanco)
+  // Si hay error o el banner no está activo, deja un área vacía, pero nunca blanca (usa el fondo de la app para continuidad visual)
   if (error || !banner?.activo) {
     return (
-      <section className="w-full max-w-7xl mx-auto mt-8 mb-10 min-h-[390px]" aria-label="sin banner"></section>
+      <section
+        className="w-full max-w-7xl mx-auto mt-8 mb-10 min-h-[390px] bg-zinc-50"
+        aria-label="sin banner"
+      ></section>
     );
   }
 
-  // Usar revealed SOLO si hay config y el banner está activo.
-  // Memorizar la clase de animación que usamos solo para evitar un render cambiado por error
+  // Siempre mostrar el banner real si config y banner.activo existen, y revealed SOLO afecta la animación
   const animSection = useMemo(() => (
     revealed ? "animate-fade-in opacity-100" : "opacity-0 translate-y-12"
   ), [revealed]);
@@ -45,9 +47,7 @@ const BannerHero = () => {
   return (
     <section
       ref={ref}
-      className={`relative w-full max-w-7xl mx-auto mt-8 mb-10 overflow-hidden rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-stretch bg-zinc-900 transition-all duration-700
-        ${animSection}
-      `}
+      className={`relative w-full max-w-7xl mx-auto mt-8 mb-10 overflow-hidden rounded-2xl shadow-xl flex flex-col md:flex-row justify-between items-stretch bg-zinc-900 transition-all duration-700 ${animSection}`}
       style={{ minHeight: 390 }}
       aria-label="banner"
     >
