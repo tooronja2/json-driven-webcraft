@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 // URL de tu Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyQDvts8n6Vx8XYIOKioWzO6h9pFbgkFwia54CF4DFOSvLouJuUnbu0i8RPsz-Ggl3L/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxyspCEp0SYVT_oUA74edfE9gIoPvZOjLkMuZxgC3kNKJRYLDPM6msj1GnnSPXPQwxe/exec';
 
 const CancelTurno = () => {
   const [searchParams] = useSearchParams();
