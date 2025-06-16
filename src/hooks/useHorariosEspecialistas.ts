@@ -145,25 +145,27 @@ export const useHorariosEspecialistas = () => {
     // ✅ PASO 3: NO hay excepción específica, buscar horario REGULAR para este día de la semana
     console.log(`✅ NO hay excepción para ${fechaStr}, buscando horario regular para ${diaSemana}`);
     
-    // CLAVE: Filtrar SOLO horarios regulares (sin fecha específica) para el día de la semana
+    // CRÍTICO: Filtrar TODOS los horarios que tengan fecha específica (independientemente de la fecha)
+    // Solo queremos horarios que sean configuraciones generales para el día de la semana
     const configuracionRegular = horarios.find(h => {
       const esElResponsable = h.Responsable === responsable;
       const esMismoDiaSemana = h.Dia_Semana === diaSemana;
       const esHorarioNormal = h.Tipo === 'normal';
       const estaActivo = h.Activo;
-      // CRUCIAL: NO debe tener fecha específica para ser considerado horario regular
-      const noTieneFechaEspecifica = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
+      // FUNDAMENTAL: NO debe tener NINGUNA fecha específica (debe ser configuración general)
+      const esConfiguracionGeneral = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
       
       console.log(`🔍 Revisando horario regular:`, {
         responsable: h.Responsable,
         diaSemana: h.Dia_Semana,
         tipo: h.Tipo,
         activo: h.Activo,
-        fechaEspecifica: h.Fecha_Especifica || 'VACIA',
-        cumpleCondiciones: esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica
+        fechaEspecifica: h.Fecha_Especifica || 'SIN_FECHA',
+        esConfiguracionGeneral: esConfiguracionGeneral,
+        cumpleCondiciones: esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && esConfiguracionGeneral
       });
       
-      return esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica;
+      return esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && esConfiguracionGeneral;
     });
 
     if (!configuracionRegular) {
