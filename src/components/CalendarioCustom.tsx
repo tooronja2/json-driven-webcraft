@@ -62,18 +62,65 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   // Cargar eventos desde Google Sheets
   const cargarEventos = async () => {
     try {
-      console.log('Cargando eventos desde Google Apps Script...');
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getEventos`);
-      const data = await response.json();
-      console.log('Respuesta del servidor:', data);
+      console.log('🔄 Intentando cargar eventos...');
+      console.log('📍 URL del Apps Script:', GOOGLE_APPS_SCRIPT_URL);
+      
+      if (GOOGLE_APPS_SCRIPT_URL.includes('TU_SCRIPT_ID_AQUI')) {
+        console.error('❌ ERROR: Aún no has reemplazado la URL del Google Apps Script');
+        alert('Error: Debes reemplazar TU_SCRIPT_ID_AQUI con tu URL real del Google Apps Script');
+        return;
+      }
+
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos`;
+      console.log('🌐 Haciendo request a:', url);
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      console.log('📡 Respuesta recibida:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+      }
+
+      const textResponse = await response.text();
+      console.log('📄 Respuesta en texto:', textResponse);
+
+      let data;
+      try {
+        data = JSON.parse(textResponse);
+      } catch (parseError) {
+        console.error('❌ Error parsing JSON:', parseError);
+        console.log('📄 Texto que no se pudo parsear:', textResponse);
+        throw new Error('Respuesta no es JSON válido');
+      }
+
+      console.log('✅ Datos parseados:', data);
       
       if (data.success) {
         setEventos(data.eventos || []);
+        console.log('✅ Eventos cargados exitosamente:', data.eventos?.length || 0);
       } else {
-        console.error('Error en la respuesta:', data.error);
+        console.error('❌ Error en la respuesta del servidor:', data.error);
+        alert('Error del servidor: ' + (data.error || 'Error desconocido'));
       }
     } catch (error) {
-      console.error('Error cargando eventos:', error);
+      console.error('❌ Error completo cargando eventos:', error);
+      console.error('📊 Detalles del error:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      alert('Error de conexión: ' + error.message);
     }
   };
 
@@ -103,7 +150,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
   const crearReserva = async () => {
     if (!fechaSeleccionada || !horaSeleccionada || !datosCliente.nombre || !datosCliente.email) {
-      alert('Por favor completa todos los campos');
+      alert('Por favor completa todos los campos obligatorios (nombre y email)');
       return;
     }
 
@@ -122,7 +169,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       Email_Cliente: datosCliente.email,
       Fecha_Inicio: fechaInicio,
       Fecha_Fin: fechaFinStr,
-      Descripcion: `${servicio?.nombre} - Tel: ${datosCliente.telefono}`,
+      Descripcion: `${servicio?.nombre} - Tel: ${datosCliente.telefono || 'No proporcionado'}`,
       Estado: 'Confirmado',
       "Valor del turno": servicio?.precio_oferta || servicio?.precio || 0,
       "Servicios incluidos": servicio?.nombre || '',
@@ -130,31 +177,64 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     };
 
     try {
-      console.log('Enviando reserva:', reservaData);
-      
+      console.log('🚀 Enviando reserva:', reservaData);
+      console.log('📍 URL destino:', GOOGLE_APPS_SCRIPT_URL);
+
+      const requestBody = {
+        action: 'crearReserva',
+        data: reservaData
+      };
+
+      console.log('📦 Body del request:', requestBody);
+
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
         },
-        body: JSON.stringify({
-          action: 'crearReserva',
-          data: reservaData
-        })
+        body: JSON.stringify(requestBody)
       });
 
-      const result = await response.json();
-      console.log('Resultado:', result);
+      console.log('📡 Respuesta del POST:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+        headers: Object.fromEntries(response.headers.entries())
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+      }
+
+      const textResponse = await response.text();
+      console.log('📄 Respuesta POST en texto:', textResponse);
+
+      let result;
+      try {
+        result = JSON.parse(textResponse);
+      } catch (parseError) {
+        console.error('❌ Error parsing JSON del POST:', parseError);
+        console.log('📄 Texto que no se pudo parsear:', textResponse);
+        throw new Error('Respuesta del servidor no es JSON válido');
+      }
+
+      console.log('✅ Resultado parseado:', result);
       
       if (result.success) {
         alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
         onReservaConfirmada();
       } else {
-        alert('Error al crear la reserva: ' + result.error);
+        alert('Error al crear la reserva: ' + (result.error || 'Error desconocido'));
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error al procesar la reserva');
+      console.error('❌ Error completo al crear reserva:', error);
+      console.error('📊 Detalles del error:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
+      alert('Error al procesar la reserva: ' + error.message);
     } finally {
       setCargando(false);
     }
@@ -162,13 +242,19 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
   return (
     <div className="max-w-md mx-auto p-4 space-y-6">
+      {/* Debug info */}
+      <div className="bg-gray-100 p-2 rounded text-xs">
+        <p><strong>Debug:</strong> Apps Script URL configurado: {GOOGLE_APPS_SCRIPT_URL.includes('TU_SCRIPT_ID_AQUI') ? '❌ NO' : '✅ SÍ'}</p>
+        <p><strong>Eventos cargados:</strong> {eventos.length}</p>
+      </div>
+
       <div>
         <h3 className="text-lg font-semibold mb-2">Selecciona la fecha</h3>
         <Calendar
           mode="single"
           selected={fechaSeleccionada}
           onSelect={setFechaSeleccionada}
-          disabled={(date) => date < new Date() || date.getDay() === 0} // Deshabilitar domingos y fechas pasadas
+          disabled={(date) => date < new Date() || date.getDay() === 0}
           className="rounded-md border"
         />
       </div>
@@ -188,6 +274,9 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
               </Button>
             ))}
           </div>
+          {horasDisponibles.length === 0 && (
+            <p className="text-gray-500 text-sm">No hay horarios disponibles para esta fecha</p>
+          )}
         </div>
       )}
 
@@ -197,23 +286,25 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
           
           <input
             type="text"
-            placeholder="Nombre completo"
+            placeholder="Nombre completo *"
             value={datosCliente.nombre}
             onChange={(e) => setDatosCliente({...datosCliente, nombre: e.target.value})}
             className="w-full p-2 border rounded-md"
+            required
           />
           
           <input
             type="email"
-            placeholder="Email"
+            placeholder="Email *"
             value={datosCliente.email}
             onChange={(e) => setDatosCliente({...datosCliente, email: e.target.value})}
             className="w-full p-2 border rounded-md"
+            required
           />
           
           <input
             type="tel"
-            placeholder="Teléfono"
+            placeholder="Teléfono (opcional)"
             value={datosCliente.telefono}
             onChange={(e) => setDatosCliente({...datosCliente, telefono: e.target.value})}
             className="w-full p-2 border rounded-md"
@@ -231,7 +322,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
           <Button 
             onClick={crearReserva} 
-            disabled={cargando}
+            disabled={cargando || !datosCliente.nombre || !datosCliente.email}
             className="w-full"
           >
             {cargando ? 'Procesando...' : 'Confirmar Reserva'}
