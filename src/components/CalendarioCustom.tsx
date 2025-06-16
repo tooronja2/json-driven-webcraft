@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { useBusiness } from '@/context/BusinessContext';
+import { useHorariosEspecialistas } from '@/hooks/useHorariosEspecialistas';
 
 interface EventoReserva {
   ID_Evento: string;
@@ -86,6 +87,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   onReservaConfirmada 
 }) => {
   const { contenido, config } = useBusiness();
+  const { obtenerHorariosDisponibles } = useHorariosEspecialistas();
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | undefined>();
   const [horaSeleccionada, setHoraSeleccionada] = useState<string>('');
   const [horasDisponibles, setHorasDisponibles] = useState<string[]>([]);
@@ -168,56 +170,43 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     }
   };
 
-  // Filtrar horarios disponibles con logging mejorado
+  // Nueva lógica para filtrar horarios disponibles considerando horarios laborales
   useEffect(() => {
     if (!fechaSeleccionada) return;
 
-    const horariosBase = generarHorarios();
+    console.log('🔍 === INICIO FILTRADO DE HORARIOS CON HORARIOS LABORALES ===');
+    
+    // 1. Obtener horarios laborales del especialista para esta fecha
+    const horariosLaborales = obtenerHorariosDisponibles(responsable, fechaSeleccionada, duracionMinutos);
+    
+    if (horariosLaborales.length === 0) {
+      console.log('❌ No hay horarios laborales configurados');
+      setHorasDisponibles([]);
+      return;
+    }
+
+    // 2. Filtrar eventos ocupados para esta fecha y responsable
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
-    
-    console.log('🔍 === INICIO FILTRADO DE HORARIOS ===');
-    console.log('📅 Fecha seleccionada:', fechaSeleccionadaStr);
-    console.log('👨‍💼 Responsable buscado:', responsable);
-    console.log('📋 Total eventos a revisar:', eventos.length);
-    
-    // Filtrar eventos ocupados para esta fecha y responsable
     const eventosRelevantes = eventos.filter(evento => {
       const esConfirmado = evento.Estado === 'Confirmado';
       const esDelResponsable = evento.Responsable === responsable;
       const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
       
-      console.log(`📝 Evento ${evento.ID_Evento}:`, {
-        fecha: evento.Fecha,
-        horaInicio: evento["Hora Inicio"],
-        responsable: evento.Responsable,
-        estado: evento.Estado,
-        esConfirmado,
-        esDelResponsable,
-        esMismaFecha,
-        COINCIDE: esConfirmado && esDelResponsable && esMismaFecha
-      });
-      
       return esConfirmado && esDelResponsable && esMismaFecha;
     });
 
-    console.log('✅ Eventos que coinciden:', eventosRelevantes);
+    console.log('✅ Eventos ocupados relevantes:', eventosRelevantes);
 
-    // Extraer horarios ocupados usando la función mejorada
+    // 3. Extraer horarios ocupados
     const horariosOcupados = eventosRelevantes
-      .map(evento => {
-        const horaExtraida = extraerHora(evento["Hora Inicio"]);
-        console.log(`⏰ Procesando evento ${evento.ID_Evento}: "${evento["Hora Inicio"]}" -> "${horaExtraida}"`);
-        return horaExtraida;
-      })
-      .filter(hora => hora !== ''); // Eliminar horas vacías
+      .map(evento => extraerHora(evento["Hora Inicio"]))
+      .filter(hora => hora !== '');
 
-    console.log('⏰ Horarios ocupados extraídos:', horariosOcupados);
-
-    // Eliminar duplicados y filtrar disponibles
     const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
-    console.log('⏰ Horarios ocupados únicos:', horariosOcupadosUnicos);
+    console.log('⏰ Horarios ocupados:', horariosOcupadosUnicos);
 
-    const disponibles = horariosBase.filter(hora => {
+    // 4. Filtrar horarios laborales que no estén ocupados
+    const disponibles = horariosLaborales.filter(hora => {
       const estaOcupado = horariosOcupadosUnicos.includes(hora);
       console.log(`⏱️ Hora ${hora}: ${estaOcupado ? 'OCUPADA' : 'disponible'}`);
       return !estaOcupado;
@@ -227,7 +216,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     console.log('🔍 === FIN FILTRADO DE HORARIOS ===');
     
     setHorasDisponibles(disponibles);
-  }, [fechaSeleccionada, eventos, responsable, duracionMinutos]);
+  }, [fechaSeleccionada, eventos, responsable, duracionMinutos, obtenerHorariosDisponibles]);
 
   useEffect(() => {
     cargarEventos();
