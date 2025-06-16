@@ -1,9 +1,10 @@
 
 import SEOHead from "@/components/SEOHead";
-import GoogleFormEmbed from "@/components/GoogleFormEmbed";
+import CalendarioCustom from "@/components/CalendarioCustom";
 import { useBusiness } from "@/context/BusinessContext";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 const CORTE_BARBA_IMG = "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png";
 const CORTE_PELO_BARBA_IMG = "/lovable-uploads/c749b507-8002-4fd8-9d5d-20b9c3903632.png";
@@ -16,31 +17,28 @@ const BARBERIA_IMAGES = [
   "/lovable-uploads/1bbc1778-07ae-4750-ba3c-20216d2b8c60.png",
 ];
 
-const GOOGLE_CALENDAR_URL = "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires";
-
-const GOOGLE_CALENDARS = [
+const ESPECIALISTAS = [
   {
     nombre: "Héctor Medina",
     foto: "https://randomuser.me/api/portraits/men/32.jpg",
-    calendarUrl:
-      "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires",
+    especialidad: "Corte y barba clásico"
   },
   {
     nombre: "Lucas Peralta",
     foto: "https://randomuser.me/api/portraits/men/66.jpg",
-    calendarUrl:
-      "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires",
+    especialidad: "Estilos modernos"
   },
   {
     nombre: "Camila González",
     foto: "https://randomuser.me/api/portraits/women/68.jpg",
-    calendarUrl:
-      "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires",
+    especialidad: "Tratamientos capilares"
   },
 ];
 
 const ReservaTurno = () => {
   const { config, contenido } = useBusiness();
+  const navigate = useNavigate();
+  
   // Leemos la preselección desde localStorage solo UNA vez al arrancar
   const [servicio, setServicio] = useState<string | null>(() => {
     if (typeof window !== "undefined") {
@@ -50,11 +48,16 @@ const ReservaTurno = () => {
     }
     return null;
   });
+  
   // Si hay preseleccion, arrancar paso 2; si no, el 1:
   const [paso, setPaso] = useState<1 | 2 | 3>(servicio ? 2 : 1);
   const [staff, setStaff] = useState<number | null>(null);
 
   useEffect(() => { window.scrollTo(0, 0); }, []);
+
+  const handleReservaConfirmada = () => {
+    navigate('/');
+  };
 
   // Paso 1: Selección de servicio
   if (paso === 1) {
@@ -98,7 +101,7 @@ const ReservaTurno = () => {
         <button className="mb-3 text-blue-600 text-sm" onClick={() => setPaso(1)}>← Volver a servicios</button>
         <h2 className="text-xl font-semibold mb-4 text-center">Elegí con quién reservar</h2>
         <div className="flex flex-col gap-4">
-          {GOOGLE_CALENDARS.map((s, idx) => (
+          {ESPECIALISTAS.map((s, idx) => (
             <button
               key={idx}
               className={`flex items-center gap-4 w-full bg-white px-4 py-3 rounded-xl border shadow hover:bg-gray-100 transition ${staff === idx ? "border-blue-400 shadow-lg scale-105" : ""}`}
@@ -107,7 +110,7 @@ const ReservaTurno = () => {
               <img src={s.foto} alt={s.nombre} className="h-12 w-12 rounded-full border" />
               <div>
                 <div className="font-semibold">{s.nombre}</div>
-                <div className="text-xs text-gray-500">Especialista</div>
+                <div className="text-xs text-gray-500">{s.especialidad}</div>
               </div>
             </button>
           ))}
@@ -116,22 +119,26 @@ const ReservaTurno = () => {
     );
   }
 
-  // Paso 3: Mostrar Google Calendar embebido del staff seleccionado
-  if (paso === 3 && staff !== null) {
-    const miembro = GOOGLE_CALENDARS[staff];
+  // Paso 3: Mostrar calendario personalizado
+  if (paso === 3 && staff !== null && servicio) {
+    const especialista = ESPECIALISTAS[staff];
     return (
-      <main className="max-w-sm mx-auto pt-10 text-center">
+      <main className="max-w-lg mx-auto pt-6 pb-12">
         <button className="mb-5 text-blue-600 text-sm" onClick={() => setPaso(2)}>
-          ← Elegir otro staff
+          ← Elegir otro especialista
         </button>
-        <h3 className="text-lg font-bold mb-2">Completá tu reserva</h3>
-        <img src={miembro.foto} alt={miembro.nombre} className="h-16 w-16 mx-auto rounded-full border mb-2" />
-        <div className="font-medium mb-4">{miembro.nombre}</div>
-        <div className="flex w-full justify-center">
-          <div className="w-full">
-            <GoogleFormEmbed formUrl={miembro.calendarUrl} height={650} />
-          </div>
+        
+        <div className="text-center mb-6">
+          <h3 className="text-lg font-bold mb-2">Reservar con {especialista.nombre}</h3>
+          <img src={especialista.foto} alt={especialista.nombre} className="h-16 w-16 mx-auto rounded-full border mb-2" />
+          <div className="text-sm text-gray-600">{especialista.especialidad}</div>
         </div>
+
+        <CalendarioCustom 
+          servicioId={servicio}
+          responsable={especialista.nombre}
+          onReservaConfirmada={handleReservaConfirmada}
+        />
       </main>
     );
   }

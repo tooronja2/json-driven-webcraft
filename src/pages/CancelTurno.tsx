@@ -1,50 +1,140 @@
 
-import { useState } from "react";
-import SEOHead from "@/components/SEOHead";
-import { useBusiness } from "@/context/BusinessContext";
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 const CancelTurno = () => {
-  const { config } = useBusiness();
-  const [email, setEmail] = useState("");
-  const [msg, setMsg] = useState<string | null>(null);
+  const [searchParams] = useSearchParams();
+  const [cargando, setCargando] = useState(false);
+  const [mensaje, setMensaje] = useState('');
+  const [turnoData, setTurnoData] = useState<any>(null);
+  
+  const eventId = searchParams.get('id');
 
-  const handleCancel = (e: React.FormEvent) => {
-    e.preventDefault();
-    // En producción aquí se podría llamar a un endpoint o instructivo
-    setMsg("Si deseas cancelar tu turno, por favor responde el mail de confirmación recibido o gestiona tu evento desde Google Calendar. Tu solicitud será registrada automáticamente en nuestra agenda de Google Sheets.");
+  useEffect(() => {
+    if (eventId) {
+      cargarDatosTurno();
+    }
+  }, [eventId]);
+
+  const cargarDatosTurno = async () => {
+    try {
+      const response = await fetch(`TU_GOOGLE_APPS_SCRIPT_URL?action=getTurno&id=${eventId}`);
+      const data = await response.json();
+      if (data.success) {
+        setTurnoData(data.turno);
+      } else {
+        setMensaje('Turno no encontrado o ya cancelado');
+      }
+    } catch (error) {
+      setMensaje('Error al cargar datos del turno');
+    }
   };
 
-  return (
-    <>
-      <SEOHead title="Cancelar Turno" description="Cancelar una reserva en Barbería Central" />
-      <main className="max-w-lg mx-auto mt-16 p-6 bg-white rounded shadow">
-        <h1 className="text-2xl font-semibold mb-4">Cancelar Turno</h1>
-        {msg ? (
-          <div className="p-4 bg-green-50 rounded text-green-800 font-medium border border-green-200">{msg}</div>
-        ) : (
-          <form onSubmit={handleCancel} className="flex flex-col gap-4">
-            <label>
-              Ingresa el email con el que reservaste:
-              <input
-                type="email"
-                className="mt-2 block border px-3 py-2 rounded w-full"
-                value={email}
-                required
-                onChange={e => setEmail(e.target.value)}
-                placeholder="ejemplo@email.com"
-              />
-            </label>
-            <button type="submit"
-              className="bg-red-600 text-white rounded px-6 py-2 hover:bg-red-700 transition w-fit">
-              Solicitar Cancelación
-            </button>
-          </form>
-        )}
-        <p className="mt-3 text-gray-600 text-sm">
-          O simplemente cancela el evento desde Google Calendar (en el mismo correo o agenda), y se reflejará automáticamente en nuestra base. Ante dudas, escríbenos a <b>{config?.email_contacto}</b>
-        </p>
+  const cancelarTurno = async () => {
+    if (!eventId) return;
+    
+    setCargando(true);
+    
+    try {
+      const response = await fetch('TU_GOOGLE_APPS_SCRIPT_URL', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'cancelarTurno',
+          eventId: eventId
+        })
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setMensaje('✅ Turno cancelado exitosamente. Te enviamos un email de confirmación.');
+      } else {
+        setMensaje('❌ Error al cancelar el turno: ' + result.error);
+      }
+    } catch (error) {
+      setMensaje('❌ Error al procesar la cancelación');
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  if (!eventId) {
+    return (
+      <main className="max-w-md mx-auto pt-10 text-center">
+        <h1 className="text-2xl font-bold mb-4">Cancelar Turno</h1>
+        <p className="text-red-600">ID de turno no válido</p>
       </main>
-    </>
+    );
+  }
+
+  return (
+    <main className="max-w-md mx-auto pt-10 px-4">
+      <h1 className="text-2xl font-bold mb-6 text-center">Cancelar Turno</h1>
+      
+      {mensaje ? (
+        <div className="bg-white rounded-xl p-6 shadow text-center">
+          <p className="text-lg">{mensaje}</p>
+          <Button 
+            onClick={() => window.location.href = '/'} 
+            className="mt-4"
+          >
+            Volver al inicio
+          </Button>
+        </div>
+      ) : turnoData ? (
+        <div className="bg-white rounded-xl p-6 shadow space-y-4">
+          <h2 className="text-lg font-semibold text-center">Detalles del turno</h2>
+          
+          <div className="space-y-2 text-sm">
+            <p><strong>Servicio:</strong> {turnoData.Titulo_Evento}</p>
+            <p><strong>Cliente:</strong> {turnoData.Nombre_Cliente}</p>
+            <p><strong>Fecha:</strong> {new Date(turnoData.Fecha_Inicio).toLocaleDateString()}</p>
+            <p><strong>Hora:</strong> {turnoData.Fecha_Inicio.split(' ')[1]?.substring(0, 5)}</p>
+            <p><strong>Especialista:</strong> {turnoData.Responsable}</p>
+            <p><strong>Estado:</strong> {turnoData.Estado}</p>
+          </div>
+
+          {turnoData.Estado !== 'Cancelado' ? (
+            <div className="text-center space-y-4">
+              <p className="text-gray-600">¿Estás seguro que querés cancelar este turno?</p>
+              <div className="flex gap-3">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.location.href = '/'}
+                  className="flex-1"
+                >
+                  No, mantener turno
+                </Button>
+                <Button 
+                  onClick={cancelarTurno}
+                  disabled={cargando}
+                  variant="destructive"
+                  className="flex-1"
+                >
+                  {cargando ? 'Cancelando...' : 'Sí, cancelar'}
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center">
+              <p className="text-red-600">Este turno ya fue cancelado</p>
+              <Button onClick={() => window.location.href = '/'} className="mt-4">
+                Volver al inicio
+              </Button>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="text-center">
+          <p>Cargando datos del turno...</p>
+        </div>
+      )}
+    </main>
   );
 };
+
 export default CancelTurno;
