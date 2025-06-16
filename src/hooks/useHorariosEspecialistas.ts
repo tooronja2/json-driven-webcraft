@@ -33,22 +33,22 @@ const normalizarHora = (hora: string | number): string => {
 };
 
 // Función MEJORADA para convertir DD/MM/YYYY a YYYY-MM-DD
-const convertirFechaAISO = (fechaDDMMYYYY: string): string => {
+const convertirFechaAISO = (fechaDDMMYYYY: any): string => {
   if (!fechaDDMMYYYY) return '';
   
-  console.log('🔄 Convirtiendo fecha:', fechaDDMMYYYY);
+  console.log('🔄 Convirtiendo fecha:', fechaDDMMYYYY, 'Tipo:', typeof fechaDDMMYYYY);
   
   // Si ya está en formato ISO (YYYY-MM-DD)
-  if (fechaDDMMYYYY.match(/^\d{4}-\d{2}-\d{2}$/)) {
-    console.log('✅ Ya está en formato ISO:', fechaDDMMYYYY);
-    return fechaDDMMYYYY;
+  const fechaStr = fechaDDMMYYYY.toString().trim();
+  if (fechaStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    console.log('✅ Ya está en formato ISO:', fechaStr);
+    return fechaStr;
   }
   
-  // Si es un objeto Date, convertirlo a string ISO
-  if (fechaDDMMYYYY instanceof Date || typeof fechaDDMMYYYY === 'object') {
+  // Si es un objeto Date o string ISO, convertirlo a string ISO
+  if (fechaDDMMYYYY instanceof Date) {
     try {
-      const fecha = new Date(fechaDDMMYYYY);
-      const fechaISO = fecha.toISOString().split('T')[0];
+      const fechaISO = fechaDDMMYYYY.toISOString().split('T')[0];
       console.log('✅ Convertido de Date object:', fechaISO);
       return fechaISO;
     } catch (e) {
@@ -56,8 +56,19 @@ const convertirFechaAISO = (fechaDDMMYYYY: string): string => {
     }
   }
   
+  // Si es string pero viene como ISO completo (1899-12-30T15:31:48.000Z)
+  if (fechaStr.includes('T') && fechaStr.includes('Z')) {
+    try {
+      const fecha = new Date(fechaStr);
+      const fechaISO = fecha.toISOString().split('T')[0];
+      console.log('✅ Convertido de string ISO completo:', fechaISO);
+      return fechaISO;
+    } catch (e) {
+      console.log('❌ Error convirtiendo string ISO:', e);
+    }
+  }
+  
   // Si está en formato DD/MM/YYYY (el más común desde Google Sheets)
-  const fechaStr = fechaDDMMYYYY.toString().trim();
   if (fechaStr.includes('/')) {
     const partes = fechaStr.split('/');
     if (partes.length === 3) {
@@ -72,7 +83,7 @@ const convertirFechaAISO = (fechaDDMMYYYY: string): string => {
   }
   
   console.log('⚠️ No se pudo convertir la fecha:', fechaDDMMYYYY);
-  return fechaDDMMYYYY.toString();
+  return fechaStr;
 };
 
 export const useHorariosEspecialistas = () => {
