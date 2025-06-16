@@ -4,14 +4,29 @@ import { useState, useEffect, useCallback } from 'react';
 interface HorarioEspecialista {
   Responsable: string;
   Dia_Semana: string; // "Lunes", "Martes", etc.
-  Hora_Inicio: string; // "09:00"
-  Hora_Fin: string; // "13:00"
+  Hora_Inicio: string | number; // "09:00" o 9
+  Hora_Fin: string | number; // "13:00" o 13
   Activo: boolean;
   Tipo: string; // "normal", "vacaciones", "libre"
   Fecha_Especifica?: string; // "2025-06-23" para casos específicos
 }
 
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbeXocgGONBQyWJoxAanotZEXGX6-Au4ttxqRamJjXOLlzQYhGDIXi0N0-a6ka2_4u/exec';
+
+// Función para normalizar hora a formato "HH:MM"
+const normalizarHora = (hora: string | number): string => {
+  if (typeof hora === 'number') {
+    return `${hora.toString().padStart(2, '0')}:00`;
+  }
+  if (typeof hora === 'string' && hora.includes(':')) {
+    return hora;
+  }
+  if (typeof hora === 'string' && !hora.includes(':')) {
+    const numeroHora = parseInt(hora);
+    return `${numeroHora.toString().padStart(2, '0')}:00`;
+  }
+  return hora.toString();
+};
 
 export const useHorariosEspecialistas = () => {
   const [horarios, setHorarios] = useState<HorarioEspecialista[]>([]);
@@ -91,11 +106,15 @@ export const useHorariosEspecialistas = () => {
       return [];
     }
 
-    console.log(`✅ Horario encontrado: ${configuracionDia.Hora_Inicio} - ${configuracionDia.Hora_Fin}`);
+    // ✅ Normalizar horarios antes de procesarlos
+    const horaInicioNormalizada = normalizarHora(configuracionDia.Hora_Inicio);
+    const horaFinNormalizada = normalizarHora(configuracionDia.Hora_Fin);
+
+    console.log(`✅ Horario encontrado: ${horaInicioNormalizada} - ${horaFinNormalizada}`);
 
     // Generar slots disponibles dentro del rango
-    const [horaInicio, minutoInicio] = configuracionDia.Hora_Inicio.split(':').map(Number);
-    const [horaFin, minutoFin] = configuracionDia.Hora_Fin.split(':').map(Number);
+    const [horaInicio, minutoInicio] = horaInicioNormalizada.split(':').map(Number);
+    const [horaFin, minutoFin] = horaFinNormalizada.split(':').map(Number);
     
     const slots = [];
     let horaActual = horaInicio;
