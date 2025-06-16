@@ -16,6 +16,13 @@ interface MenuNav { texto: string; url: string; subcategorias?: { texto: string;
 interface FooterLink { texto: string; url: string }
 interface RedesSociales { instagram?: string; facebook?: string; tiktok?: string }
 
+export interface StaffMember {
+  nombre: string;
+  foto: string;
+  email: string;
+  calendarUrl: string;
+}
+
 export interface ConfigGeneral {
   nombre_negocio: string;
   meta_titulo: string;
@@ -71,6 +78,7 @@ export interface ContenidoItem {
 interface BusinessContextType {
   config: ConfigGeneral | null;
   contenido: ContenidoItem[] | null;
+  staff: StaffMember[] | null;
   loading: boolean;
   error: string | null;
   reload: () => void;
@@ -81,6 +89,7 @@ const BusinessContext = createContext<BusinessContextType | undefined>(undefined
 export const BusinessProvider = ({ children }: { children: ReactNode }) => {
   const [config, setConfig] = useState<ConfigGeneral | null>(null);
   const [contenido, setContenido] = useState<ContenidoItem[] | null>(null);
+  const [staff, setStaff] = useState<StaffMember[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -102,16 +111,23 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
     return data as ContenidoItem[];
   };
 
+  const validateStaff = (data: any): StaffMember[] => {
+    if (!Array.isArray(data)) throw new Error('Staff no es array');
+    return data as StaffMember[];
+  };
+
   const loadAll = async () => {
     setLoading(true);
     setError(null);
     try {
-      const [configData, contenidoData] = await Promise.all([
-        fetchJSON("/data/config_general.json"),
-        fetchJSON("/data/servicios.json")
+      const [configData, contenidoData, staffData] = await Promise.all([
+        fetchJSON('/data/config_general.json'),
+        fetchJSON('/data/servicios.json'),
+        fetchJSON('/data/staff.json')
       ]);
       setConfig(validateConfig(configData));
       setContenido(validateContenido(contenidoData));
+      setStaff(validateStaff(staffData));
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -126,6 +142,7 @@ export const BusinessProvider = ({ children }: { children: ReactNode }) => {
   const value: BusinessContextType = {
     config,
     contenido,
+    staff,
     loading,
     error,
     reload: loadAll,

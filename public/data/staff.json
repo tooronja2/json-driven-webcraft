@@ -1,0 +1,20 @@
+[
+  {
+    "nombre": "Héctor Medina",
+    "foto": "https://randomuser.me/api/portraits/men/32.jpg",
+    "email": "hector@example.com",
+    "calendarUrl": "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires"
+  },
+  {
+    "nombre": "Lucas Peralta",
+    "foto": "https://randomuser.me/api/portraits/men/66.jpg",
+    "email": "lucas@example.com",
+    "calendarUrl": "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires"
+  },
+  {
+    "nombre": "Camila González",
+    "foto": "https://randomuser.me/api/portraits/women/68.jpg",
+    "email": "camila@example.com",
+    "calendarUrl": "https://calendar.google.com/calendar/appointments/schedules/AcZssZ3sGI4BQFEkPUqzsopPtfQ0f3XsWHF1g08G7fqnZC09GqzySxJKFEx_jcpHj-skwEwV0br3bbNX?gv=true&ctz=America/Argentina/Buenos_Aires"
+  }
+]
