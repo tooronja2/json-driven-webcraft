@@ -1,7 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+
+// REEMPLAZA ESTA URL CON LA URL DE TU GOOGLE APPS SCRIPT
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
 
 const CancelTurno = () => {
   const [searchParams] = useSearchParams();
@@ -19,7 +21,7 @@ const CancelTurno = () => {
 
   const cargarDatosTurno = async () => {
     try {
-      const response = await fetch(`TU_GOOGLE_APPS_SCRIPT_URL?action=getTurno&id=${eventId}`);
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getTurno&id=${eventId}`);
       const data = await response.json();
       if (data.success) {
         setTurnoData(data.turno);
@@ -37,7 +39,7 @@ const CancelTurno = () => {
     setCargando(true);
     
     try {
-      const response = await fetch('TU_GOOGLE_APPS_SCRIPT_URL', {
+      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

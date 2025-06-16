@@ -24,6 +24,9 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
+// REEMPLAZA ESTA URL CON LA URL DE TU GOOGLE APPS SCRIPT
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
+
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
   responsable, 
@@ -59,10 +62,16 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   // Cargar eventos desde Google Sheets
   const cargarEventos = async () => {
     try {
-      // URL del Google Apps Script (deberás reemplazar con tu URL)
-      const response = await fetch('TU_GOOGLE_APPS_SCRIPT_URL?action=getEventos');
+      console.log('Cargando eventos desde Google Apps Script...');
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getEventos`);
       const data = await response.json();
-      setEventos(data.eventos || []);
+      console.log('Respuesta del servidor:', data);
+      
+      if (data.success) {
+        setEventos(data.eventos || []);
+      } else {
+        console.error('Error en la respuesta:', data.error);
+      }
     } catch (error) {
       console.error('Error cargando eventos:', error);
     }
@@ -121,7 +130,9 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     };
 
     try {
-      const response = await fetch('TU_GOOGLE_APPS_SCRIPT_URL', {
+      console.log('Enviando reserva:', reservaData);
+      
+      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -133,6 +144,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       });
 
       const result = await response.json();
+      console.log('Resultado:', result);
       
       if (result.success) {
         alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
