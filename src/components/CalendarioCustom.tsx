@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -24,8 +23,8 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
-// REEMPLAZA ESTA URL CON LA URL DE TU GOOGLE APPS SCRIPT
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
+// URL de tu Google Apps Script
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeAT6sRADmr1ZUGfWTPCqZcowZbjyYvPC2h6aNkK9NEF-lHbmGTAkVkdzKNr-Vlu8l/exec';
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
@@ -62,15 +61,9 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   // Cargar eventos desde Google Sheets
   const cargarEventos = async () => {
     try {
-      console.log('🔄 Intentando cargar eventos...');
+      console.log('🔄 Cargando eventos desde Google Apps Script...');
       console.log('📍 URL del Apps Script:', GOOGLE_APPS_SCRIPT_URL);
       
-      if (GOOGLE_APPS_SCRIPT_URL.includes('TU_SCRIPT_ID_AQUI')) {
-        console.error('❌ ERROR: Aún no has reemplazado la URL del Google Apps Script');
-        alert('Error: Debes reemplazar TU_SCRIPT_ID_AQUI con tu URL real del Google Apps Script');
-        return;
-      }
-
       const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos`;
       console.log('🌐 Haciendo request a:', url);
       
@@ -244,7 +237,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     <div className="max-w-md mx-auto p-4 space-y-6">
       {/* Debug info */}
       <div className="bg-gray-100 p-2 rounded text-xs">
-        <p><strong>Debug:</strong> Apps Script URL configurado: {GOOGLE_APPS_SCRIPT_URL.includes('TU_SCRIPT_ID_AQUI') ? '❌ NO' : '✅ SÍ'}</p>
+        <p><strong>Debug:</strong> Apps Script URL configurado: ✅ SÍ</p>
         <p><strong>Eventos cargados:</strong> {eventos.length}</p>
       </div>
 
