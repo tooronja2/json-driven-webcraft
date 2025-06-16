@@ -10,8 +10,8 @@ interface EventoReserva {
   Nombre_Cliente: string;
   Email_Cliente: string;
   Fecha: string; // "2025-06-23"
-  "Hora Inicio": string; // "14:15"
-  "Hora Fin": string; // "14:30"
+  "Hora Inicio": string; // "11:15"
+  "Hora Fin": string; // "11:30"
   Descripcion: string;
   Estado: string;
   "Valor del turno": number;
@@ -62,7 +62,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   // Cargar eventos desde Google Sheets
   const cargarEventos = async () => {
     try {
-      console.log('🔄 Cargando eventos...');
+      console.log('🔄 Cargando eventos desde nuevo formato...');
       const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
@@ -80,31 +80,27 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       const data = await response.json();
       
       if (data.success) {
-        console.log('📅 Eventos RAW recibidos:', data.eventos);
+        console.log('📅 Eventos RAW recibidos (nuevo formato):', data.eventos);
         
-        // Procesar eventos para asegurar formato correcto
+        // Los eventos ya vienen en el formato correcto del nuevo Google Sheets
         const eventosProcesados = data.eventos.map((evento: any) => {
-          console.log('🔍 Procesando evento:', evento);
+          console.log('🔍 Procesando evento (nuevo formato):', evento);
           
-          // Si tiene el formato antiguo, convertir
-          if (evento.Fecha_Inicio && !evento.Fecha) {
-            const fecha = new Date(evento.Fecha_Inicio);
-            return {
-              ...evento,
-              Fecha: fecha.toISOString().split('T')[0],
-              "Hora Inicio": `${fecha.getUTCHours().toString().padStart(2, '0')}:${fecha.getUTCMinutes().toString().padStart(2, '0')}`,
-              "Hora Fin": evento.Fecha_Fin ? (() => {
-                const fechaFin = new Date(evento.Fecha_Fin);
-                return `${fechaFin.getUTCHours().toString().padStart(2, '0')}:${fechaFin.getUTCMinutes().toString().padStart(2, '0')}`;
-              })() : ''
-            };
+          // Convertir la fecha de Date object a string si es necesario
+          let fechaStr = evento.Fecha;
+          if (typeof evento.Fecha === 'object' && evento.Fecha instanceof Date) {
+            fechaStr = evento.Fecha.toISOString().split('T')[0];
+          } else if (typeof evento.Fecha === 'string' && evento.Fecha.includes('T')) {
+            fechaStr = evento.Fecha.split('T')[0];
           }
           
-          // Si ya tiene el formato nuevo, usar tal como está
-          return evento;
+          return {
+            ...evento,
+            Fecha: fechaStr
+          };
         });
         
-        console.log('✅ Eventos procesados:', eventosProcesados);
+        console.log('✅ Eventos procesados (nuevo formato):', eventosProcesados);
         setEventos(eventosProcesados);
       } else {
         console.error('❌ Error del servidor:', data.error);
@@ -203,7 +199,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         formData.append(key, datos[key]);
       }
 
-      console.log('🚀 Enviando reserva');
+      console.log('🚀 Enviando reserva (nuevo formato)');
       console.log('📦 Datos:', reservaData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
