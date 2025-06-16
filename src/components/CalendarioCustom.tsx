@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -27,30 +26,54 @@ interface CalendarioCustomProps {
 
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZV2OgLOAeUrfAvopyfxGLLgHSMzPxFUaC-EAqsWsVMb_07qxSA-MyfIcEEq9tcqlR/exec';
 
-// Función para extraer hora en formato HH:MM desde cualquier formato
+// Función mejorada para extraer hora en formato HH:MM
 const extraerHora = (horaInput: string | Date): string => {
   console.log('🕐 Extrayendo hora de:', horaInput, 'Tipo:', typeof horaInput);
   
+  // Si es string directo (formato HH:MM)
   if (typeof horaInput === 'string') {
-    // Si es string, limpiarlo y verificar formato
     const horaLimpia = horaInput.trim();
     if (horaLimpia.match(/^\d{1,2}:\d{2}$/)) {
-      // Ya está en formato HH:MM
       const [hora, minuto] = horaLimpia.split(':');
       const horaFinal = `${hora.padStart(2, '0')}:${minuto}`;
       console.log('✅ Hora extraída (string):', horaFinal);
       return horaFinal;
     }
+    
+    // Si es string pero viene como ISO (1899-12-30T15:31:48.000Z)
+    if (horaLimpia.includes('T') && horaLimpia.includes('Z')) {
+      const fecha = new Date(horaLimpia);
+      const horas = fecha.getHours().toString().padStart(2, '0');
+      const minutos = fecha.getMinutes().toString().padStart(2, '0');
+      const horaFinal = `${horas}:${minutos}`;
+      console.log('✅ Hora extraída (string ISO):', horaFinal);
+      return horaFinal;
+    }
   }
   
-  if (horaInput instanceof Date || (typeof horaInput === 'object' && horaInput !== null)) {
-    // Si es Date object, extraer hora y minuto
-    const fecha = new Date(horaInput);
-    const horas = fecha.getHours().toString().padStart(2, '0');
-    const minutos = fecha.getMinutes().toString().padStart(2, '0');
+  // Si es Date object
+  if (horaInput instanceof Date) {
+    const horas = horaInput.getHours().toString().padStart(2, '0');
+    const minutos = horaInput.getMinutes().toString().padStart(2, '0');
     const horaFinal = `${horas}:${minutos}`;
     console.log('✅ Hora extraída (Date):', horaFinal);
     return horaFinal;
+  }
+  
+  // Si es object pero no Date, intentar convertir a Date
+  if (typeof horaInput === 'object' && horaInput !== null) {
+    try {
+      const fecha = new Date(horaInput);
+      if (!isNaN(fecha.getTime())) {
+        const horas = fecha.getHours().toString().padStart(2, '0');
+        const minutos = fecha.getMinutes().toString().padStart(2, '0');
+        const horaFinal = `${horas}:${minutos}`;
+        console.log('✅ Hora extraída (object convertido):', horaFinal);
+        return horaFinal;
+      }
+    } catch (e) {
+      console.log('❌ Error convirtiendo object a Date:', e);
+    }
   }
   
   console.log('⚠️ No se pudo extraer hora de:', horaInput);
@@ -145,7 +168,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     }
   };
 
-  // Filtrar horarios disponibles
+  // Filtrar horarios disponibles con logging mejorado
   useEffect(() => {
     if (!fechaSeleccionada) return;
 
@@ -179,9 +202,13 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     console.log('✅ Eventos que coinciden:', eventosRelevantes);
 
-    // Extraer horarios ocupados usando la nueva función
+    // Extraer horarios ocupados usando la función mejorada
     const horariosOcupados = eventosRelevantes
-      .map(evento => extraerHora(evento["Hora Inicio"]))
+      .map(evento => {
+        const horaExtraida = extraerHora(evento["Hora Inicio"]);
+        console.log(`⏰ Procesando evento ${evento.ID_Evento}: "${evento["Hora Inicio"]}" -> "${horaExtraida}"`);
+        return horaExtraida;
+      })
       .filter(hora => hora !== ''); // Eliminar horas vacías
 
     console.log('⏰ Horarios ocupados extraídos:', horariosOcupados);
