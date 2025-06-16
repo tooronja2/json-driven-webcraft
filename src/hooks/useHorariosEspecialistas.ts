@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 
 interface HorarioEspecialista {
@@ -104,82 +103,79 @@ export const useHorariosEspecialistas = () => {
     const fechaStr = fecha.toISOString().split('T')[0]; // Formato ISO: YYYY-MM-DD
     const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][fecha.getDay()];
     
-    console.log(`🕐 Obteniendo horarios para ${responsable} el ${diaSemana} (${fechaStr})`);
+    console.log(`🕐 === INICIO BÚSQUEDA HORARIOS ===`);
+    console.log(`👤 Responsable: ${responsable}`);
+    console.log(`📅 Fecha: ${fechaStr} (${diaSemana})`);
+    console.log(`⏱️ Duración: ${duracionMinutos} minutos`);
 
-    // 🔍 PASO 1: Buscar configuración específica EXACTA para esta fecha
-    const configuracionEspecifica = horarios.find(h => 
-      h.Responsable === responsable && 
-      h.Fecha_Especifica && 
-      sonFechasIguales(h.Fecha_Especifica, fechaStr) &&
-      h.Activo
-    );
-
-    console.log('🔍 Configuración específica encontrada:', configuracionEspecifica);
-
-    // 🚫 PASO 2: Si hay configuración específica para esta fecha exacta
-    if (configuracionEspecifica) {
-      console.log(`📅 Aplicando configuración específica para ${fechaStr} (Tipo: ${configuracionEspecifica.Tipo})`);
+    // 🔍 PASO 1: Verificar si existe configuración específica para esta fecha EXACTA
+    const configuracionEspecificaFecha = horarios.find(h => {
+      const tieneResponsable = h.Responsable === responsable;
+      const tieneFechaEspecifica = h.Fecha_Especifica && h.Fecha_Especifica.trim() !== '';
+      const esMismaFecha = tieneFechaEspecifica && sonFechasIguales(h.Fecha_Especifica!, fechaStr);
+      const estaActivo = h.Activo;
       
-      // Si es libre o vacaciones para esta fecha específica, NO HAY horarios
-      if (configuracionEspecifica.Tipo === 'vacaciones' || configuracionEspecifica.Tipo === 'libre') {
-        console.log(`❌ ${responsable} NO trabaja el ${fechaStr} (${configuracionEspecifica.Tipo} - fecha específica)`);
-        return [];
-      }
+      console.log(`🔍 Revisando configuración específica:`, {
+        responsable: h.Responsable,
+        fechaEspecifica: h.Fecha_Especifica,
+        tipo: h.Tipo,
+        tieneResponsable,
+        tieneFechaEspecifica,
+        esMismaFecha,
+        estaActivo
+      });
+      
+      return tieneResponsable && tieneFechaEspecifica && esMismaFecha && estaActivo;
+    });
 
-      // Si es normal para esta fecha específica, usar esos horarios
-      if (configuracionEspecifica.Tipo === 'normal') {
-        console.log(`✅ Usando horario específico normal para ${fechaStr}`);
-        
-        const horaInicioNormalizada = normalizarHora(configuracionEspecifica.Hora_Inicio);
-        const horaFinNormalizada = normalizarHora(configuracionEspecifica.Hora_Fin);
+    console.log('📋 Configuración específica encontrada:', configuracionEspecificaFecha);
 
-        console.log(`✅ Horario específico: ${horaInicioNormalizada} - ${horaFinNormalizada}`);
-
-        // Generar slots para configuración específica
-        const [horaInicio, minutoInicio] = horaInicioNormalizada.split(':').map(Number);
-        const [horaFin, minutoFin] = horaFinNormalizada.split(':').map(Number);
-        
-        const slots = [];
-        let horaActual = horaInicio;
-        let minutoActual = minutoInicio;
-
-        while (horaActual < horaFin || (horaActual === horaFin && minutoActual < minutoFin)) {
-          const slot = `${horaActual.toString().padStart(2, '0')}:${minutoActual.toString().padStart(2, '0')}`;
-          slots.push(slot);
-
-          minutoActual += duracionMinutos;
-          if (minutoActual >= 60) {
-            horaActual += Math.floor(minutoActual / 60);
-            minutoActual = minutoActual % 60;
-          }
-        }
-
-        console.log(`📋 Slots generados (específicos) para ${responsable}:`, slots);
-        return slots;
-      }
-    }
-
-    // 📅 PASO 3: NO hay configuración específica para esta fecha, usar horario regular del día de la semana
-    console.log(`📅 No hay configuración específica para ${fechaStr}, buscando horario regular para ${diaSemana}`);
-    
-    const configuracionDia = horarios.find(h => 
-      h.Responsable === responsable && 
-      h.Dia_Semana === diaSemana &&
-      h.Tipo === 'normal' &&
-      h.Activo &&
-      !h.Fecha_Especifica // Solo horarios generales, NO específicos
-    );
-
-    if (!configuracionDia) {
-      console.log(`❌ No hay horario regular configurado para ${responsable} los ${diaSemana}`);
+    // 🚫 PASO 2: Si hay configuración específica para esta fecha exacta, NO TRABAJAR
+    if (configuracionEspecificaFecha) {
+      console.log(`❌ EXCEPCIÓN DETECTADA: ${responsable} NO trabaja el ${fechaStr} (fecha específica configurada)`);
+      console.log(`🚫 Tipo de excepción: ${configuracionEspecificaFecha.Tipo}`);
+      console.log(`🕐 === FIN BÚSQUEDA (SIN HORARIOS) ===`);
       return [];
     }
 
-    // ✅ Normalizar horarios antes de procesarlos
-    const horaInicioNormalizada = normalizarHora(configuracionDia.Hora_Inicio);
-    const horaFinNormalizada = normalizarHora(configuracionDia.Hora_Fin);
+    // ✅ PASO 3: NO hay configuración específica, buscar horario REGULAR para este día de la semana
+    console.log(`📅 No hay excepción para ${fechaStr}, buscando horario regular para ${diaSemana}`);
+    
+    const configuracionRegular = horarios.find(h => {
+      const tieneResponsable = h.Responsable === responsable;
+      const esMismoDia = h.Dia_Semana === diaSemana;
+      const esNormal = h.Tipo === 'normal';
+      const estaActivo = h.Activo;
+      const noTieneFechaEspecifica = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
+      
+      console.log(`🔍 Revisando configuración regular:`, {
+        responsable: h.Responsable,
+        diaSemana: h.Dia_Semana,
+        tipo: h.Tipo,
+        fechaEspecifica: h.Fecha_Especifica,
+        tieneResponsable,
+        esMismoDia,
+        esNormal,
+        estaActivo,
+        noTieneFechaEspecifica
+      });
+      
+      return tieneResponsable && esMismoDia && esNormal && estaActivo && noTieneFechaEspecifica;
+    });
 
-    console.log(`✅ Horario regular encontrado: ${horaInicioNormalizada} - ${horaFinNormalizada}`);
+    if (!configuracionRegular) {
+      console.log(`❌ No hay horario regular configurado para ${responsable} los ${diaSemana}`);
+      console.log(`🕐 === FIN BÚSQUEDA (SIN CONFIGURACIÓN) ===`);
+      return [];
+    }
+
+    console.log(`✅ Horario regular encontrado para ${diaSemana}:`, configuracionRegular);
+
+    // ✅ Normalizar horarios antes de procesarlos
+    const horaInicioNormalizada = normalizarHora(configuracionRegular.Hora_Inicio);
+    const horaFinNormalizada = normalizarHora(configuracionRegular.Hora_Fin);
+
+    console.log(`⏰ Horario normalizado: ${horaInicioNormalizada} - ${horaFinNormalizada}`);
 
     // Generar slots disponibles dentro del rango
     const [horaInicio, minutoInicio] = horaInicioNormalizada.split(':').map(Number);
@@ -201,7 +197,8 @@ export const useHorariosEspecialistas = () => {
       }
     }
 
-    console.log(`📋 Slots generados (regulares) para ${responsable}:`, slots);
+    console.log(`📋 Slots generados para ${responsable}:`, slots);
+    console.log(`🕐 === FIN BÚSQUEDA (CON HORARIOS) ===`);
     return slots;
   }, [horarios]); // Solo recrear cuando cambie horarios
 
