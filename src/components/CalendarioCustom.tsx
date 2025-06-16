@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -9,8 +8,9 @@ interface EventoReserva {
   Titulo_Evento: string;
   Nombre_Cliente: string;
   Email_Cliente: string;
-  Fecha_Inicio: string;
-  Fecha_Fin: string;
+  Fecha: string; // Ahora separado: "2025-06-23"
+  "Hora Inicio": string; // Ahora separado: "14:15"
+  "Hora Fin": string; // Ahora separado: "14:30"
   Descripcion: string;
   Estado: string;
   "Valor del turno": number;
@@ -24,8 +24,8 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
-// URL de tu Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyq1P4rqf4Nt9-madQErTFv5mfnNfyXT_7eM88pcAZcLkygfA-E6Lj25fp5ZaqJWNKm/exec';
+// NUEVA URL de tu Google Apps Script
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZV2OgLOAeUrfAvopyfxGLLgHSMzPxFUaC-EAqsWsVMb_07qxSA-MyfIcEEq9tcqlR/exec';
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
@@ -95,59 +95,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     }
   };
 
-  // Función CORREGIDA para parsear fecha desde Google Sheets
-  const parsearFechaSheet = (fechaStr: string | Date) => {
-    try {
-      let fecha: Date;
-      
-      // Si es string, puede ser formato ISO o formato con espacio
-      if (typeof fechaStr === 'string') {
-        // Formato ISO: "2025-06-23T14:15:00.000Z"
-        if (fechaStr.includes('T')) {
-          fecha = new Date(fechaStr);
-          // IMPORTANTE: Usar UTC para evitar problemas de zona horaria
-          return {
-            fecha: fecha.toISOString().split('T')[0], // "2025-06-23"
-            hora: `${fecha.getUTCHours().toString().padStart(2, '0')}:${fecha.getUTCMinutes().toString().padStart(2, '0')}` // "14:15" (UTC)
-          };
-        } 
-        // Formato con espacio: "2025-06-23 14:15:00"
-        else if (fechaStr.includes(' ')) {
-          const partes = fechaStr.split(' ');
-          if (partes.length >= 2) {
-            return {
-              fecha: partes[0], // "2025-06-23"
-              hora: partes[1].substring(0, 5) // "14:15"
-            };
-          }
-        }
-        // Intentar parsear como fecha de cualquier manera
-        else {
-          fecha = new Date(fechaStr);
-        }
-      } 
-      // Si ya es un objeto Date
-      else {
-        fecha = new Date(fechaStr);
-      }
-      
-      // Verificar que la fecha sea válida
-      if (isNaN(fecha.getTime())) {
-        console.warn('❌ Fecha inválida:', fechaStr);
-        return null;
-      }
-      
-      return {
-        fecha: fecha.toISOString().split('T')[0], // "2025-06-23"
-        hora: `${fecha.getUTCHours().toString().padStart(2, '0')}:${fecha.getUTCMinutes().toString().padStart(2, '0')}` // Usar UTC
-      };
-    } catch (error) {
-      console.error('❌ Error parseando fecha:', fechaStr, error);
-      return null;
-    }
-  };
-
-  // Filtrar horarios disponibles
+  // Filtrar horarios disponibles - SIMPLIFICADO para el nuevo formato
   useEffect(() => {
     if (!fechaSeleccionada) return;
 
@@ -158,20 +106,16 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     console.log('👨‍💼 Responsable seleccionado:', responsable);
     console.log('📋 Eventos disponibles:', eventos);
     
-    // Filtrar horarios ocupados
+    // Filtrar horarios ocupados - MUCHO MÁS SIMPLE ahora
     const horariosOcupados = eventos
       .filter(evento => {
-        // Verificar que el evento esté confirmado y sea del responsable correcto
         const esConfirmado = evento.Estado !== 'Cancelado';
         const esDelResponsable = evento.Responsable === responsable;
-        
-        // Parsear la fecha del evento
-        const fechaEvento = parsearFechaSheet(evento.Fecha_Inicio);
-        const esMismaFecha = fechaEvento && fechaEvento.fecha === fechaSeleccionadaStr;
+        const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
         
         console.log(`📝 Evento ${evento.ID_Evento}:`, {
-          fechaOriginal: evento.Fecha_Inicio,
-          fechaEvento,
+          fecha: evento.Fecha,
+          horaInicio: evento["Hora Inicio"],
           esConfirmado,
           esDelResponsable,
           esMismaFecha,
@@ -181,15 +125,11 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         
         return esConfirmado && esDelResponsable && esMismaFecha;
       })
-      .map(evento => {
-        const fechaEvento = parsearFechaSheet(evento.Fecha_Inicio);
-        return fechaEvento ? fechaEvento.hora : null;
-      })
-      .filter(hora => hora !== null);
+      .map(evento => evento["Hora Inicio"]);
 
     console.log('⏰ Horarios ocupados encontrados:', horariosOcupados);
 
-    // Remover duplicados usando Set
+    // Remover duplicados y filtrar disponibles
     const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
     const disponibles = horariosBase.filter(hora => !horariosOcupadosUnicos.includes(hora));
     
@@ -210,19 +150,21 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     setCargando(true);
 
-    const fechaInicio = `${fechaSeleccionada.toISOString().split('T')[0]} ${horaSeleccionada}:00`;
-    const fechaFin = new Date(fechaSeleccionada);
-    fechaFin.setHours(parseInt(horaSeleccionada.split(':')[0]));
-    fechaFin.setMinutes(parseInt(horaSeleccionada.split(':')[1]) + duracionMinutos);
-    const fechaFinStr = `${fechaFin.toISOString().split('T')[0]} ${fechaFin.getHours().toString().padStart(2, '0')}:${fechaFin.getMinutes().toString().padStart(2, '0')}:00`;
+    // Calcular hora de fin
+    const [horas, minutos] = horaSeleccionada.split(':').map(Number);
+    const fechaFin = new Date();
+    fechaFin.setHours(horas, minutos + duracionMinutos);
+    const horaFin = `${fechaFin.getHours().toString().padStart(2, '0')}:${fechaFin.getMinutes().toString().padStart(2, '0')}`;
 
+    // NUEVO FORMATO: datos separados
     const reservaData = {
       ID_Evento: `evento_${Date.now()}`,
       Titulo_Evento: servicio?.nombre || '',
       Nombre_Cliente: datosCliente.nombre,
       Email_Cliente: datosCliente.email,
-      Fecha_Inicio: fechaInicio,
-      Fecha_Fin: fechaFinStr,
+      Fecha: fechaSeleccionada.toISOString().split('T')[0], // "2025-06-23"
+      Hora_Inicio: horaSeleccionada, // "14:15"
+      Hora_Fin: horaFin, // "14:30"
       Descripcion: `${servicio?.nombre} - Tel: ${datosCliente.telefono || 'No proporcionado'}`,
       Estado: 'Confirmado',
       "Valor del turno": servicio?.precio_oferta || servicio?.precio || 0,
@@ -231,7 +173,6 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     };
 
     try {
-      // Preparar datos como form-urlencoded según tu Apps Script
       const datos = {
         action: "crearReserva",
         data: JSON.stringify(reservaData)
@@ -242,8 +183,8 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         formData.append(key, datos[key]);
       }
 
-      console.log('🚀 Enviando reserva como form-urlencoded');
-      console.log('📦 Datos:', datos);
+      console.log('🚀 Enviando reserva con nuevo formato');
+      console.log('📦 Datos:', reservaData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',

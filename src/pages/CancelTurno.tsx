@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
-// URL de tu Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyq1P4rqf4Nt9-madQErTFv5mfnNfyXT_7eM88pcAZcLkygfA-E6Lj25fp5ZaqJWNKm/exec';
+// NUEVA URL de tu Google Apps Script
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZV2OgLOAeUrfAvopyfxGLLgHSMzPxFUaC-EAqsWsVMb_07qxSA-MyfIcEEq9tcqlR/exec';
 
 const CancelTurno = () => {
   const [searchParams] = useSearchParams();
@@ -39,15 +40,16 @@ const CancelTurno = () => {
     setCargando(true);
     
     try {
+      const formData = new URLSearchParams();
+      formData.append('action', 'cancelarTurno');
+      formData.append('eventId', eventId);
+
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify({
-          action: 'cancelarTurno',
-          eventId: eventId
-        })
+        body: formData
       });
 
       const result = await response.json();
@@ -94,8 +96,9 @@ const CancelTurno = () => {
           <div className="space-y-2 text-sm">
             <p><strong>Servicio:</strong> {turnoData.Titulo_Evento}</p>
             <p><strong>Cliente:</strong> {turnoData.Nombre_Cliente}</p>
-            <p><strong>Fecha:</strong> {new Date(turnoData.Fecha_Inicio).toLocaleDateString()}</p>
-            <p><strong>Hora:</strong> {turnoData.Fecha_Inicio.split(' ')[1]?.substring(0, 5)}</p>
+            <p><strong>Fecha:</strong> {turnoData.Fecha}</p>
+            <p><strong>Hora inicio:</strong> {turnoData["Hora Inicio"]}</p>
+            <p><strong>Hora fin:</strong> {turnoData["Hora Fin"]}</p>
             <p><strong>Especialista:</strong> {turnoData.Responsable}</p>
             <p><strong>Estado:</strong> {turnoData.Estado}</p>
           </div>
