@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 
 interface HorarioEspecialista {
@@ -86,6 +85,9 @@ const convertirFechaAISO = (fechaDDMMYYYY: any): string => {
   return fechaStr;
 };
 
+// 🔐 API KEY SECRETA - DEBE SER LA MISMA QUE EN CalendarioCustom
+const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
+
 export const useHorariosEspecialistas = () => {
   const [horarios, setHorarios] = useState<HorarioEspecialista[]>([]);
   const [diasLibres, setDiasLibres] = useState<DiaLibre[]>([]);
@@ -96,7 +98,7 @@ export const useHorariosEspecialistas = () => {
       setCargando(true);
       console.log('🔄 Cargando horarios de especialistas...');
       
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getHorarios&timestamp=${Date.now()}`;
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getHorarios&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -131,7 +133,7 @@ export const useHorariosEspecialistas = () => {
     try {
       console.log('🔄 Cargando días libres...');
       
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getDiasLibres&timestamp=${Date.now()}`;
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getDiasLibres&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
         method: 'GET',

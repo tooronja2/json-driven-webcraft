@@ -81,6 +81,9 @@ const extraerHora = (horaInput: string | Date): string => {
   return '';
 };
 
+// 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
+const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
+
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
   responsable, 
@@ -106,7 +109,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   const cargarEventos = useCallback(async () => {
     try {
       console.log('🔄 Cargando eventos desde Google Sheets...');
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&timestamp=${Date.now()}`;
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -245,6 +248,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     try {
       const datos = {
         action: "crearReserva",
+        apiKey: API_SECRET_KEY,
         data: JSON.stringify(reservaData)
       };
 
