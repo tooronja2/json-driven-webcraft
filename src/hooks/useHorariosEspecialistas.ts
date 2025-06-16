@@ -106,7 +106,7 @@ export const useHorariosEspecialistas = () => {
     
     console.log(`🕐 Obteniendo horarios para ${responsable} el ${diaSemana} (${fechaStr})`);
 
-    // 🔍 PASO 1: Buscar configuración específica para esta fecha exacta
+    // 🔍 PASO 1: Buscar configuración específica EXACTA para esta fecha
     const configuracionEspecifica = horarios.find(h => 
       h.Responsable === responsable && 
       h.Fecha_Especifica && 
@@ -116,45 +116,52 @@ export const useHorariosEspecialistas = () => {
 
     console.log('🔍 Configuración específica encontrada:', configuracionEspecifica);
 
-    // 🚫 PASO 2: Si hay configuración específica y es "libre" o "vacaciones", NO HAY horarios
-    if (configuracionEspecifica && (configuracionEspecifica.Tipo === 'vacaciones' || configuracionEspecifica.Tipo === 'libre')) {
-      console.log(`❌ ${responsable} NO trabaja el ${fechaStr} (${configuracionEspecifica.Tipo} - fecha específica)`);
-      return [];
-    }
-
-    // ✅ PASO 3: Si hay configuración específica y es "normal", usarla
-    if (configuracionEspecifica && configuracionEspecifica.Tipo === 'normal') {
-      console.log(`✅ Usando horario específico para ${fechaStr}`);
+    // 🚫 PASO 2: Si hay configuración específica para esta fecha exacta
+    if (configuracionEspecifica) {
+      console.log(`📅 Aplicando configuración específica para ${fechaStr} (Tipo: ${configuracionEspecifica.Tipo})`);
       
-      const horaInicioNormalizada = normalizarHora(configuracionEspecifica.Hora_Inicio);
-      const horaFinNormalizada = normalizarHora(configuracionEspecifica.Hora_Fin);
-
-      console.log(`✅ Horario específico: ${horaInicioNormalizada} - ${horaFinNormalizada}`);
-
-      // Generar slots para configuración específica
-      const [horaInicio, minutoInicio] = horaInicioNormalizada.split(':').map(Number);
-      const [horaFin, minutoFin] = horaFinNormalizada.split(':').map(Number);
-      
-      const slots = [];
-      let horaActual = horaInicio;
-      let minutoActual = minutoInicio;
-
-      while (horaActual < horaFin || (horaActual === horaFin && minutoActual < minutoFin)) {
-        const slot = `${horaActual.toString().padStart(2, '0')}:${minutoActual.toString().padStart(2, '0')}`;
-        slots.push(slot);
-
-        minutoActual += duracionMinutos;
-        if (minutoActual >= 60) {
-          horaActual += Math.floor(minutoActual / 60);
-          minutoActual = minutoActual % 60;
-        }
+      // Si es libre o vacaciones para esta fecha específica, NO HAY horarios
+      if (configuracionEspecifica.Tipo === 'vacaciones' || configuracionEspecifica.Tipo === 'libre') {
+        console.log(`❌ ${responsable} NO trabaja el ${fechaStr} (${configuracionEspecifica.Tipo} - fecha específica)`);
+        return [];
       }
 
-      console.log(`📋 Slots generados (específicos) para ${responsable}:`, slots);
-      return slots;
+      // Si es normal para esta fecha específica, usar esos horarios
+      if (configuracionEspecifica.Tipo === 'normal') {
+        console.log(`✅ Usando horario específico normal para ${fechaStr}`);
+        
+        const horaInicioNormalizada = normalizarHora(configuracionEspecifica.Hora_Inicio);
+        const horaFinNormalizada = normalizarHora(configuracionEspecifica.Hora_Fin);
+
+        console.log(`✅ Horario específico: ${horaInicioNormalizada} - ${horaFinNormalizada}`);
+
+        // Generar slots para configuración específica
+        const [horaInicio, minutoInicio] = horaInicioNormalizada.split(':').map(Number);
+        const [horaFin, minutoFin] = horaFinNormalizada.split(':').map(Number);
+        
+        const slots = [];
+        let horaActual = horaInicio;
+        let minutoActual = minutoInicio;
+
+        while (horaActual < horaFin || (horaActual === horaFin && minutoActual < minutoFin)) {
+          const slot = `${horaActual.toString().padStart(2, '0')}:${minutoActual.toString().padStart(2, '0')}`;
+          slots.push(slot);
+
+          minutoActual += duracionMinutos;
+          if (minutoActual >= 60) {
+            horaActual += Math.floor(minutoActual / 60);
+            minutoActual = minutoActual % 60;
+          }
+        }
+
+        console.log(`📋 Slots generados (específicos) para ${responsable}:`, slots);
+        return slots;
+      }
     }
 
-    // 📅 PASO 4: No hay configuración específica, buscar horario regular del día de la semana
+    // 📅 PASO 3: NO hay configuración específica para esta fecha, usar horario regular del día de la semana
+    console.log(`📅 No hay configuración específica para ${fechaStr}, buscando horario regular para ${diaSemana}`);
+    
     const configuracionDia = horarios.find(h => 
       h.Responsable === responsable && 
       h.Dia_Semana === diaSemana &&
