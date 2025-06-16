@@ -62,7 +62,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   // Cargar eventos desde Google Sheets
   const cargarEventos = async () => {
     try {
-      console.log('🔄 Cargando eventos desde nuevo formato...');
+      console.log('🔄 Cargando eventos desde Google Sheets...');
       const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
@@ -80,27 +80,40 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       const data = await response.json();
       
       if (data.success) {
-        console.log('📅 Eventos RAW recibidos (nuevo formato):', data.eventos);
+        console.log('📅 Eventos RAW recibidos:', data.eventos);
         
-        // Los eventos ya vienen en el formato correcto del nuevo Google Sheets
+        // Procesar eventos para normalizar formato de fecha
         const eventosProcesados = data.eventos.map((evento: any) => {
-          console.log('🔍 Procesando evento (nuevo formato):', evento);
+          console.log('🔍 Procesando evento original:', evento);
           
-          // Convertir la fecha de Date object a string si es necesario
-          let fechaStr = evento.Fecha;
+          // Normalizar fecha - puede venir como Date object o string
+          let fechaNormalizada = evento.Fecha;
           if (typeof evento.Fecha === 'object' && evento.Fecha instanceof Date) {
-            fechaStr = evento.Fecha.toISOString().split('T')[0];
+            fechaNormalizada = evento.Fecha.toISOString().split('T')[0];
           } else if (typeof evento.Fecha === 'string' && evento.Fecha.includes('T')) {
-            fechaStr = evento.Fecha.split('T')[0];
+            fechaNormalizada = evento.Fecha.split('T')[0];
+          }
+
+          // Normalizar hora - asegurar formato HH:MM
+          let horaInicio = evento["Hora Inicio"];
+          if (typeof horaInicio === 'object' && horaInicio instanceof Date) {
+            horaInicio = `${horaInicio.getHours().toString().padStart(2, '0')}:${horaInicio.getMinutes().toString().padStart(2, '0')}`;
+          } else if (typeof horaInicio === 'string') {
+            // Si ya es string, mantenerlo tal como está
+            horaInicio = horaInicio.trim();
           }
           
-          return {
+          const eventoNormalizado = {
             ...evento,
-            Fecha: fechaStr
+            Fecha: fechaNormalizada,
+            "Hora Inicio": horaInicio
           };
+          
+          console.log('✅ Evento normalizado:', eventoNormalizado);
+          return eventoNormalizado;
         });
         
-        console.log('✅ Eventos procesados (nuevo formato):', eventosProcesados);
+        console.log('📋 Todos los eventos procesados:', eventosProcesados);
         setEventos(eventosProcesados);
       } else {
         console.error('❌ Error del servidor:', data.error);
@@ -119,38 +132,53 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     const horariosBase = generarHorarios();
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
     
-    console.log('🔍 Filtrando horarios para fecha:', fechaSeleccionadaStr);
-    console.log('👨‍💼 Responsable seleccionado:', responsable);
-    console.log('📋 Eventos para filtrar:', eventos);
+    console.log('🔍 === INICIO FILTRADO DE HORARIOS ===');
+    console.log('📅 Fecha seleccionada:', fechaSeleccionadaStr);
+    console.log('👨‍💼 Responsable buscado:', responsable);
+    console.log('📋 Total eventos a revisar:', eventos.length);
     
-    // Filtrar horarios ocupados
-    const horariosOcupados = eventos
-      .filter(evento => {
-        const esConfirmado = evento.Estado !== 'Cancelado';
-        const esDelResponsable = evento.Responsable === responsable;
-        const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
-        
-        console.log(`📝 Evento ${evento.ID_Evento}:`, {
-          fecha: evento.Fecha,
-          horaInicio: evento["Hora Inicio"],
-          responsable: evento.Responsable,
-          estado: evento.Estado,
-          esConfirmado,
-          esDelResponsable,
-          esMismaFecha
-        });
-        
-        return esConfirmado && esDelResponsable && esMismaFecha;
-      })
+    // Filtrar eventos ocupados para esta fecha y responsable
+    const eventosRelevantes = eventos.filter(evento => {
+      const esConfirmado = evento.Estado === 'Confirmado';
+      const esDelResponsable = evento.Responsable === responsable;
+      const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
+      
+      console.log(`📝 Evento ${evento.ID_Evento}:`, {
+        fecha: evento.Fecha,
+        horaInicio: evento["Hora Inicio"],
+        responsable: evento.Responsable,
+        estado: evento.Estado,
+        esConfirmado,
+        esDelResponsable,
+        esMismaFecha,
+        COINCIDE: esConfirmado && esDelResponsable && esMismaFecha
+      });
+      
+      return esConfirmado && esDelResponsable && esMismaFecha;
+    });
+
+    console.log('✅ Eventos que coinciden:', eventosRelevantes);
+
+    // Extraer horarios ocupados
+    const horariosOcupados = eventosRelevantes
       .map(evento => evento["Hora Inicio"])
-      .filter(Boolean); // Remover valores undefined/null
+      .filter(hora => hora && typeof hora === 'string')
+      .map(hora => hora.trim()); // Limpiar espacios
 
-    console.log('⏰ Horarios ocupados encontrados:', horariosOcupados);
+    console.log('⏰ Horarios ocupados extraídos:', horariosOcupados);
 
+    // Eliminar duplicados y filtrar disponibles
     const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
-    const disponibles = horariosBase.filter(hora => !horariosOcupadosUnicos.includes(hora));
+    console.log('⏰ Horarios ocupados únicos:', horariosOcupadosUnicos);
+
+    const disponibles = horariosBase.filter(hora => {
+      const estaOcupado = horariosOcupadosUnicos.includes(hora);
+      console.log(`⏱️ Hora ${hora}: ${estaOcupado ? 'OCUPADA' : 'disponible'}`);
+      return !estaOcupado;
+    });
     
-    console.log('✅ Horarios disponibles finales:', disponibles);
+    console.log('✅ === HORARIOS FINALES DISPONIBLES ===:', disponibles);
+    console.log('🔍 === FIN FILTRADO DE HORARIOS ===');
     
     setHorasDisponibles(disponibles);
   }, [fechaSeleccionada, eventos, responsable, duracionMinutos]);
@@ -199,8 +227,8 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         formData.append(key, datos[key]);
       }
 
-      console.log('🚀 Enviando reserva (nuevo formato)');
-      console.log('📦 Datos:', reservaData);
+      console.log('🚀 Enviando nueva reserva');
+      console.log('📦 Datos de reserva:', reservaData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
