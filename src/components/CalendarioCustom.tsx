@@ -320,7 +320,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
                 const isDiaLibre = esDiaLibre(date);
                 return (
                   <div className="relative w-full h-full">
-                    <button {...props}>
+                    <button {...props} className={props.className}>
                       {date.getDate()}
                     </button>
                     {isDiaLibre && (
