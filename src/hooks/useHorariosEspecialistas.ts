@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useCallback } from 'react';
 
 interface HorarioEspecialista {
   Responsable: string;
@@ -52,8 +53,8 @@ export const useHorariosEspecialistas = () => {
     }
   };
 
-  // Generar horarios disponibles para un especialista en una fecha específica
-  const obtenerHorariosDisponibles = (responsable: string, fecha: Date, duracionMinutos: number): string[] => {
+  // Memoizar la función para evitar recreaciones en cada render
+  const obtenerHorariosDisponibles = useCallback((responsable: string, fecha: Date, duracionMinutos: number): string[] => {
     const fechaStr = fecha.toISOString().split('T')[0];
     const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][fecha.getDay()];
     
@@ -114,7 +115,7 @@ export const useHorariosEspecialistas = () => {
 
     console.log(`📋 Slots generados para ${responsable}:`, slots);
     return slots;
-  };
+  }, [horarios]); // Solo recrear cuando cambie horarios
 
   useEffect(() => {
     cargarHorarios();

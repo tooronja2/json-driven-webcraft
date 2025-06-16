@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { useBusiness } from '@/context/BusinessContext';
@@ -102,20 +102,8 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   const servicio = contenido?.find(s => s.id === servicioId);
   const duracionMinutos = parseInt(servicio?.detalles?.duracion?.replace('min', '') || '30');
 
-  // Horarios de trabajo (9 AM a 6 PM)
-  const generarHorarios = () => {
-    const horarios = [];
-    for (let hora = 9; hora < 18; hora++) {
-      for (let minuto = 0; minuto < 60; minuto += duracionMinutos) {
-        const horaStr = `${hora.toString().padStart(2, '0')}:${minuto.toString().padStart(2, '0')}`;
-        horarios.push(horaStr);
-      }
-    }
-    return horarios;
-  };
-
   // Cargar eventos desde Google Sheets
-  const cargarEventos = async () => {
+  const cargarEventos = useCallback(async () => {
     try {
       console.log('🔄 Cargando eventos desde Google Sheets...');
       const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&timestamp=${Date.now()}`;
@@ -168,11 +156,14 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       console.error('❌ Error cargando eventos:', error);
       setEventos([]);
     }
-  };
+  }, []);
 
-  // Nueva lógica para filtrar horarios disponibles considerando horarios laborales
+  // Filtrado de horarios mejorado con memoización
   useEffect(() => {
-    if (!fechaSeleccionada) return;
+    if (!fechaSeleccionada) {
+      setHorasDisponibles([]);
+      return;
+    }
 
     console.log('🔍 === INICIO FILTRADO DE HORARIOS CON HORARIOS LABORALES ===');
     
@@ -220,7 +211,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
   useEffect(() => {
     cargarEventos();
-  }, []);
+  }, [cargarEventos]);
 
   const crearReserva = async () => {
     if (!fechaSeleccionada || !horaSeleccionada || !datosCliente.nombre || !datosCliente.email) {
