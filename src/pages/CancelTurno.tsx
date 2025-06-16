@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -7,7 +6,7 @@ import { Button } from '@/components/ui/button';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 // NUEVA URL de tu Google Apps Script actualizada
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyDwU3d96deq8mbdFPCyVjBhTbw95ZAwLPF2paTnskzDLvPnjulH-E-f7Sn5_8n3o-j/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyCXS8uTwK62RwHP_g667wWWlId8Ik-yVJzLVlBIIHKLhvh2Qp0DcxDlNtDnfjgXNd1/exec';
 
 const CancelTurno = () => {
   const [searchParams] = useSearchParams();
