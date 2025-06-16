@@ -85,6 +85,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       }
       
       if (data.success) {
+        console.log('📅 Eventos cargados:', data.eventos);
         setEventos(data.eventos || []);
       } else {
         console.error('❌ Error del servidor:', data.error);
@@ -94,25 +95,77 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     }
   };
 
+  // Función para parsear fecha desde Google Sheets
+  const parsearFechaSheet = (fechaStr: string) => {
+    // El formato puede venir como "2025-06-23 11:15:00" o como fecha de Excel
+    if (typeof fechaStr === 'string') {
+      // Si es string con formato "YYYY-MM-DD HH:mm:ss"
+      const partes = fechaStr.split(' ');
+      if (partes.length >= 2) {
+        return {
+          fecha: partes[0], // "2025-06-23"
+          hora: partes[1].substring(0, 5) // "11:15"
+        };
+      }
+    } else if (fechaStr instanceof Date || !isNaN(Date.parse(fechaStr))) {
+      // Si es un objeto Date de Excel
+      const fecha = new Date(fechaStr);
+      return {
+        fecha: fecha.toISOString().split('T')[0], // "2025-06-23"
+        hora: `${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}` // "11:15"
+      };
+    }
+    
+    return null;
+  };
+
   // Filtrar horarios disponibles
   useEffect(() => {
     if (!fechaSeleccionada) return;
 
     const horariosBase = generarHorarios();
-    const fechaStr = fechaSeleccionada.toISOString().split('T')[0];
+    const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0]; // "2025-06-23"
+    
+    console.log('🔍 Filtrando horarios para fecha:', fechaSeleccionadaStr);
+    console.log('👨‍💼 Responsable seleccionado:', responsable);
+    console.log('📋 Eventos disponibles:', eventos);
     
     // Filtrar horarios ocupados
     const horariosOcupados = eventos
-      .filter(evento => 
-        evento.Fecha_Inicio.startsWith(fechaStr) && 
-        evento.Responsable === responsable &&
-        evento.Estado !== 'Cancelado'
-      )
-      .map(evento => evento.Fecha_Inicio.split(' ')[1]?.substring(0, 5));
+      .filter(evento => {
+        // Verificar que el evento esté confirmado y sea del responsable correcto
+        const esConfirmado = evento.Estado !== 'Cancelado';
+        const esDelResponsable = evento.Responsable === responsable;
+        
+        // Parsear la fecha del evento
+        const fechaEvento = parsearFechaSheet(evento.Fecha_Inicio);
+        const esMismaFecha = fechaEvento && fechaEvento.fecha === fechaSeleccionadaStr;
+        
+        console.log(`📝 Evento ${evento.ID_Evento}:`, {
+          fechaEvento,
+          esConfirmado,
+          esDelResponsable,
+          esMismaFecha,
+          responsableEvento: evento.Responsable,
+          estado: evento.Estado
+        });
+        
+        return esConfirmado && esDelResponsable && esMismaFecha;
+      })
+      .map(evento => {
+        const fechaEvento = parsearFechaSheet(evento.Fecha_Inicio);
+        return fechaEvento ? fechaEvento.hora : null;
+      })
+      .filter(hora => hora !== null);
+
+    console.log('⏰ Horarios ocupados encontrados:', horariosOcupados);
 
     const disponibles = horariosBase.filter(hora => !horariosOcupados.includes(hora));
+    
+    console.log('✅ Horarios disponibles finales:', disponibles);
+    
     setHorasDisponibles(disponibles);
-  }, [fechaSeleccionada, eventos, responsable]);
+  }, [fechaSeleccionada, eventos, responsable, duracionMinutos]);
 
   useEffect(() => {
     cargarEventos();
@@ -191,6 +244,8 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       
       if (result.success) {
         alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
+        // Recargar eventos para actualizar la disponibilidad
+        await cargarEventos();
         onReservaConfirmada();
       } else {
         alert('Error al crear la reserva: ' + (result.error || 'Error desconocido'));
