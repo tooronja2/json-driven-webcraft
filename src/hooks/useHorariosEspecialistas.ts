@@ -109,8 +109,24 @@ export const useHorariosEspecialistas = () => {
     console.log(`📅 Fecha: ${fechaStr} (${diaSemana})`);
     console.log(`⏱️ Duración: ${duracionMinutos} minutos`);
     console.log(`📋 Total horarios disponibles:`, horarios.length);
+    
+    // DEPURACIÓN: Mostrar TODOS los horarios para este responsable
+    console.log('🔍 === TODOS LOS HORARIOS PARA ESTE RESPONSABLE ===');
+    const horariosResponsable = horarios.filter(h => h.Responsable === responsable);
+    horariosResponsable.forEach((h, index) => {
+      console.log(`Horario ${index + 1}:`, {
+        responsable: h.Responsable,
+        diaSemana: h.Dia_Semana,
+        tipo: h.Tipo,
+        activo: h.Activo,
+        fechaEspecifica: h.Fecha_Especifica || 'SIN_FECHA_ESPECIFICA',
+        horaInicio: h.Hora_Inicio,
+        horaFin: h.Hora_Fin
+      });
+    });
 
     // 🔍 PASO 1: Buscar si existe una configuración ESPECÍFICA para esta fecha EXACTA
+    console.log(`🔍 === PASO 1: BUSCANDO EXCEPCIÓN ESPECÍFICA PARA ${fechaStr} ===`);
     const excepcionEspecifica = horarios.find(h => {
       const esElResponsable = h.Responsable === responsable;
       const tieneFechaEspecifica = h.Fecha_Especifica && h.Fecha_Especifica.trim() !== '';
@@ -144,28 +160,38 @@ export const useHorariosEspecialistas = () => {
 
     // ✅ PASO 3: NO hay excepción específica, buscar horario REGULAR para este día de la semana
     console.log(`✅ NO hay excepción para ${fechaStr}, buscando horario regular para ${diaSemana}`);
+    console.log(`🔍 === PASO 3: BUSCANDO CONFIGURACIÓN REGULAR PARA ${diaSemana} ===`);
     
-    // CRÍTICO: Filtrar TODOS los horarios que tengan fecha específica (independientemente de la fecha)
-    // Solo queremos horarios que sean configuraciones generales para el día de la semana
+    // DEPURACIÓN: Mostrar todos los horarios que coinciden con el día de la semana
+    const horariosDiaSemana = horarios.filter(h => 
+      h.Responsable === responsable && h.Dia_Semana === diaSemana
+    );
+    console.log(`📋 Horarios encontrados para ${diaSemana}:`, horariosDiaSemana);
+    
+    // CRÍTICO: Solo considerar horarios que NO tengan fecha específica
     const configuracionRegular = horarios.find(h => {
       const esElResponsable = h.Responsable === responsable;
       const esMismoDiaSemana = h.Dia_Semana === diaSemana;
       const esHorarioNormal = h.Tipo === 'normal';
       const estaActivo = h.Activo;
-      // FUNDAMENTAL: NO debe tener NINGUNA fecha específica (debe ser configuración general)
-      const esConfiguracionGeneral = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
+      // FUNDAMENTAL: NO debe tener NINGUNA fecha específica
+      const noTieneFechaEspecifica = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
       
-      console.log(`🔍 Revisando horario regular:`, {
+      console.log(`🔍 Evaluando horario:`, {
         responsable: h.Responsable,
         diaSemana: h.Dia_Semana,
         tipo: h.Tipo,
         activo: h.Activo,
-        fechaEspecifica: h.Fecha_Especifica || 'SIN_FECHA',
-        esConfiguracionGeneral: esConfiguracionGeneral,
-        cumpleCondiciones: esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && esConfiguracionGeneral
+        fechaEspecifica: h.Fecha_Especifica || 'NINGUNA',
+        noTieneFechaEspecifica: noTieneFechaEspecifica,
+        esElResponsable: esElResponsable,
+        esMismoDiaSemana: esMismoDiaSemana,
+        esHorarioNormal: esHorarioNormal,
+        estaActivo: estaActivo,
+        cumpleTodasLasCondiciones: esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica
       });
       
-      return esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && esConfiguracionGeneral;
+      return esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica;
     });
 
     if (!configuracionRegular) {
