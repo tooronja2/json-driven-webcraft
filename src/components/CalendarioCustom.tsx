@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -95,28 +94,51 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     }
   };
 
-  // Función para parsear fecha desde Google Sheets
-  const parsearFechaSheet = (fechaStr: string) => {
-    // El formato puede venir como "2025-06-23 11:15:00" o como fecha de Excel
-    if (typeof fechaStr === 'string') {
-      // Si es string con formato "YYYY-MM-DD HH:mm:ss"
-      const partes = fechaStr.split(' ');
-      if (partes.length >= 2) {
-        return {
-          fecha: partes[0], // "2025-06-23"
-          hora: partes[1].substring(0, 5) // "11:15"
-        };
+  // Función corregida para parsear fecha desde Google Sheets
+  const parsearFechaSheet = (fechaStr: string | Date) => {
+    try {
+      let fecha: Date;
+      
+      // Si es string, puede ser formato ISO o formato con espacio
+      if (typeof fechaStr === 'string') {
+        // Formato ISO: "2025-06-23T11:15:00.000Z"
+        if (fechaStr.includes('T')) {
+          fecha = new Date(fechaStr);
+        } 
+        // Formato con espacio: "2025-06-23 11:15:00"
+        else if (fechaStr.includes(' ')) {
+          const partes = fechaStr.split(' ');
+          if (partes.length >= 2) {
+            return {
+              fecha: partes[0], // "2025-06-23"
+              hora: partes[1].substring(0, 5) // "11:15"
+            };
+          }
+        }
+        // Intentar parsear como fecha de cualquier manera
+        else {
+          fecha = new Date(fechaStr);
+        }
+      } 
+      // Si ya es un objeto Date
+      else {
+        fecha = new Date(fechaStr);
       }
-    } else if (fechaStr instanceof Date || !isNaN(Date.parse(fechaStr))) {
-      // Si es un objeto Date de Excel
-      const fecha = new Date(fechaStr);
+      
+      // Verificar que la fecha sea válida
+      if (isNaN(fecha.getTime())) {
+        console.warn('❌ Fecha inválida:', fechaStr);
+        return null;
+      }
+      
       return {
         fecha: fecha.toISOString().split('T')[0], // "2025-06-23"
         hora: `${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}` // "11:15"
       };
+    } catch (error) {
+      console.error('❌ Error parseando fecha:', fechaStr, error);
+      return null;
     }
-    
-    return null;
   };
 
   // Filtrar horarios disponibles
@@ -142,6 +164,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         const esMismaFecha = fechaEvento && fechaEvento.fecha === fechaSeleccionadaStr;
         
         console.log(`📝 Evento ${evento.ID_Evento}:`, {
+          fechaOriginal: evento.Fecha_Inicio,
           fechaEvento,
           esConfirmado,
           esDelResponsable,
