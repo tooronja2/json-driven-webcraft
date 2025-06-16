@@ -28,12 +28,22 @@ const normalizarHora = (hora: string | number): string => {
   return hora.toString();
 };
 
-// Función para normalizar fecha a formato ISO (YYYY-MM-DD)
+// Función CORREGIDA para normalizar fecha a formato ISO (YYYY-MM-DD)
 const normalizarFechaAISO = (fecha: string): string => {
   if (!fecha) return '';
   
+  console.log(`🔄 Normalizando fecha: "${fecha}"`);
+  
+  // Si es un Date ISO string (2025-06-17T03:00:00.000Z)
+  if (fecha.includes('T') && fecha.includes('Z')) {
+    const fechaISO = fecha.split('T')[0];
+    console.log(`✅ Fecha ISO extraída: "${fechaISO}"`);
+    return fechaISO;
+  }
+  
   // Si ya está en formato ISO (YYYY-MM-DD)
-  if (fecha.includes('-') && fecha.length === 10) {
+  if (fecha.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    console.log(`✅ Fecha ya en formato ISO: "${fecha}"`);
     return fecha;
   }
   
@@ -42,19 +52,24 @@ const normalizarFechaAISO = (fecha: string): string => {
     const partes = fecha.split('/');
     if (partes.length === 3) {
       const [dia, mes, año] = partes;
-      return `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+      const fechaISO = `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+      console.log(`✅ Fecha convertida de DD/MM/YYYY a ISO: "${fechaISO}"`);
+      return fechaISO;
     }
   }
   
+  console.log(`⚠️ No se pudo normalizar la fecha: "${fecha}"`);
   return fecha;
 };
 
-// Función para comparar fechas independientemente del formato
+// Función CORREGIDA para comparar fechas independientemente del formato
 const sonFechasIguales = (fecha1: string, fecha2: string): boolean => {
   if (!fecha1 || !fecha2) return false;
   
   const fechaISO1 = normalizarFechaAISO(fecha1);
   const fechaISO2 = normalizarFechaAISO(fecha2);
+  
+  console.log(`🔍 Comparando fechas: "${fechaISO1}" vs "${fechaISO2}" = ${fechaISO1 === fechaISO2}`);
   
   return fechaISO1 === fechaISO2;
 };
@@ -99,7 +114,7 @@ export const useHorariosEspecialistas = () => {
     }
   };
 
-  // Función corregida para manejar fechas específicas correctamente
+  // Función CORREGIDA para manejar fechas específicas correctamente
   const obtenerHorariosDisponibles = useCallback((responsable: string, fecha: Date, duracionMinutos: number): string[] => {
     const fechaStr = fecha.toISOString().split('T')[0]; // Formato ISO: YYYY-MM-DD
     const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][fecha.getDay()];
@@ -135,7 +150,7 @@ export const useHorariosEspecialistas = () => {
         return false;
       }
       
-      // Comparar fechas usando nuestra función normalizada
+      // Comparar fechas usando nuestra función CORREGIDA
       const esMismaFecha = sonFechasIguales(h.Fecha_Especifica!, fechaStr);
       
       console.log(`🔍 Revisando posible excepción:`, {
@@ -162,20 +177,14 @@ export const useHorariosEspecialistas = () => {
     console.log(`✅ NO hay excepción para ${fechaStr}, buscando horario regular para ${diaSemana}`);
     console.log(`🔍 === PASO 3: BUSCANDO CONFIGURACIÓN REGULAR PARA ${diaSemana} ===`);
     
-    // DEPURACIÓN: Mostrar todos los horarios que coinciden con el día de la semana
-    const horariosDiaSemana = horarios.filter(h => 
-      h.Responsable === responsable && h.Dia_Semana === diaSemana
-    );
-    console.log(`📋 Horarios encontrados para ${diaSemana}:`, horariosDiaSemana);
-    
-    // CRÍTICO: Solo considerar horarios que NO tengan fecha específica
+    // FUNDAMENTAL: Solo buscar horarios que NO tengan NINGUNA fecha específica
     const configuracionRegular = horarios.find(h => {
       const esElResponsable = h.Responsable === responsable;
       const esMismoDiaSemana = h.Dia_Semana === diaSemana;
       const esHorarioNormal = h.Tipo === 'normal';
       const estaActivo = h.Activo;
-      // FUNDAMENTAL: NO debe tener NINGUNA fecha específica
-      const noTieneFechaEspecifica = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
+      // CRÍTICO: NO debe tener NINGUNA fecha específica (configuración general)
+      const esConfiguracionGeneral = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
       
       console.log(`🔍 Evaluando horario:`, {
         responsable: h.Responsable,
@@ -183,19 +192,20 @@ export const useHorariosEspecialistas = () => {
         tipo: h.Tipo,
         activo: h.Activo,
         fechaEspecifica: h.Fecha_Especifica || 'NINGUNA',
-        noTieneFechaEspecifica: noTieneFechaEspecifica,
+        esConfiguracionGeneral: esConfiguracionGeneral,
         esElResponsable: esElResponsable,
         esMismoDiaSemana: esMismoDiaSemana,
         esHorarioNormal: esHorarioNormal,
         estaActivo: estaActivo,
-        cumpleTodasLasCondiciones: esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica
+        cumpleTodasLasCondiciones: esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && esConfiguracionGeneral
       });
       
-      return esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica;
+      return esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && esConfiguracionGeneral;
     });
 
     if (!configuracionRegular) {
       console.log(`❌ No hay horario regular configurado para ${responsable} los ${diaSemana}`);
+      console.log(`🚨 DIAGNÓSTICO: Parece que solo hay configuraciones específicas para este día, no hay horario regular.`);
       console.log(`🕐 === FIN BÚSQUEDA (SIN CONFIGURACIÓN REGULAR) ===`);
       return [];
     }
