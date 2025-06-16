@@ -3,7 +3,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
 import { useBusiness } from '@/context/BusinessContext';
 import { useHorariosEspecialistas } from '@/hooks/useHorariosEspecialistas';
-import { X } from 'lucide-react';
 
 interface EventoReserva {
   ID_Evento: string;
@@ -88,7 +87,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   onReservaConfirmada 
 }) => {
   const { contenido, config } = useBusiness();
-  const { obtenerHorariosDisponibles, diasLibres } = useHorariosEspecialistas();
+  const { obtenerHorariosDisponibles } = useHorariosEspecialistas();
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | undefined>();
   const [horaSeleccionada, setHoraSeleccionada] = useState<string>('');
   const [horasDisponibles, setHorasDisponibles] = useState<string[]>([]);
@@ -158,14 +157,6 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       setEventos([]);
     }
   }, []);
-
-  // Función para verificar si una fecha es día libre
-  const esDiaLibre = (date: Date): boolean => {
-    const fechaStr = date.toISOString().split('T')[0];
-    return diasLibres.some(diaLibre => 
-      diaLibre.Responsable === responsable && diaLibre.Dia === fechaStr
-    );
-  };
 
   // Filtrado de horarios mejorado con memoización
   useEffect(() => {
@@ -299,43 +290,13 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     <div className="max-w-md mx-auto p-4 space-y-6">
       <div>
         <h3 className="text-lg font-semibold mb-2">Selecciona la fecha</h3>
-        <div className="relative">
-          <Calendar
-            mode="single"
-            selected={fechaSeleccionada}
-            onSelect={setFechaSeleccionada}
-            disabled={(date) => date < new Date() || date.getDay() === 0}
-            modifiers={{
-              diaLibre: (date) => esDiaLibre(date)
-            }}
-            modifiersStyles={{
-              diaLibre: { 
-                position: 'relative',
-                backgroundColor: '#fee2e2',
-                color: '#dc2626'
-              }
-            }}
-            components={{
-              Day: ({ date, ...props }) => {
-                const isDiaLibre = esDiaLibre(date);
-                return (
-                  <div className="relative w-full h-full">
-                    <button {...props} className={props.className}>
-                      {date.getDate()}
-                    </button>
-                    {isDiaLibre && (
-                      <X 
-                        className="absolute top-0 right-0 h-3 w-3 text-red-600 pointer-events-none" 
-                        style={{ transform: 'translate(25%, -25%)' }}
-                      />
-                    )}
-                  </div>
-                );
-              }
-            }}
-            className="rounded-md border"
-          />
-        </div>
+        <Calendar
+          mode="single"
+          selected={fechaSeleccionada}
+          onSelect={setFechaSeleccionada}
+          disabled={(date) => date < new Date() || date.getDay() === 0}
+          className="rounded-md border"
+        />
       </div>
 
       {fechaSeleccionada && (
