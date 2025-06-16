@@ -25,7 +25,7 @@ interface CalendarioCustomProps {
 }
 
 // URL de tu Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeAT6sRADmr1ZUGfWTPCqZcowZbjyYvPC2h6aNkK9NEF-lHbmGTAkVkdzKNr-Vlu8l/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyq1P4rqf4Nt9-madQErTFv5mfnNfyXT_7eM88pcAZcLkygfA-E6Lj25fp5ZaqJWNKm/exec';
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
@@ -91,7 +91,6 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       }
     } catch (error) {
       console.error('❌ Error cargando eventos:', error);
-      // No mostrar alert aquí, solo log del error
     }
   };
 
@@ -148,25 +147,29 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     };
 
     try {
-      console.log('🚀 Enviando reserva a:', GOOGLE_APPS_SCRIPT_URL);
-      console.log('📦 Datos de la reserva:', reservaData);
-
-      const requestBody = {
-        action: 'crearReserva',
-        data: reservaData
+      // Preparar datos como form-urlencoded según tu Apps Script
+      const datos = {
+        action: "crearReserva",
+        data: JSON.stringify(reservaData)
       };
+
+      const formData = new URLSearchParams();
+      for (const key in datos) {
+        formData.append(key, datos[key]);
+      }
+
+      console.log('🚀 Enviando reserva como form-urlencoded');
+      console.log('📦 Datos:', datos);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(requestBody)
+        body: formData
       });
 
       console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
@@ -194,27 +197,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       }
     } catch (error) {
       console.error('❌ Error completo:', error);
-      console.error('❌ Error name:', error.name);
-      console.error('❌ Error message:', error.message);
-      
-      if (error.message.includes('Failed to fetch')) {
-        alert(`Error de conexión con Google Apps Script. 
-        
-Posibles causas:
-1. El Google Apps Script no está configurado con CORS
-2. La URL del script es incorrecta
-3. El script no está desplegado como "Web app"
-
-Error técnico: ${error.message}
-
-URL utilizada: ${GOOGLE_APPS_SCRIPT_URL}`);
-      } else if (error.message.includes('CORS')) {
-        alert(`Error de CORS: ${error.message}
-        
-Verifica que tu Google Apps Script tenga los headers CORS configurados y esté redesployed.`);
-      } else {
-        alert('Error al procesar la reserva: ' + error.message);
-      }
+      alert('Error al procesar la reserva: ' + error.message);
     } finally {
       setCargando(false);
     }
