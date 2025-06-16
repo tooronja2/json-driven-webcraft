@@ -1,12 +1,24 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import SEOHead from "@/components/SEOHead";
 import { useBusiness } from "@/context/BusinessContext";
+import { useLocation } from "react-router-dom";
 
 const CancelTurno = () => {
   const { config } = useBusiness();
+  const { search } = useLocation();
   const [email, setEmail] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
+  const id = new URLSearchParams(search).get("id");
+
+  useEffect(() => {
+    if (id) {
+      fetch(`/api/cancel/${id}`)
+        .then(r => r.text())
+        .then(t => setMsg(t))
+        .catch(() => setMsg("Error al cancelar"));
+    }
+  }, [id]);
 
   const handleCancel = (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,6 +33,8 @@ const CancelTurno = () => {
         <h1 className="text-2xl font-semibold mb-4">Cancelar Turno</h1>
         {msg ? (
           <div className="p-4 bg-green-50 rounded text-green-800 font-medium border border-green-200">{msg}</div>
+        ) : id ? (
+          <p>Procesando cancelación...</p>
         ) : (
           <form onSubmit={handleCancel} className="flex flex-col gap-4">
             <label>
