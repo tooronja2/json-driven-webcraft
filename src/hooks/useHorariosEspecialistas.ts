@@ -134,7 +134,7 @@ export const useHorariosEspecialistas = () => {
       return esMismaFecha;
     });
 
-    // 🚫 PASO 2: Si hay configuración específica para esta fecha exacta, NO TRABAJAR
+    // 🚫 PASO 2: Si hay configuración específica para esta fecha exacta, retornar array vacío
     if (excepcionEspecifica) {
       console.log(`❌ EXCEPCIÓN DETECTADA: ${responsable} tiene configuración específica para ${fechaStr}`);
       console.log(`🚫 Configuración encontrada:`, excepcionEspecifica);
@@ -145,12 +145,13 @@ export const useHorariosEspecialistas = () => {
     // ✅ PASO 3: NO hay excepción específica, buscar horario REGULAR para este día de la semana
     console.log(`✅ NO hay excepción para ${fechaStr}, buscando horario regular para ${diaSemana}`);
     
+    // CLAVE: Filtrar SOLO horarios regulares (sin fecha específica) para el día de la semana
     const configuracionRegular = horarios.find(h => {
       const esElResponsable = h.Responsable === responsable;
       const esMismoDiaSemana = h.Dia_Semana === diaSemana;
       const esHorarioNormal = h.Tipo === 'normal';
       const estaActivo = h.Activo;
-      // IMPORTANTE: Para horarios regulares, NO debe tener fecha específica
+      // CRUCIAL: NO debe tener fecha específica para ser considerado horario regular
       const noTieneFechaEspecifica = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
       
       console.log(`🔍 Revisando horario regular:`, {
@@ -158,7 +159,7 @@ export const useHorariosEspecialistas = () => {
         diaSemana: h.Dia_Semana,
         tipo: h.Tipo,
         activo: h.Activo,
-        fechaEspecifica: h.Fecha_Especifica,
+        fechaEspecifica: h.Fecha_Especifica || 'VACIA',
         cumpleCondiciones: esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica
       });
       
