@@ -61,11 +61,10 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   // Cargar eventos desde Google Sheets
   const cargarEventos = async () => {
     try {
-      console.log('🔄 Cargando eventos desde Google Apps Script...');
-      console.log('📍 URL del Apps Script:', GOOGLE_APPS_SCRIPT_URL);
+      console.log('🔄 Cargando eventos...');
       
       const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos`;
-      console.log('🌐 Haciendo request a:', url);
+      console.log('🌐 Request a:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -74,46 +73,35 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         },
       });
 
-      console.log('📡 Respuesta recibida:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
+      console.log('📡 Status:', response.status);
 
       if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP Error: ${response.status}`);
       }
 
       const textResponse = await response.text();
-      console.log('📄 Respuesta en texto:', textResponse);
+      console.log('📄 Respuesta:', textResponse);
 
       let data;
       try {
         data = JSON.parse(textResponse);
       } catch (parseError) {
         console.error('❌ Error parsing JSON:', parseError);
-        console.log('📄 Texto que no se pudo parsear:', textResponse);
         throw new Error('Respuesta no es JSON válido');
       }
 
-      console.log('✅ Datos parseados:', data);
+      console.log('✅ Datos:', data);
       
       if (data.success) {
         setEventos(data.eventos || []);
-        console.log('✅ Eventos cargados exitosamente:', data.eventos?.length || 0);
+        console.log('✅ Eventos cargados:', data.eventos?.length || 0);
       } else {
-        console.error('❌ Error en la respuesta del servidor:', data.error);
+        console.error('❌ Error del servidor:', data.error);
         alert('Error del servidor: ' + (data.error || 'Error desconocido'));
       }
     } catch (error) {
-      console.error('❌ Error completo cargando eventos:', error);
-      console.error('📊 Detalles del error:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
-      alert('Error de conexión: ' + error.message);
+      console.error('❌ Error cargando eventos:', error);
+      alert('Error de conexión. Revisa la configuración CORS de tu Google Apps Script: ' + error.message);
     }
   };
 
@@ -170,15 +158,12 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     };
 
     try {
-      console.log('🚀 Enviando reserva:', reservaData);
-      console.log('📍 URL destino:', GOOGLE_APPS_SCRIPT_URL);
+      console.log('🚀 Enviando reserva...');
 
       const requestBody = {
         action: 'crearReserva',
         data: reservaData
       };
-
-      console.log('📦 Body del request:', requestBody);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
@@ -189,30 +174,24 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         body: JSON.stringify(requestBody)
       });
 
-      console.log('📡 Respuesta del POST:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-        headers: Object.fromEntries(response.headers.entries())
-      });
+      console.log('📡 Status POST:', response.status);
 
       if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status} ${response.statusText}`);
+        throw new Error(`HTTP Error: ${response.status}`);
       }
 
       const textResponse = await response.text();
-      console.log('📄 Respuesta POST en texto:', textResponse);
+      console.log('📄 Respuesta POST:', textResponse);
 
       let result;
       try {
         result = JSON.parse(textResponse);
       } catch (parseError) {
         console.error('❌ Error parsing JSON del POST:', parseError);
-        console.log('📄 Texto que no se pudo parsear:', textResponse);
         throw new Error('Respuesta del servidor no es JSON válido');
       }
 
-      console.log('✅ Resultado parseado:', result);
+      console.log('✅ Resultado:', result);
       
       if (result.success) {
         alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
@@ -221,13 +200,12 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         alert('Error al crear la reserva: ' + (result.error || 'Error desconocido'));
       }
     } catch (error) {
-      console.error('❌ Error completo al crear reserva:', error);
-      console.error('📊 Detalles del error:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
-      alert('Error al procesar la reserva: ' + error.message);
+      console.error('❌ Error al crear reserva:', error);
+      if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+        alert('Error de CORS: Debes configurar los headers CORS en tu Google Apps Script y volver a deployarlo.');
+      } else {
+        alert('Error al procesar la reserva: ' + error.message);
+      }
     } finally {
       setCargando(false);
     }
@@ -235,12 +213,6 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
   return (
     <div className="max-w-md mx-auto p-4 space-y-6">
-      {/* Debug info */}
-      <div className="bg-gray-100 p-2 rounded text-xs">
-        <p><strong>Debug:</strong> Apps Script URL configurado: ✅ SÍ</p>
-        <p><strong>Eventos cargados:</strong> {eventos.length}</p>
-      </div>
-
       <div>
         <h3 className="text-lg font-semibold mb-2">Selecciona la fecha</h3>
         <Calendar
