@@ -10,8 +10,8 @@ interface EventoReserva {
   Nombre_Cliente: string;
   Email_Cliente: string;
   Fecha: string; // "2025-06-23"
-  "Hora Inicio": string; // "11:15"
-  "Hora Fin": string; // "11:30"
+  "Hora Inicio": string | Date; // "11:15" o Date object
+  "Hora Fin": string | Date; // "11:30" o Date object
   Descripcion: string;
   Estado: string;
   "Valor del turno": number;
@@ -26,6 +26,36 @@ interface CalendarioCustomProps {
 }
 
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZV2OgLOAeUrfAvopyfxGLLgHSMzPxFUaC-EAqsWsVMb_07qxSA-MyfIcEEq9tcqlR/exec';
+
+// Función para extraer hora en formato HH:MM desde cualquier formato
+const extraerHora = (horaInput: string | Date): string => {
+  console.log('🕐 Extrayendo hora de:', horaInput, 'Tipo:', typeof horaInput);
+  
+  if (typeof horaInput === 'string') {
+    // Si es string, limpiarlo y verificar formato
+    const horaLimpia = horaInput.trim();
+    if (horaLimpia.match(/^\d{1,2}:\d{2}$/)) {
+      // Ya está en formato HH:MM
+      const [hora, minuto] = horaLimpia.split(':');
+      const horaFinal = `${hora.padStart(2, '0')}:${minuto}`;
+      console.log('✅ Hora extraída (string):', horaFinal);
+      return horaFinal;
+    }
+  }
+  
+  if (horaInput instanceof Date || (typeof horaInput === 'object' && horaInput !== null)) {
+    // Si es Date object, extraer hora y minuto
+    const fecha = new Date(horaInput);
+    const horas = fecha.getHours().toString().padStart(2, '0');
+    const minutos = fecha.getMinutes().toString().padStart(2, '0');
+    const horaFinal = `${horas}:${minutos}`;
+    console.log('✅ Hora extraída (Date):', horaFinal);
+    return horaFinal;
+  }
+  
+  console.log('⚠️ No se pudo extraer hora de:', horaInput);
+  return '';
+};
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
@@ -94,19 +124,9 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
             fechaNormalizada = evento.Fecha.split('T')[0];
           }
 
-          // Normalizar hora - asegurar formato HH:MM
-          let horaInicio = evento["Hora Inicio"];
-          if (typeof horaInicio === 'object' && horaInicio instanceof Date) {
-            horaInicio = `${horaInicio.getHours().toString().padStart(2, '0')}:${horaInicio.getMinutes().toString().padStart(2, '0')}`;
-          } else if (typeof horaInicio === 'string') {
-            // Si ya es string, mantenerlo tal como está
-            horaInicio = horaInicio.trim();
-          }
-          
           const eventoNormalizado = {
             ...evento,
-            Fecha: fechaNormalizada,
-            "Hora Inicio": horaInicio
+            Fecha: fechaNormalizada
           };
           
           console.log('✅ Evento normalizado:', eventoNormalizado);
@@ -159,11 +179,10 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     console.log('✅ Eventos que coinciden:', eventosRelevantes);
 
-    // Extraer horarios ocupados
+    // Extraer horarios ocupados usando la nueva función
     const horariosOcupados = eventosRelevantes
-      .map(evento => evento["Hora Inicio"])
-      .filter(hora => hora && typeof hora === 'string')
-      .map(hora => hora.trim()); // Limpiar espacios
+      .map(evento => extraerHora(evento["Hora Inicio"]))
+      .filter(hora => hora !== ''); // Eliminar horas vacías
 
     console.log('⏰ Horarios ocupados extraídos:', horariosOcupados);
 
