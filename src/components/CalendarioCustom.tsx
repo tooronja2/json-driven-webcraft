@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -94,24 +95,29 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     }
   };
 
-  // Función corregida para parsear fecha desde Google Sheets
+  // Función CORREGIDA para parsear fecha desde Google Sheets
   const parsearFechaSheet = (fechaStr: string | Date) => {
     try {
       let fecha: Date;
       
       // Si es string, puede ser formato ISO o formato con espacio
       if (typeof fechaStr === 'string') {
-        // Formato ISO: "2025-06-23T11:15:00.000Z"
+        // Formato ISO: "2025-06-23T14:15:00.000Z"
         if (fechaStr.includes('T')) {
           fecha = new Date(fechaStr);
+          // IMPORTANTE: Usar UTC para evitar problemas de zona horaria
+          return {
+            fecha: fecha.toISOString().split('T')[0], // "2025-06-23"
+            hora: `${fecha.getUTCHours().toString().padStart(2, '0')}:${fecha.getUTCMinutes().toString().padStart(2, '0')}` // "14:15" (UTC)
+          };
         } 
-        // Formato con espacio: "2025-06-23 11:15:00"
+        // Formato con espacio: "2025-06-23 14:15:00"
         else if (fechaStr.includes(' ')) {
           const partes = fechaStr.split(' ');
           if (partes.length >= 2) {
             return {
               fecha: partes[0], // "2025-06-23"
-              hora: partes[1].substring(0, 5) // "11:15"
+              hora: partes[1].substring(0, 5) // "14:15"
             };
           }
         }
@@ -133,7 +139,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       
       return {
         fecha: fecha.toISOString().split('T')[0], // "2025-06-23"
-        hora: `${fecha.getHours().toString().padStart(2, '0')}:${fecha.getMinutes().toString().padStart(2, '0')}` // "11:15"
+        hora: `${fecha.getUTCHours().toString().padStart(2, '0')}:${fecha.getUTCMinutes().toString().padStart(2, '0')}` // Usar UTC
       };
     } catch (error) {
       console.error('❌ Error parseando fecha:', fechaStr, error);
@@ -183,7 +189,9 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     console.log('⏰ Horarios ocupados encontrados:', horariosOcupados);
 
-    const disponibles = horariosBase.filter(hora => !horariosOcupados.includes(hora));
+    // Remover duplicados usando Set
+    const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
+    const disponibles = horariosBase.filter(hora => !horariosOcupadosUnicos.includes(hora));
     
     console.log('✅ Horarios disponibles finales:', disponibles);
     
