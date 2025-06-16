@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -61,10 +62,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   // Cargar eventos desde Google Sheets
   const cargarEventos = async () => {
     try {
-      console.log('🔄 Cargando eventos...');
-      
       const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos`;
-      console.log('🌐 Request a:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -73,15 +71,11 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         },
       });
 
-      console.log('📡 Status:', response.status);
-
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
 
       const textResponse = await response.text();
-      console.log('📄 Respuesta:', textResponse);
-
       let data;
       try {
         data = JSON.parse(textResponse);
@@ -89,19 +83,15 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         console.error('❌ Error parsing JSON:', parseError);
         throw new Error('Respuesta no es JSON válido');
       }
-
-      console.log('✅ Datos:', data);
       
       if (data.success) {
         setEventos(data.eventos || []);
-        console.log('✅ Eventos cargados:', data.eventos?.length || 0);
       } else {
         console.error('❌ Error del servidor:', data.error);
-        alert('Error del servidor: ' + (data.error || 'Error desconocido'));
       }
     } catch (error) {
       console.error('❌ Error cargando eventos:', error);
-      alert('Error de conexión. Revisa la configuración CORS de tu Google Apps Script: ' + error.message);
+      // No mostrar alert aquí, solo log del error
     }
   };
 
@@ -158,7 +148,8 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     };
 
     try {
-      console.log('🚀 Enviando reserva...');
+      console.log('🚀 Enviando reserva a:', GOOGLE_APPS_SCRIPT_URL);
+      console.log('📦 Datos de la reserva:', reservaData);
 
       const requestBody = {
         action: 'crearReserva',
@@ -174,24 +165,26 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         body: JSON.stringify(requestBody)
       });
 
-      console.log('📡 Status POST:', response.status);
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
 
       if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
+        throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
       }
 
       const textResponse = await response.text();
-      console.log('📄 Respuesta POST:', textResponse);
+      console.log('📄 Raw response:', textResponse);
 
       let result;
       try {
         result = JSON.parse(textResponse);
       } catch (parseError) {
-        console.error('❌ Error parsing JSON del POST:', parseError);
-        throw new Error('Respuesta del servidor no es JSON válido');
+        console.error('❌ Error parsing JSON:', parseError);
+        console.error('❌ Raw response was:', textResponse);
+        throw new Error(`Respuesta del servidor no es JSON válido. Respuesta: ${textResponse.substring(0, 200)}...`);
       }
 
-      console.log('✅ Resultado:', result);
+      console.log('✅ Parsed result:', result);
       
       if (result.success) {
         alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
@@ -200,9 +193,25 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         alert('Error al crear la reserva: ' + (result.error || 'Error desconocido'));
       }
     } catch (error) {
-      console.error('❌ Error al crear reserva:', error);
-      if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
-        alert('Error de CORS: Debes configurar los headers CORS en tu Google Apps Script y volver a deployarlo.');
+      console.error('❌ Error completo:', error);
+      console.error('❌ Error name:', error.name);
+      console.error('❌ Error message:', error.message);
+      
+      if (error.message.includes('Failed to fetch')) {
+        alert(`Error de conexión con Google Apps Script. 
+        
+Posibles causas:
+1. El Google Apps Script no está configurado con CORS
+2. La URL del script es incorrecta
+3. El script no está desplegado como "Web app"
+
+Error técnico: ${error.message}
+
+URL utilizada: ${GOOGLE_APPS_SCRIPT_URL}`);
+      } else if (error.message.includes('CORS')) {
+        alert(`Error de CORS: ${error.message}
+        
+Verifica que tu Google Apps Script tenga los headers CORS configurados y esté redesployed.`);
       } else {
         alert('Error al procesar la reserva: ' + error.message);
       }
