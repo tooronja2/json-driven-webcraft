@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 
 interface HorarioEspecialista {
@@ -31,25 +32,47 @@ const normalizarHora = (hora: string | number): string => {
   return hora.toString();
 };
 
-// Función para convertir DD/MM/YYYY a YYYY-MM-DD
+// Función MEJORADA para convertir DD/MM/YYYY a YYYY-MM-DD
 const convertirFechaAISO = (fechaDDMMYYYY: string): string => {
   if (!fechaDDMMYYYY) return '';
   
+  console.log('🔄 Convirtiendo fecha:', fechaDDMMYYYY);
+  
   // Si ya está en formato ISO (YYYY-MM-DD)
   if (fechaDDMMYYYY.match(/^\d{4}-\d{2}-\d{2}$/)) {
+    console.log('✅ Ya está en formato ISO:', fechaDDMMYYYY);
     return fechaDDMMYYYY;
   }
   
-  // Si está en formato DD/MM/YYYY
-  if (fechaDDMMYYYY.includes('/')) {
-    const partes = fechaDDMMYYYY.trim().split('/');
-    if (partes.length === 3) {
-      const [dia, mes, año] = partes;
-      return `${año}-${mes.padStart(2, '0')}-${dia.padStart(2, '0')}`;
+  // Si es un objeto Date, convertirlo a string ISO
+  if (fechaDDMMYYYY instanceof Date || typeof fechaDDMMYYYY === 'object') {
+    try {
+      const fecha = new Date(fechaDDMMYYYY);
+      const fechaISO = fecha.toISOString().split('T')[0];
+      console.log('✅ Convertido de Date object:', fechaISO);
+      return fechaISO;
+    } catch (e) {
+      console.log('❌ Error convirtiendo Date object:', e);
     }
   }
   
-  return fechaDDMMYYYY;
+  // Si está en formato DD/MM/YYYY (el más común desde Google Sheets)
+  const fechaStr = fechaDDMMYYYY.toString().trim();
+  if (fechaStr.includes('/')) {
+    const partes = fechaStr.split('/');
+    if (partes.length === 3) {
+      const [dia, mes, año] = partes;
+      // Asegurar que día y mes tengan 2 dígitos
+      const diaFormateado = dia.padStart(2, '0');
+      const mesFormateado = mes.padStart(2, '0');
+      const fechaISO = `${año}-${mesFormateado}-${diaFormateado}`;
+      console.log('✅ Convertido DD/MM/YYYY a ISO:', `${fechaStr} -> ${fechaISO}`);
+      return fechaISO;
+    }
+  }
+  
+  console.log('⚠️ No se pudo convertir la fecha:', fechaDDMMYYYY);
+  return fechaDDMMYYYY.toString();
 };
 
 export const useHorariosEspecialistas = () => {
@@ -114,8 +137,27 @@ export const useHorariosEspecialistas = () => {
       const data = await response.json();
       
       if (data.success) {
-        console.log('🚫 Días libres recibidos:', data.diasLibres);
-        setDiasLibres(data.diasLibres || []);
+        console.log('🚫 Días libres RAW recibidos:', data.diasLibres);
+        
+        // Procesar días libres para normalizar fechas
+        const diasLibresProcesados = data.diasLibres.map((diaLibre: any) => {
+          const fechaOriginal = diaLibre.Dia;
+          const fechaConvertida = convertirFechaAISO(fechaOriginal);
+          
+          console.log('📅 Procesando día libre:', {
+            responsable: diaLibre.Responsable,
+            fechaOriginal: fechaOriginal,
+            fechaConvertida: fechaConvertida
+          });
+          
+          return {
+            Responsable: diaLibre.Responsable,
+            Dia: fechaConvertida
+          };
+        });
+        
+        console.log('✅ Días libres procesados:', diasLibresProcesados);
+        setDiasLibres(diasLibresProcesados);
       } else {
         console.error('❌ Error del servidor:', data.error);
         setDiasLibres([]);
@@ -137,25 +179,26 @@ export const useHorariosEspecialistas = () => {
     
     // 🔍 PASO 1: Verificar si este responsable tiene día libre en esta fecha específica
     console.log(`🔍 === VERIFICANDO DÍAS LIBRES PARA ${fechaStr} ===`);
+    console.log('📋 Días libres disponibles:', diasLibres);
+    
     const tieneDiaLibre = diasLibres.some(diaLibre => {
       const esMismoResponsable = diaLibre.Responsable === responsable;
-      const fechaLibreISO = convertirFechaAISO(diaLibre.Dia);
-      const esMismaFecha = fechaLibreISO === fechaStr;
+      const esMismaFecha = diaLibre.Dia === fechaStr;
       
       console.log(`🔍 Verificando día libre:`, {
         responsable: diaLibre.Responsable,
-        diaOriginal: diaLibre.Dia,
-        diaConvertido: fechaLibreISO,
+        dia: diaLibre.Dia,
         fechaBuscada: fechaStr,
         esMismoResponsable,
-        esMismaFecha
+        esMismaFecha,
+        coincide: esMismoResponsable && esMismaFecha
       });
       
       return esMismoResponsable && esMismaFecha;
     });
 
     if (tieneDiaLibre) {
-      console.log(`🚫 ${responsable} tiene día libre el ${fechaStr}`);
+      console.log(`🚫 ${responsable} tiene día libre el ${fechaStr} - NO HAY HORARIOS DISPONIBLES`);
       console.log(`🕐 === FIN BÚSQUEDA (DÍA LIBRE) ===`);
       return [];
     }
