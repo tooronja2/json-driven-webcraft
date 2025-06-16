@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -8,9 +9,9 @@ interface EventoReserva {
   Titulo_Evento: string;
   Nombre_Cliente: string;
   Email_Cliente: string;
-  Fecha: string; // Ahora separado: "2025-06-23"
-  "Hora Inicio": string; // Ahora separado: "14:15"
-  "Hora Fin": string; // Ahora separado: "14:30"
+  Fecha: string; // "2025-06-23"
+  "Hora Inicio": string; // "14:15"
+  "Hora Fin": string; // "14:30"
   Descripcion: string;
   Estado: string;
   "Valor del turno": number;
@@ -24,7 +25,6 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
-// NUEVA URL de tu Google Apps Script
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZV2OgLOAeUrfAvopyfxGLLgHSMzPxFUaC-EAqsWsVMb_07qxSA-MyfIcEEq9tcqlR/exec';
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
@@ -62,51 +62,72 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   // Cargar eventos desde Google Sheets
   const cargarEventos = async () => {
     try {
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos`;
+      console.log('🔄 Cargando eventos...');
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
         },
+        cache: 'no-cache'
       });
 
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status}`);
       }
 
-      const textResponse = await response.text();
-      let data;
-      try {
-        data = JSON.parse(textResponse);
-      } catch (parseError) {
-        console.error('❌ Error parsing JSON:', parseError);
-        throw new Error('Respuesta no es JSON válido');
-      }
+      const data = await response.json();
       
       if (data.success) {
-        console.log('📅 Eventos cargados:', data.eventos);
-        setEventos(data.eventos || []);
+        console.log('📅 Eventos RAW recibidos:', data.eventos);
+        
+        // Procesar eventos para asegurar formato correcto
+        const eventosProcesados = data.eventos.map((evento: any) => {
+          console.log('🔍 Procesando evento:', evento);
+          
+          // Si tiene el formato antiguo, convertir
+          if (evento.Fecha_Inicio && !evento.Fecha) {
+            const fecha = new Date(evento.Fecha_Inicio);
+            return {
+              ...evento,
+              Fecha: fecha.toISOString().split('T')[0],
+              "Hora Inicio": `${fecha.getUTCHours().toString().padStart(2, '0')}:${fecha.getUTCMinutes().toString().padStart(2, '0')}`,
+              "Hora Fin": evento.Fecha_Fin ? (() => {
+                const fechaFin = new Date(evento.Fecha_Fin);
+                return `${fechaFin.getUTCHours().toString().padStart(2, '0')}:${fechaFin.getUTCMinutes().toString().padStart(2, '0')}`;
+              })() : ''
+            };
+          }
+          
+          // Si ya tiene el formato nuevo, usar tal como está
+          return evento;
+        });
+        
+        console.log('✅ Eventos procesados:', eventosProcesados);
+        setEventos(eventosProcesados);
       } else {
         console.error('❌ Error del servidor:', data.error);
+        setEventos([]);
       }
     } catch (error) {
       console.error('❌ Error cargando eventos:', error);
+      setEventos([]);
     }
   };
 
-  // Filtrar horarios disponibles - SIMPLIFICADO para el nuevo formato
+  // Filtrar horarios disponibles
   useEffect(() => {
     if (!fechaSeleccionada) return;
 
     const horariosBase = generarHorarios();
-    const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0]; // "2025-06-23"
+    const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
     
     console.log('🔍 Filtrando horarios para fecha:', fechaSeleccionadaStr);
     console.log('👨‍💼 Responsable seleccionado:', responsable);
-    console.log('📋 Eventos disponibles:', eventos);
+    console.log('📋 Eventos para filtrar:', eventos);
     
-    // Filtrar horarios ocupados - MUCHO MÁS SIMPLE ahora
+    // Filtrar horarios ocupados
     const horariosOcupados = eventos
       .filter(evento => {
         const esConfirmado = evento.Estado !== 'Cancelado';
@@ -116,20 +137,20 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         console.log(`📝 Evento ${evento.ID_Evento}:`, {
           fecha: evento.Fecha,
           horaInicio: evento["Hora Inicio"],
+          responsable: evento.Responsable,
+          estado: evento.Estado,
           esConfirmado,
           esDelResponsable,
-          esMismaFecha,
-          responsableEvento: evento.Responsable,
-          estado: evento.Estado
+          esMismaFecha
         });
         
         return esConfirmado && esDelResponsable && esMismaFecha;
       })
-      .map(evento => evento["Hora Inicio"]);
+      .map(evento => evento["Hora Inicio"])
+      .filter(Boolean); // Remover valores undefined/null
 
     console.log('⏰ Horarios ocupados encontrados:', horariosOcupados);
 
-    // Remover duplicados y filtrar disponibles
     const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
     const disponibles = horariosBase.filter(hora => !horariosOcupadosUnicos.includes(hora));
     
@@ -156,15 +177,14 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     fechaFin.setHours(horas, minutos + duracionMinutos);
     const horaFin = `${fechaFin.getHours().toString().padStart(2, '0')}:${fechaFin.getMinutes().toString().padStart(2, '0')}`;
 
-    // NUEVO FORMATO: datos separados
     const reservaData = {
       ID_Evento: `evento_${Date.now()}`,
       Titulo_Evento: servicio?.nombre || '',
       Nombre_Cliente: datosCliente.nombre,
       Email_Cliente: datosCliente.email,
-      Fecha: fechaSeleccionada.toISOString().split('T')[0], // "2025-06-23"
-      Hora_Inicio: horaSeleccionada, // "14:15"
-      Hora_Fin: horaFin, // "14:30"
+      Fecha: fechaSeleccionada.toISOString().split('T')[0],
+      Hora_Inicio: horaSeleccionada,
+      Hora_Fin: horaFin,
       Descripcion: `${servicio?.nombre} - Tel: ${datosCliente.telefono || 'No proporcionado'}`,
       Estado: 'Confirmado',
       "Valor del turno": servicio?.precio_oferta || servicio?.precio || 0,
@@ -183,7 +203,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         formData.append(key, datos[key]);
       }
 
-      console.log('🚀 Enviando reserva con nuevo formato');
+      console.log('🚀 Enviando reserva');
       console.log('📦 Datos:', reservaData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
@@ -194,25 +214,11 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         body: formData
       });
 
-      console.log('📡 Response status:', response.status);
-
       if (!response.ok) {
         throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
       }
 
-      const textResponse = await response.text();
-      console.log('📄 Raw response:', textResponse);
-
-      let result;
-      try {
-        result = JSON.parse(textResponse);
-      } catch (parseError) {
-        console.error('❌ Error parsing JSON:', parseError);
-        console.error('❌ Raw response was:', textResponse);
-        throw new Error(`Respuesta del servidor no es JSON válido. Respuesta: ${textResponse.substring(0, 200)}...`);
-      }
-
-      console.log('✅ Parsed result:', result);
+      const result = await response.json();
       
       if (result.success) {
         alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
