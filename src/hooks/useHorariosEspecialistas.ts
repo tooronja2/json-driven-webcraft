@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 
 interface HorarioEspecialista {
@@ -98,7 +99,7 @@ export const useHorariosEspecialistas = () => {
     }
   };
 
-  // Memoizar la función para evitar recreaciones en cada render
+  // Función corregida para manejar fechas específicas correctamente
   const obtenerHorariosDisponibles = useCallback((responsable: string, fecha: Date, duracionMinutos: number): string[] => {
     const fechaStr = fecha.toISOString().split('T')[0]; // Formato ISO: YYYY-MM-DD
     const diaSemana = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'][fecha.getDay()];
@@ -107,65 +108,66 @@ export const useHorariosEspecialistas = () => {
     console.log(`👤 Responsable: ${responsable}`);
     console.log(`📅 Fecha: ${fechaStr} (${diaSemana})`);
     console.log(`⏱️ Duración: ${duracionMinutos} minutos`);
+    console.log(`📋 Total horarios disponibles:`, horarios.length);
 
-    // 🔍 PASO 1: Verificar si existe configuración específica para esta fecha EXACTA
-    const configuracionEspecificaFecha = horarios.find(h => {
-      const tieneResponsable = h.Responsable === responsable;
+    // 🔍 PASO 1: Buscar si existe una configuración ESPECÍFICA para esta fecha EXACTA
+    const excepcionEspecifica = horarios.find(h => {
+      const esElResponsable = h.Responsable === responsable;
       const tieneFechaEspecifica = h.Fecha_Especifica && h.Fecha_Especifica.trim() !== '';
-      const esMismaFecha = tieneFechaEspecifica && sonFechasIguales(h.Fecha_Especifica!, fechaStr);
-      const estaActivo = h.Activo;
       
-      console.log(`🔍 Revisando configuración específica:`, {
+      if (!esElResponsable || !tieneFechaEspecifica) {
+        return false;
+      }
+      
+      // Comparar fechas usando nuestra función normalizada
+      const esMismaFecha = sonFechasIguales(h.Fecha_Especifica!, fechaStr);
+      
+      console.log(`🔍 Revisando posible excepción:`, {
         responsable: h.Responsable,
         fechaEspecifica: h.Fecha_Especifica,
+        fechaBuscada: fechaStr,
+        sonIguales: esMismaFecha,
         tipo: h.Tipo,
-        tieneResponsable,
-        tieneFechaEspecifica,
-        esMismaFecha,
-        estaActivo
+        activo: h.Activo
       });
       
-      return tieneResponsable && tieneFechaEspecifica && esMismaFecha && estaActivo;
+      return esMismaFecha;
     });
 
-    console.log('📋 Configuración específica encontrada:', configuracionEspecificaFecha);
-
     // 🚫 PASO 2: Si hay configuración específica para esta fecha exacta, NO TRABAJAR
-    if (configuracionEspecificaFecha) {
-      console.log(`❌ EXCEPCIÓN DETECTADA: ${responsable} NO trabaja el ${fechaStr} (fecha específica configurada)`);
-      console.log(`🚫 Tipo de excepción: ${configuracionEspecificaFecha.Tipo}`);
-      console.log(`🕐 === FIN BÚSQUEDA (SIN HORARIOS) ===`);
+    if (excepcionEspecifica) {
+      console.log(`❌ EXCEPCIÓN DETECTADA: ${responsable} tiene configuración específica para ${fechaStr}`);
+      console.log(`🚫 Configuración encontrada:`, excepcionEspecifica);
+      console.log(`🕐 === FIN BÚSQUEDA (FECHA ESPECÍFICA - SIN HORARIOS) ===`);
       return [];
     }
 
-    // ✅ PASO 3: NO hay configuración específica, buscar horario REGULAR para este día de la semana
-    console.log(`📅 No hay excepción para ${fechaStr}, buscando horario regular para ${diaSemana}`);
+    // ✅ PASO 3: NO hay excepción específica, buscar horario REGULAR para este día de la semana
+    console.log(`✅ NO hay excepción para ${fechaStr}, buscando horario regular para ${diaSemana}`);
     
     const configuracionRegular = horarios.find(h => {
-      const tieneResponsable = h.Responsable === responsable;
-      const esMismoDia = h.Dia_Semana === diaSemana;
-      const esNormal = h.Tipo === 'normal';
+      const esElResponsable = h.Responsable === responsable;
+      const esMismoDiaSemana = h.Dia_Semana === diaSemana;
+      const esHorarioNormal = h.Tipo === 'normal';
       const estaActivo = h.Activo;
+      // IMPORTANTE: Para horarios regulares, NO debe tener fecha específica
       const noTieneFechaEspecifica = !h.Fecha_Especifica || h.Fecha_Especifica.trim() === '';
       
-      console.log(`🔍 Revisando configuración regular:`, {
+      console.log(`🔍 Revisando horario regular:`, {
         responsable: h.Responsable,
         diaSemana: h.Dia_Semana,
         tipo: h.Tipo,
+        activo: h.Activo,
         fechaEspecifica: h.Fecha_Especifica,
-        tieneResponsable,
-        esMismoDia,
-        esNormal,
-        estaActivo,
-        noTieneFechaEspecifica
+        cumpleCondiciones: esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica
       });
       
-      return tieneResponsable && esMismoDia && esNormal && estaActivo && noTieneFechaEspecifica;
+      return esElResponsable && esMismoDiaSemana && esHorarioNormal && estaActivo && noTieneFechaEspecifica;
     });
 
     if (!configuracionRegular) {
       console.log(`❌ No hay horario regular configurado para ${responsable} los ${diaSemana}`);
-      console.log(`🕐 === FIN BÚSQUEDA (SIN CONFIGURACIÓN) ===`);
+      console.log(`🕐 === FIN BÚSQUEDA (SIN CONFIGURACIÓN REGULAR) ===`);
       return [];
     }
 
@@ -198,9 +200,9 @@ export const useHorariosEspecialistas = () => {
     }
 
     console.log(`📋 Slots generados para ${responsable}:`, slots);
-    console.log(`🕐 === FIN BÚSQUEDA (CON HORARIOS) ===`);
+    console.log(`🕐 === FIN BÚSQUEDA (CON HORARIOS REGULARES) ===`);
     return slots;
-  }, [horarios]); // Solo recrear cuando cambie horarios
+  }, [horarios]);
 
   useEffect(() => {
     cargarHorarios();
