@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 
 interface HorarioEspecialista {
@@ -11,7 +10,7 @@ interface HorarioEspecialista {
   Fecha_Especifica?: string; // "2025-06-23" para casos específicos
 }
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxZV2OgLOAeUrfAvopyfxGLLgHSMzPxFUaC-EAqsWsVMb_07qxSA-MyfIcEEq9tcqlR/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxbeXocgGONBQyWJoxAanotZEXGX6-Au4ttxqRamJjXOLlzQYhGDIXi0N0-a6ka2_4u/exec';
 
 export const useHorariosEspecialistas = () => {
   const [horarios, setHorarios] = useState<HorarioEspecialista[]>([]);
