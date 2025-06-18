@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
-// NUEVA URL de tu Google Apps Script actualizada
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbx2fe5gVZjK-bJCNPqMncnKJgujQSWwfmcrvz6cRXsydLnbLOJFw1WU53jTOYte40ow/exec';
+// URL actualizada de tu Google Apps Script
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_p1Tf2r153vTow1lI841DL8h73LaIIN5RpFo-2tdWkTNQ7gjlv4TOzng-jHZ4o0m_/exec';
 
 const CancelTurno = () => {
   const [searchParams] = useSearchParams();
