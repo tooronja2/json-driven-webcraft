@@ -2,8 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
-// URL actualizada de tu Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_p1Tf2r153vTow1lI841DL8h73LaIIN5RpFo-2tdWkTNQ7gjlv4TOzng-jHZ4o0m_/exec';
+// 🔐 API KEY SECRETA - DEBE SER LA MISMA QUE EN CalendarioCustom
+const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
+
+// NUEVA URL de tu Google Apps Script actualizada
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypYNr6ClchtOEpCi6Uc-fGXpUW_rVx6pgUjln4GLoiR8nBmtVAUdIjrkWyUsACvost/exec';
 
 const CancelTurno = () => {
   const [searchParams] = useSearchParams();
@@ -21,7 +24,7 @@ const CancelTurno = () => {
 
   const cargarDatosTurno = async () => {
     try {
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getTurno&referrer=${encodeURIComponent(window.location.origin)}&id=${eventId}`);
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getTurno&apiKey=${API_SECRET_KEY}&id=${eventId}`);
       const data = await response.json();
       if (data.success) {
         setTurnoData(data.turno);
@@ -41,7 +44,7 @@ const CancelTurno = () => {
     try {
       const formData = new URLSearchParams();
       formData.append('action', 'cancelarTurno');
-      formData.append('referrer', window.location.origin);
+      formData.append('apiKey', API_SECRET_KEY);
       formData.append('eventId', eventId);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {

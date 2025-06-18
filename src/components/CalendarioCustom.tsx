@@ -25,7 +25,7 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbw_p1Tf2r153vTow1lI841DL8h73LaIIN5RpFo-2tdWkTNQ7gjlv4TOzng-jHZ4o0m_/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbypYNr6ClchtOEpCi6Uc-fGXpUW_rVx6pgUjln4GLoiR8nBmtVAUdIjrkWyUsACvost/exec';
 
 // Función mejorada para extraer hora en formato HH:MM
 const extraerHora = (horaInput: string | Date): string => {
@@ -81,6 +81,9 @@ const extraerHora = (horaInput: string | Date): string => {
   return '';
 };
 
+// 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
+const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
+
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
   responsable, 
@@ -106,7 +109,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   const cargarEventos = useCallback(async () => {
     try {
       console.log('🔄 Cargando eventos desde Google Sheets...');
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&referrer=${encodeURIComponent(window.location.origin)}&timestamp=${Date.now()}`;
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -245,7 +248,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     try {
       const datos = {
         action: "crearReserva",
-        referrer: window.location.origin,
+        apiKey: API_SECRET_KEY,
         data: JSON.stringify(reservaData)
       };
 
