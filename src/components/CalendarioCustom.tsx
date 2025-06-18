@@ -25,7 +25,7 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfXrLrj6DDOpFeXwTjUtFBFhxniXSI_gc38vUofDPCsbQqV5AXq7nID8gDMuAVzYYn/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzB3TcWCcNsMTB4yBhDzv8tC8VD1oKsE_4iVF8ngogYF5vVItUo2se2CThPixXcgRBM/exec';
 
 // Función mejorada para extraer hora en formato HH:MM
 const extraerHora = (horaInput: string | Date): string => {

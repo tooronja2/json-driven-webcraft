@@ -14,7 +14,7 @@ interface DiaLibre {
   Dia: string; // "17/06/2025"
 }
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyfXrLrj6DDOpFeXwTjUtFBFhxniXSI_gc38vUofDPCsbQqV5AXq7nID8gDMuAVzYYn/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbzB3TcWCcNsMTB4yBhDzv8tC8VD1oKsE_4iVF8ngogYF5vVItUo2se2CThPixXcgRBM/exec';
 
 // Función para normalizar hora a formato "HH:MM"
 const normalizarHora = (hora: string | number): string => {
