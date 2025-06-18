@@ -107,7 +107,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   const cargarEventos = useCallback(async () => {
     try {
       console.log('🔄 Cargando eventos desde Google Sheets...');
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&timestamp=${Date.now()}`;
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&referrer=${encodeURIComponent(window.location.origin)}&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -246,6 +246,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     try {
       const datos = {
         action: "crearReserva",
+        referrer: window.location.origin,
         data: JSON.stringify(reservaData)
       };
 

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 
 interface HorarioEspecialista {
@@ -96,7 +95,7 @@ export const useHorariosEspecialistas = () => {
       setCargando(true);
       console.log('🔄 Cargando horarios de especialistas...');
       
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getHorarios&timestamp=${Date.now()}`;
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getHorarios&referrer=${encodeURIComponent(window.location.origin)}&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
         method: 'GET',
@@ -131,7 +130,7 @@ export const useHorariosEspecialistas = () => {
     try {
       console.log('🔄 Cargando días libres...');
       
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getDiasLibres&timestamp=${Date.now()}`;
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getDiasLibres&referrer=${encodeURIComponent(window.location.origin)}&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
         method: 'GET',

@@ -22,7 +22,7 @@ const CancelTurno = () => {
 
   const cargarDatosTurno = async () => {
     try {
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getTurno&id=${eventId}`);
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getTurno&referrer=${encodeURIComponent(window.location.origin)}&id=${eventId}`);
       const data = await response.json();
       if (data.success) {
         setTurnoData(data.turno);
@@ -42,6 +42,7 @@ const CancelTurno = () => {
     try {
       const formData = new URLSearchParams();
       formData.append('action', 'cancelarTurno');
+      formData.append('referrer', window.location.origin);
       formData.append('eventId', eventId);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
