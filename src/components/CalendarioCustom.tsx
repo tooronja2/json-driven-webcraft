@@ -161,6 +161,12 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     }
   }, []);
 
+  // Función para obtener la fecha de hoy sin hora (solo año, mes, día)
+  const obtenerFechaHoySoloFecha = () => {
+    const hoy = new Date();
+    return new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  };
+
   // Filtrado de horarios mejorado con memoización
   useEffect(() => {
     if (!fechaSeleccionada) {
@@ -298,7 +304,14 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
           mode="single"
           selected={fechaSeleccionada}
           onSelect={setFechaSeleccionada}
-          disabled={(date) => date < new Date() || date.getDay() === 0}
+          disabled={(date) => {
+            const fechaHoy = obtenerFechaHoySoloFecha();
+            const fechaComparar = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            
+            // Solo bloquear días anteriores al día de hoy (no el día actual)
+            // Y bloquear domingos (día 0)
+            return fechaComparar < fechaHoy || date.getDay() === 0;
+          }}
           className="rounded-md border"
         />
       </div>
