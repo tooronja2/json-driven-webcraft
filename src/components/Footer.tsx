@@ -1,6 +1,7 @@
 
 import { useBusiness } from "@/context/BusinessContext";
 import { Instagram, Facebook } from "lucide-react";
+import { Link } from "react-router-dom";
 
 const Footer = () => {
   const { config } = useBusiness();
@@ -18,6 +19,9 @@ const Footer = () => {
               {l.texto}
             </a>
           ))}
+          <Link to="/gestion" className="hover:underline text-sm font-semibold" style={{ color: config.colores_tema.primario }}>
+            Iniciar Sesión
+          </Link>
         </div>
         <div className="flex gap-3">
           {config.links_redes_sociales.instagram && (
