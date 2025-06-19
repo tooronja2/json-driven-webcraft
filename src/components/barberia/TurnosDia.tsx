@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Calendar, Clock, User, Check, X, AlertCircle } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface Turno {
   ID_Evento: string;
@@ -34,6 +35,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [barberoSeleccionado, setBarberoSeleccionado] = useState<string>('todos');
   const [cargando, setCargando] = useState(true);
   const [actualizandoTurno, setActualizandoTurno] = useState<string | null>(null);
+  const { toast } = useToast();
 
   // Determinar barbero asignado para usuarios no admin
   const obtenerBarberoAsignado = () => {
@@ -88,40 +90,75 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       setActualizandoTurno(turnoId);
       
-      const turnoData = {
+      console.log(`Intentando actualizar turno ${turnoId} a estado: ${nuevoEstado}`);
+
+      const requestBody = {
         action: 'updateEstado',
         eventoId: turnoId,
         nuevoEstado: nuevoEstado,
         apiKey: API_SECRET_KEY
       };
 
-      console.log('Actualizando estado del turno:', turnoData);
+      console.log('Datos de la solicitud:', requestBody);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json'
         },
-        body: JSON.stringify(turnoData)
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('Status de respuesta:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+      }
+
       const result = await response.json();
-      console.log('Respuesta del servidor:', result);
+      console.log('Respuesta completa del servidor:', result);
 
       if (result.success) {
-        // Actualizar el estado local
+        // Actualizar el estado local inmediatamente
         setTurnos(prev => prev.map(turno => 
           turno.ID_Evento === turnoId 
             ? { ...turno, Estado: nuevoEstado }
             : turno
         ));
+        
+        toast({
+          title: "Estado actualizado",
+          description: `El turno ha sido marcado como ${nuevoEstado.toLowerCase()}`,
+        });
+
+        // Recargar los turnos después de un breve delay para asegurar consistencia
+        setTimeout(() => {
+          cargarTurnos();
+        }, 1000);
       } else {
-        console.error('Error al actualizar estado:', result.error);
-        alert('Error al actualizar el estado del turno');
+        const errorMsg = result.error || result.message || 'Error desconocido';
+        console.error('Error del servidor:', errorMsg);
+        
+        toast({
+          title: "Error al actualizar",
+          description: `No se pudo actualizar el estado: ${errorMsg}`,
+          variant: "destructive"
+        });
       }
     } catch (error) {
-      console.error('Error:', error);
-      alert('Error de conexión al actualizar el estado');
+      console.error('Error completo:', error);
+      
+      let errorMessage = 'Error de conexión desconocido';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      
+      toast({
+        title: "Error de conexión",
+        description: `No se pudo conectar al servidor: ${errorMessage}`,
+        variant: "destructive"
+      });
     } finally {
       setActualizandoTurno(null);
     }
@@ -296,7 +333,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                           disabled={actualizandoTurno === turno.ID_Evento}
                         >
                           <Check className="h-3 w-3 mr-1" />
-                          Confirmar
+                          {actualizandoTurno === turno.ID_Evento ? 'Confirmando...' : 'Confirmar'}
                         </Button>
                         <Button
                           size="sm"
@@ -306,7 +343,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                           disabled={actualizandoTurno === turno.ID_Evento}
                         >
                           <X className="h-3 w-3 mr-1" />
-                          Cancelar
+                          {actualizandoTurno === turno.ID_Evento ? 'Cancelando...' : 'Cancelar'}
                         </Button>
                       </div>
                     )}
@@ -321,7 +358,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                           disabled={actualizandoTurno === turno.ID_Evento}
                         >
                           <Check className="h-3 w-3 mr-1" />
-                          Completar
+                          {actualizandoTurno === turno.ID_Evento ? 'Completando...' : 'Completar'}
                         </Button>
                         <Button
                           size="sm"
@@ -331,7 +368,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                           disabled={actualizandoTurno === turno.ID_Evento}
                         >
                           <X className="h-3 w-3 mr-1" />
-                          Cancelar
+                          {actualizandoTurno === turno.ID_Evento ? 'Cancelando...' : 'Cancelar'}
                         </Button>
                       </div>
                     )}

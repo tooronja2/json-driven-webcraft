@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LogOut, Plus, Users } from 'lucide-react';
+import { Toaster } from '@/components/ui/toaster';
 import TurnosDia from '@/components/barberia/TurnosDia';
 import EstadisticasBarberia from '@/components/barberia/EstadisticasBarberia';
 import AgregarTurno from '@/components/barberia/AgregarTurno';
@@ -97,6 +98,8 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, per
           onClose={() => setMostrarGestionUsuarios(false)}
         />
       )}
+
+      <Toaster />
     </div>
   );
 };
