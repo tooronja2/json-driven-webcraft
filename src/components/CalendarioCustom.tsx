@@ -167,6 +167,29 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     return new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
   };
 
+  // Función para obtener la hora actual en formato HH:MM
+  const obtenerHoraActual = () => {
+    const ahora = new Date();
+    const horas = ahora.getHours().toString().padStart(2, '0');
+    const minutos = ahora.getMinutes().toString().padStart(2, '0');
+    return `${horas}:${minutos}`;
+  };
+
+  // Función para comparar si una hora ya pasó (solo para el día actual)
+  const yaEsHoraPasada = (hora: string, fechaSeleccionada: Date): boolean => {
+    const fechaHoy = obtenerFechaHoySoloFecha();
+    const fechaComparar = new Date(fechaSeleccionada.getFullYear(), fechaSeleccionada.getMonth(), fechaSeleccionada.getDate());
+    
+    // Solo verificar si es el día actual
+    if (fechaComparar.getTime() === fechaHoy.getTime()) {
+      const horaActual = obtenerHoraActual();
+      console.log(`⏰ Comparando horarios - Actual: ${horaActual}, Disponible: ${hora}`);
+      return hora <= horaActual;
+    }
+    
+    return false; // Para días futuros, ninguna hora ha pasado
+  };
+
   // Filtrado de horarios mejorado con memoización
   useEffect(() => {
     if (!fechaSeleccionada) {
@@ -205,11 +228,14 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
     console.log('⏰ Horarios ocupados:', horariosOcupadosUnicos);
 
-    // 4. Filtrar horarios laborales que no estén ocupados
+    // 4. Filtrar horarios laborales que no estén ocupados Y que no hayan pasado (si es el día actual)
     const disponibles = horariosLaborales.filter(hora => {
       const estaOcupado = horariosOcupadosUnicos.includes(hora);
-      console.log(`⏱️ Hora ${hora}: ${estaOcupado ? 'OCUPADA' : 'disponible'}`);
-      return !estaOcupado;
+      const yaPaso = yaEsHoraPasada(hora, fechaSeleccionada);
+      
+      console.log(`⏱️ Hora ${hora}: ocupada=${estaOcupado}, ya pasó=${yaPaso}, disponible=${!estaOcupado && !yaPaso}`);
+      
+      return !estaOcupado && !yaPaso;
     });
     
     console.log('✅ === HORARIOS FINALES DISPONIBLES ===:', disponibles);
