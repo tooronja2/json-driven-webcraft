@@ -1,0 +1,30 @@
+
+{
+  "name": "Barbería Estilo - Gestión",
+  "short_name": "Barbería Gestión",
+  "description": "Sistema de gestión interna para Barbería Estilo",
+  "start_url": "/gestion",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#1f2937",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "orientation": "portrait",
+  "categories": ["business", "productivity"],
+  "lang": "es"
+}

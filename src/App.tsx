@@ -12,6 +12,7 @@ import Servicios from "./pages/Servicios";
 import Equipo from "./pages/Equipo";
 import Resenas from "./pages/Resenas";
 import Direccion from "./pages/Direccion";
+import GestionBarberia from "./pages/GestionBarberia";
 
 const App = () => (
   <BrowserRouter>
@@ -27,6 +28,8 @@ const App = () => (
         <Route path="/reservar-turno" element={<ReservaTurno />} />
         <Route path="*" element={<NotFound />} />
       </Route>
+      {/* Ruta independiente para la gestión de barbería */}
+      <Route path="/gestion" element={<GestionBarberia />} />
     </Routes>
   </BrowserRouter>
 );
