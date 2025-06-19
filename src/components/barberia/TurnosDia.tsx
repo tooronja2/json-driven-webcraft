@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -90,34 +91,51 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       setActualizandoTurno(turnoId);
       
-      console.log(`Intentando actualizar turno ${turnoId} a estado: ${nuevoEstado}`);
+      console.log(`🔄 Intentando actualizar turno ${turnoId} a estado: ${nuevoEstado}`);
 
-      const requestBody = {
+      // Preparar datos de la solicitud
+      const requestData = {
         action: 'updateEstado',
         eventoId: turnoId,
         nuevoEstado: nuevoEstado,
         apiKey: API_SECRET_KEY
       };
 
-      console.log('Datos de la solicitud:', requestBody);
+      console.log('📤 Enviando solicitud:', requestData);
 
+      // Realizar la solicitud con configuración mejorada
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
         },
-        body: JSON.stringify(requestBody)
+        body: JSON.stringify(requestData),
+        mode: 'cors'
       });
 
-      console.log('Status de respuesta:', response.status);
+      console.log('📡 Status de respuesta:', response.status, response.statusText);
 
+      // Verificar si la respuesta es OK
       if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status} - ${response.statusText}`);
+        const errorText = await response.text();
+        console.error('❌ Error HTTP:', response.status, errorText);
+        throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
       }
 
-      const result = await response.json();
-      console.log('Respuesta completa del servidor:', result);
+      // Intentar parsear la respuesta
+      let result;
+      try {
+        const responseText = await response.text();
+        console.log('📥 Respuesta raw:', responseText);
+        result = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ Error parseando JSON:', parseError);
+        throw new Error('Respuesta del servidor no válida');
+      }
+
+      console.log('📋 Resultado parseado:', result);
 
       if (result.success) {
         // Actualizar el estado local inmediatamente
@@ -128,37 +146,50 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         ));
         
         toast({
-          title: "Estado actualizado",
+          title: "✅ Estado actualizado",
           description: `El turno ha sido marcado como ${nuevoEstado.toLowerCase()}`,
         });
 
-        // Recargar los turnos después de un breve delay para asegurar consistencia
+        console.log('✅ Turno actualizado exitosamente');
+
+        // Recargar turnos después de un breve delay para confirmar consistencia
         setTimeout(() => {
           cargarTurnos();
-        }, 1000);
+        }, 1500);
+        
       } else {
-        const errorMsg = result.error || result.message || 'Error desconocido';
-        console.error('Error del servidor:', errorMsg);
+        const errorMsg = result.error || result.message || 'Error desconocido del servidor';
+        console.error('❌ Error del servidor:', errorMsg);
         
         toast({
-          title: "Error al actualizar",
-          description: `No se pudo actualizar el estado: ${errorMsg}`,
+          title: "❌ Error al actualizar",
+          description: `No se pudo actualizar: ${errorMsg}`,
           variant: "destructive"
         });
       }
+
     } catch (error) {
-      console.error('Error completo:', error);
+      console.error('💥 Error completo en actualizarEstadoTurno:', error);
       
       let errorMessage = 'Error de conexión desconocido';
-      if (error instanceof Error) {
+      
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        errorMessage = 'No se pudo conectar al servidor. Verifica tu conexión a internet.';
+      } else if (error instanceof Error) {
         errorMessage = error.message;
       }
       
       toast({
-        title: "Error de conexión",
-        description: `No se pudo conectar al servidor: ${errorMessage}`,
+        title: "🔌 Error de conexión",
+        description: errorMessage,
         variant: "destructive"
       });
+
+      // Intentar recargar turnos para ver el estado actual
+      setTimeout(() => {
+        cargarTurnos();
+      }, 2000);
+      
     } finally {
       setActualizandoTurno(null);
     }
