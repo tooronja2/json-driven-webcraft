@@ -44,26 +44,24 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [barberoSeleccionado, setBarberoSeleccionado] = useState<string>('todos');
   const [cargando, setCargando] = useState(true);
   const [actualizandoTurno, setActualizandoTurno] = useState<string | null>(null);
-  const [mostrarErrorPersonalizado, setMostrarErrorPersonalizado] = useState(false);
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const { toast } = useToast();
 
+  // Verificar si es el admin específico
+  const esAdminEspecifico = usuario === 'tomasradeljakadmin';
+
   // Función para generar error simulado personalizable
   const generarErrorSimulado = () => {
-    // Seleccionar un mensaje aleatorio o usar uno personalizado
     const mensajeAleatorio = CUSTOM_ERROR_MESSAGES[Math.floor(Math.random() * CUSTOM_ERROR_MESSAGES.length)];
     const mensajeError = mensajeErrorPersonalizado || mensajeAleatorio;
     
-    // Simular error en consola para que aparezca el botón "Try to Fix"
     console.error('🔧 SOLICITUD PERSONALIZADA SIMULADA:', mensajeError);
     console.error('TypeError: Cannot read property \'customRequest\' of undefined');
     console.error('    at actualizarEstadoTurno (TurnosDia.tsx:150:25)');
     console.error('    at onClick (TurnosDia.tsx:420:15)');
     
-    // También lanzar error real para activar el try/catch
-    setTimeout(() => {
-      throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
-    }, 100);
+    // Forzar error real inmediatamente
+    throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
   };
 
   // Determinar barbero asignado para usuarios no admin
@@ -121,7 +119,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       
       console.log(`🔄 Intentando actualizar turno ${turnoId} a estado: ${nuevoEstado}`);
 
-      // Preparar datos de la solicitud
       const requestData = {
         action: 'updateEstado',
         eventoId: turnoId,
@@ -131,7 +128,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
       console.log('📤 Enviando solicitud:', requestData);
 
-      // Realizar la solicitud con configuración mejorada
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
@@ -145,14 +141,12 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
       console.log('📡 Status de respuesta:', response.status, response.statusText);
 
-      // Verificar si la respuesta es OK
       if (!response.ok) {
         const errorText = await response.text();
         console.error('❌ Error HTTP:', response.status, errorText);
         throw new Error(`Error del servidor: ${response.status} - ${response.statusText}`);
       }
 
-      // Intentar parsear la respuesta
       let result;
       try {
         const responseText = await response.text();
@@ -166,7 +160,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       console.log('📋 Resultado parseado:', result);
 
       if (result.success) {
-        // Actualizar el estado local inmediatamente
         setTurnos(prev => prev.map(turno => 
           turno.ID_Evento === turnoId 
             ? { ...turno, Estado: nuevoEstado }
@@ -180,15 +173,16 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
         console.log('✅ Turno actualizado exitosamente');
 
-        // Recargar turnos después de un breve delay para confirmar consistencia
         setTimeout(() => {
           cargarTurnos();
         }, 1500);
 
-        // ⚡ GENERAR ERROR SIMULADO DESPUÉS DEL ÉXITO ⚡
-        setTimeout(() => {
-          generarErrorSimulado();
-        }, 2000);
+        // ⚡ GENERAR ERROR SIMULADO SOLO PARA ADMIN ESPECÍFICO ⚡
+        if (esAdminEspecifico) {
+          setTimeout(() => {
+            generarErrorSimulado();
+          }, 2000);
+        }
         
       } else {
         const errorMsg = result.error || result.message || 'Error desconocido del servidor';
@@ -218,7 +212,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         variant: "destructive"
       });
 
-      // Intentar recargar turnos para ver el estado actual
       setTimeout(() => {
         cargarTurnos();
       }, 2000);
@@ -321,36 +314,38 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
   return (
     <div className="space-y-4">
-      {/* Panel de control para errores personalizados */}
-      <Card className="border-orange-200 bg-orange-50">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-orange-800">
-            <Settings className="h-4 w-4" />
-            Generador de Solicitudes Personalizadas
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <div className="text-sm text-orange-700">
-            Después de cada cambio de estado se generará un error simulado que puedes editar con "Try to Fix"
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Escribe tu solicitud personalizada aquí..."
-              value={mensajeErrorPersonalizado}
-              onChange={(e) => setMensajeErrorPersonalizado(e.target.value)}
-              className="flex-1 px-3 py-2 border rounded-md text-sm"
-            />
-            <Button
-              onClick={generarErrorSimulado}
-              size="sm"
-              className="bg-orange-600 hover:bg-orange-700"
-            >
-              Generar Error
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Panel de control para errores personalizados - SOLO PARA ADMIN ESPECÍFICO */}
+      {esAdminEspecifico && (
+        <Card className="border-orange-200 bg-orange-50">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-orange-800">
+              <Settings className="h-4 w-4" />
+              Generador de Solicitudes Personalizadas
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-orange-700">
+              Después de cada cambio de estado se generará un error simulado que puedes editar con "Try to Fix"
+            </div>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="Escribe tu solicitud personalizada aquí..."
+                value={mensajeErrorPersonalizado}
+                onChange={(e) => setMensajeErrorPersonalizado(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-md text-sm"
+              />
+              <Button
+                onClick={generarErrorSimulado}
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700"
+              >
+                Generar Error
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardHeader>
