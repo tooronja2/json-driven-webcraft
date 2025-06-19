@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -47,8 +48,8 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const { toast } = useToast();
 
-  // Verificar si es el admin específico - más robusto
-  const esAdminEspecifico = usuario?.toLowerCase()?.trim() === 'tomasradeljakadmin';
+  // Verificar si es el admin específico - corregido para el usuario real
+  const esAdminEspecifico = usuario?.toLowerCase()?.includes('tomás') || usuario?.toLowerCase()?.includes('tomas') || usuario === 'tomasradeljakadmin';
   
   // Debug log para verificar el usuario
   console.log('🔍 Usuario actual:', usuario);
