@@ -31,7 +31,7 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
     password: '',
     nombre: '',
     rol: 'Empleado',
-    barberoAsignado: ''
+    barberoAsignado: 'todos'
   });
 
   useEffect(() => {
@@ -63,7 +63,7 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
       nombre: formData.nombre,
       rol: formData.rol,
       permisos: ['ver_turnos', 'agregar_turnos'],
-      barberoAsignado: formData.barberoAsignado || undefined
+      barberoAsignado: formData.barberoAsignado === 'todos' ? undefined : formData.barberoAsignado
     };
 
     const usuariosActualizados = [...usuarios, nuevoUsuario];
@@ -74,7 +74,7 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
       password: '',
       nombre: '',
       rol: 'Empleado',
-      barberoAsignado: ''
+      barberoAsignado: 'todos'
     });
     setMostrarFormulario(false);
   };
@@ -202,7 +202,7 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
                       <SelectValue placeholder="Seleccionar barbero específico o dejar vacío para todos" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">Todos los barberos</SelectItem>
+                      <SelectItem value="todos">Todos los barberos</SelectItem>
                       {BARBEROS.map((barbero) => (
                         <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
                       ))}
