@@ -47,8 +47,13 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const { toast } = useToast();
 
-  // Verificar si es el admin específico
-  const esAdminEspecifico = usuario === 'tomasradeljakadmin';
+  // Verificar si es el admin específico - más robusto
+  const esAdminEspecifico = usuario?.toLowerCase()?.trim() === 'tomasradeljakadmin';
+  
+  // Debug log para verificar el usuario
+  console.log('🔍 Usuario actual:', usuario);
+  console.log('🔍 Es admin específico:', esAdminEspecifico);
+  console.log('🔍 Permisos:', permisos);
 
   // Función para generar error simulado personalizable
   const generarErrorSimulado = () => {
@@ -320,10 +325,13 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-orange-800">
               <Settings className="h-4 w-4" />
-              Generador de Solicitudes Personalizadas
+              🔧 Generador de Solicitudes Personalizadas
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
+            <div className="text-sm text-orange-700">
+              Usuario: <strong>{usuario}</strong> | Admin: <strong>{esAdminEspecifico ? 'SÍ' : 'NO'}</strong>
+            </div>
             <div className="text-sm text-orange-700">
               Después de cada cambio de estado se generará un error simulado que puedes editar con "Try to Fix"
             </div>
