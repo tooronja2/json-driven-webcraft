@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, DollarSign, Calendar, XCircle, BarChart, CheckCircle, Clock } from 'lucide-react';
@@ -83,22 +82,14 @@ const EstadisticasBarberia: React.FC = () => {
   const añoActual = fechaActual.getFullYear();
   const mesActual = fechaActual.getMonth() + 1;
 
-  // Clasificación de turnos
-  const turnosReservados = turnos.filter(t => 
-    t.Estado === 'Confirmado' && 
-    (!t.origen || t.origen === 'web') // Turnos que vienen del formulario web
-  );
-  
-  const turnosConfirmadosManual = turnos.filter(t => 
-    t.Estado === 'Confirmado' && 
-    t.origen === 'manual' // Turnos agregados manualmente
-  );
-  
+  // Clasificación corregida de turnos
+  const turnosReservados = turnos.filter(t => t.Estado === 'Reservado');
+  const turnosConfirmados = turnos.filter(t => t.Estado === 'Confirmado');
   const turnosCompletados = turnos.filter(t => t.Estado === 'Completado');
   
   // Filtros por fecha para hoy
   const turnosReservadosHoy = turnosReservados.filter(t => normalizarFecha(t.Fecha) === hoy);
-  const turnosConfirmadosManualHoy = turnosConfirmadosManual.filter(t => normalizarFecha(t.Fecha) === hoy);
+  const turnosConfirmadosHoy = turnosConfirmados.filter(t => normalizarFecha(t.Fecha) === hoy);
   const turnosCompletadosHoy = turnosCompletados.filter(t => normalizarFecha(t.Fecha) === hoy);
   
   // Filtros por mes
@@ -109,7 +100,7 @@ const EstadisticasBarberia: React.FC = () => {
   });
 
   const turnosReservadosMes = turnosMesActual(turnosReservados);
-  const turnosConfirmadosManualMes = turnosMesActual(turnosConfirmadosManual);
+  const turnosConfirmadosMes = turnosMesActual(turnosConfirmados);
   const turnosCompletadosMes = turnosMesActual(turnosCompletados);
 
   const cancelacionesMes = turnos.filter(t => {
@@ -191,8 +182,8 @@ const EstadisticasBarberia: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{turnosConfirmadosManualHoy.length}</div>
-              <p className="text-xs text-gray-600">Agregados manualmente</p>
+              <div className="text-2xl font-bold text-green-600">{turnosConfirmadosHoy.length}</div>
+              <p className="text-xs text-gray-600">Confirmados por la barbería</p>
             </CardContent>
           </Card>
 
@@ -236,8 +227,8 @@ const EstadisticasBarberia: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600">{turnosConfirmadosManualMes.length}</div>
-              <p className="text-xs text-gray-600">Agregados manualmente</p>
+              <div className="text-2xl font-bold text-green-600">{turnosConfirmadosMes.length}</div>
+              <p className="text-xs text-gray-600">Confirmados por la barbería</p>
             </CardContent>
           </Card>
 

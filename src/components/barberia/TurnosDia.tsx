@@ -1,8 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Calendar, Clock, User } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Calendar, Clock, User, Check, X, AlertCircle } from 'lucide-react';
 
 interface Turno {
   ID_Evento: string;
@@ -33,6 +33,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [barberoSeleccionado, setBarberoSeleccionado] = useState<string>('todos');
   const [cargando, setCargando] = useState(true);
+  const [actualizandoTurno, setActualizandoTurno] = useState<string | null>(null);
 
   // Determinar barbero asignado para usuarios no admin
   const obtenerBarberoAsignado = () => {
@@ -80,6 +81,49 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       setTurnos([]);
     } finally {
       setCargando(false);
+    }
+  };
+
+  const actualizarEstadoTurno = async (turnoId: string, nuevoEstado: string) => {
+    try {
+      setActualizandoTurno(turnoId);
+      
+      const turnoData = {
+        action: 'updateEstado',
+        eventoId: turnoId,
+        nuevoEstado: nuevoEstado,
+        apiKey: API_SECRET_KEY
+      };
+
+      console.log('Actualizando estado del turno:', turnoData);
+
+      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(turnoData)
+      });
+
+      const result = await response.json();
+      console.log('Respuesta del servidor:', result);
+
+      if (result.success) {
+        // Actualizar el estado local
+        setTurnos(prev => prev.map(turno => 
+          turno.ID_Evento === turnoId 
+            ? { ...turno, Estado: nuevoEstado }
+            : turno
+        ));
+      } else {
+        console.error('Error al actualizar estado:', result.error);
+        alert('Error al actualizar el estado del turno');
+      }
+    } catch (error) {
+      console.error('Error:', error);
+      alert('Error de conexión al actualizar el estado');
+    } finally {
+      setActualizandoTurno(null);
     }
   };
 
@@ -134,6 +178,36 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     return '';
   };
 
+  const obtenerEstiloEstado = (estado: string) => {
+    switch (estado) {
+      case 'Reservado':
+        return 'bg-blue-100 text-blue-800';
+      case 'Confirmado':
+        return 'bg-green-100 text-green-800';
+      case 'Completado':
+        return 'bg-purple-100 text-purple-800';
+      case 'Cancelado':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  const obtenerIconoEstado = (estado: string) => {
+    switch (estado) {
+      case 'Reservado':
+        return <Clock className="h-3 w-3" />;
+      case 'Confirmado':
+        return <Check className="h-3 w-3" />;
+      case 'Completado':
+        return <Check className="h-3 w-3" />;
+      case 'Cancelado':
+        return <X className="h-3 w-3" />;
+      default:
+        return <AlertCircle className="h-3 w-3" />;
+    }
+  };
+
   if (cargando) {
     return (
       <Card>
@@ -185,30 +259,82 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 .map(turno => (
                 <div 
                   key={turno.ID_Evento} 
-                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  className="border rounded-lg p-4 bg-white"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="text-lg font-mono font-semibold text-blue-600">
-                      {extraerHora(turno["Hora Inicio"])}
-                    </div>
-                    <div>
-                      <div className="font-medium">{turno.Nombre_Cliente}</div>
-                      <div className="text-sm text-gray-600 flex items-center gap-1">
-                        <User className="h-3 w-3" />
-                        {turno.Responsable}
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div className="text-lg font-mono font-semibold text-blue-600">
+                        {extraerHora(turno["Hora Inicio"])}
+                      </div>
+                      <div>
+                        <div className="font-medium">{turno.Nombre_Cliente}</div>
+                        <div className="text-sm text-gray-600 flex items-center gap-1">
+                          <User className="h-3 w-3" />
+                          {turno.Responsable}
+                        </div>
                       </div>
                     </div>
+                    <div className="text-right">
+                      <div className="font-semibold">${turno["Valor del turno"]}</div>
+                      <div className="text-sm text-gray-600">{turno["Servicios incluidos"]}</div>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <div className="font-semibold">${turno["Valor del turno"]}</div>
-                    <div className="text-sm text-gray-600">{turno["Servicios incluidos"]}</div>
-                    <div className={`text-xs px-2 py-1 rounded ${
-                      turno.Estado === 'Confirmado' ? 'bg-green-100 text-green-800' :
-                      turno.Estado === 'Completado' ? 'bg-blue-100 text-blue-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className={`text-xs px-2 py-1 rounded flex items-center gap-1 ${obtenerEstiloEstado(turno.Estado)}`}>
+                      {obtenerIconoEstado(turno.Estado)}
                       {turno.Estado}
                     </div>
+                    
+                    {turno.Estado === 'Reservado' && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-green-600 border-green-600 hover:bg-green-50"
+                          onClick={() => actualizarEstadoTurno(turno.ID_Evento, 'Confirmado')}
+                          disabled={actualizandoTurno === turno.ID_Evento}
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Confirmar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-600 hover:bg-red-50"
+                          onClick={() => actualizarEstadoTurno(turno.ID_Evento, 'Cancelado')}
+                          disabled={actualizandoTurno === turno.ID_Evento}
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
+                      </div>
+                    )}
+                    
+                    {turno.Estado === 'Confirmado' && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-purple-600 border-purple-600 hover:bg-purple-50"
+                          onClick={() => actualizarEstadoTurno(turno.ID_Evento, 'Completado')}
+                          disabled={actualizandoTurno === turno.ID_Evento}
+                        >
+                          <Check className="h-3 w-3 mr-1" />
+                          Completar
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="text-red-600 border-red-600 hover:bg-red-50"
+                          onClick={() => actualizarEstadoTurno(turno.ID_Evento, 'Cancelado')}
+                          disabled={actualizandoTurno === turno.ID_Evento}
+                        >
+                          <X className="h-3 w-3 mr-1" />
+                          Cancelar
+                        </Button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
