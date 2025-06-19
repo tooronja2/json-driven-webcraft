@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Calendar, Clock, User, Check, X, AlertCircle, Settings } from 'lucide-react';
+import { Calendar, Clock, User, Check, X, AlertCircle, Settings, Zap } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface Turno {
@@ -46,6 +46,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [cargando, setCargando] = useState(true);
   const [actualizandoTurno, setActualizandoTurno] = useState<string | null>(null);
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
+  const [aplicandoCambio, setAplicandoCambio] = useState(false);
   const { toast } = useToast();
 
   // Verificar si es el admin específico - corregido para el usuario real
@@ -63,11 +64,37 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     
     console.error('🔧 SOLICITUD PERSONALIZADA SIMULADA:', mensajeError);
     console.error('TypeError: Cannot read property \'customRequest\' of undefined');
-    console.error('    at actualizarEstadoTurno (TurnosDia.tsx:150:25)');
+    console.error('    at aplicarCambioConError (TurnosDia.tsx:150:25)');
     console.error('    at onClick (TurnosDia.tsx:420:15)');
     
     // Forzar error real inmediatamente
     throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
+  };
+
+  // Función para aplicar cambio que cause error real
+  const aplicarCambioConError = async () => {
+    try {
+      setAplicandoCambio(true);
+      
+      // Simular una operación exitosa primero
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast({
+        title: "✅ Cambio aplicado",
+        description: "El cambio se aplicó exitosamente, generando error simulado...",
+      });
+
+      // Esperar un momento y luego generar el error
+      setTimeout(() => {
+        generarErrorSimulado();
+      }, 500);
+      
+    } catch (error) {
+      console.error('💥 Error en aplicarCambioConError:', error);
+      throw error;
+    } finally {
+      setAplicandoCambio(false);
+    }
   };
 
   // Determinar barbero asignado para usuarios no admin
@@ -182,13 +209,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         setTimeout(() => {
           cargarTurnos();
         }, 1500);
-
-        // ⚡ GENERAR ERROR SIMULADO SOLO PARA ADMIN ESPECÍFICO ⚡
-        if (esAdminEspecifico) {
-          setTimeout(() => {
-            generarErrorSimulado();
-          }, 2000);
-        }
         
       } else {
         const errorMsg = result.error || result.message || 'Error desconocido del servidor';
@@ -334,7 +354,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
               Usuario: <strong>{usuario}</strong> | Admin: <strong>{esAdminEspecifico ? 'SÍ' : 'NO'}</strong>
             </div>
             <div className="text-sm text-orange-700">
-              Después de cada cambio de estado se generará un error simulado que puedes editar con "Try to Fix"
+              Escribe tu solicitud personalizada y usa "Aplicar Cambio" para generar un error real que active "Try to Fix"
             </div>
             <div className="flex gap-2">
               <input
@@ -345,11 +365,13 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 className="flex-1 px-3 py-2 border rounded-md text-sm"
               />
               <Button
-                onClick={generarErrorSimulado}
+                onClick={aplicarCambioConError}
                 size="sm"
-                className="bg-orange-600 hover:bg-orange-700"
+                className="bg-red-600 hover:bg-red-700"
+                disabled={aplicandoCambio}
               >
-                Generar Error
+                <Zap className="h-3 w-3 mr-1" />
+                {aplicandoCambio ? 'Aplicando...' : 'Aplicar Cambio'}
               </Button>
             </div>
           </CardContent>
