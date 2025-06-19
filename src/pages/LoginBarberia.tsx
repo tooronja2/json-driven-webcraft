@@ -35,6 +35,8 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
     setError('');
 
     setTimeout(() => {
+      console.log('Intentando login con:', { usuario, password });
+      
       // Verificar admin principal
       if (usuario === ADMIN_USER.usuario && password === ADMIN_USER.password) {
         localStorage.setItem('barberia_usuario', ADMIN_USER.nombre);
@@ -47,14 +49,22 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
 
       // Verificar usuarios creados
       const usuarios = obtenerUsuarios();
+      console.log('Usuarios en localStorage:', usuarios);
+      
       const usuarioEncontrado = usuarios.find(
-        (u: any) => u.usuario === usuario && u.password === password
+        (u: any) => {
+          console.log('Comparando:', u.usuario, 'con', usuario, '| pass:', u.password, 'con', password);
+          return u.usuario === usuario && u.password === password;
+        }
       );
+
+      console.log('Usuario encontrado:', usuarioEncontrado);
 
       if (usuarioEncontrado) {
         localStorage.setItem('barberia_usuario', usuarioEncontrado.nombre);
         localStorage.setItem('barberia_rol', usuarioEncontrado.rol);
         localStorage.setItem('barberia_permisos', JSON.stringify(usuarioEncontrado.permisos));
+        localStorage.setItem('barberia_barbero_asignado', usuarioEncontrado.barberoAsignado || '');
         onLogin(usuarioEncontrado.nombre, usuarioEncontrado.rol, usuarioEncontrado.permisos);
       } else {
         setError('Usuario o contraseña incorrectos');

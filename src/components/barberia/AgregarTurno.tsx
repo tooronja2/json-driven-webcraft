@@ -1,11 +1,13 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { X } from 'lucide-react';
-import { useBusiness } from '@/context/BusinessContext';
+import { Calendar } from 'lucide-react';
+import { Calendar as CalendarDate } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
+import { format } from 'date-fns';
+import { es } from 'date-fns/locale';
 
 interface AgregarTurnoProps {
   onClose: () => void;
@@ -15,199 +17,246 @@ interface AgregarTurnoProps {
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
+const SERVICIOS = ['Corte de pelo', 'Arreglo de barba', 'Corte y barba', 'Tratamiento capilar'];
+const PRECIOS_SERVICIOS: { [key: string]: number } = {
+  'Corte de pelo': 15000,
+  'Arreglo de barba': 10000,
+  'Corte y barba': 23000,
+  'Tratamiento capilar': 8000
+};
 const BARBEROS = ['Héctor Medina', 'Lucas Peralta', 'Camila González'];
 
+interface FormData {
+  nombre: string;
+  email: string;
+  fecha: string;
+  hora: string;
+  servicio: string;
+  descripcion: string;
+  responsable: string;
+}
+
 const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado }) => {
-  const { contenido } = useBusiness();
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
+    nombre: '',
+    email: '',
+    fecha: '',
+    hora: '',
     servicio: '',
-    valor: '',
-    horaInicio: '',
-    responsable: '',
-    nombreCliente: 'Cliente Walk-in',
-    emailCliente: 'walkin@barberia.com'
+    descripcion: '',
+    responsable: ''
   });
-  const [cargando, setCargando] = useState(false);
+  const [error, setError] = useState('');
+  const [mensajeExito, setMensajeExito] = useState('');
+  const [enviando, setEnviando] = useState(false);
+  const [date, setDate] = React.useState<Date | undefined>(new Date());
 
-  const servicioSeleccionado = contenido?.find(s => s.id === formData.servicio);
-  const duracionMinutos = parseInt(servicioSeleccionado?.detalles?.duracion?.replace('min', '') || '30');
+  const calcularHoraFin = (horaInicio: string, servicio: string): string => {
+    const duracionServicio = {
+      'Corte de pelo': 30,
+      'Arreglo de barba': 20,
+      'Corte y barba': 45,
+      'Tratamiento capilar': 40
+    }[servicio] || 30;
 
-  // Calcular hora fin automáticamente
-  const calcularHoraFin = (horaInicio: string): string => {
-    if (!horaInicio) return '';
-    
     const [horas, minutos] = horaInicio.split(':').map(Number);
-    const fechaFin = new Date();
-    fechaFin.setHours(horas, minutos + duracionMinutos);
-    
-    return `${fechaFin.getHours().toString().padStart(2, '0')}:${fechaFin.getMinutes().toString().padStart(2, '0')}`;
+    let nuevaHora = horas;
+    let nuevoMinuto = minutos + duracionServicio;
+
+    if (nuevoMinuto >= 60) {
+      nuevaHora += Math.floor(nuevoMinuto / 60);
+      nuevoMinuto %= 60;
+    }
+
+    nuevaHora %= 24;
+
+    const horaFinFormateada = `${String(nuevaHora).padStart(2, '0')}:${String(nuevoMinuto).padStart(2, '0')}`;
+    return horaFinFormateada;
   };
 
-  const horaFin = calcularHoraFin(formData.horaInicio);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.servicio || !formData.valor || !formData.horaInicio || !formData.responsable) {
-      alert('Por favor completa todos los campos obligatorios');
+  const enviarTurno = async () => {
+    if (!formData.nombre || !formData.email || !formData.fecha || !formData.hora || !formData.responsable) {
+      setError('Por favor completa todos los campos obligatorios');
       return;
     }
 
-    setCargando(true);
-
-    const reservaData = {
-      ID_Evento: `walk_in_${Date.now()}`,
-      Titulo_Evento: servicioSeleccionado?.nombre || formData.servicio,
-      Nombre_Cliente: formData.nombreCliente,
-      Email_Cliente: formData.emailCliente,
-      Fecha: new Date().toISOString().split('T')[0],
-      Hora_Inicio: formData.horaInicio,
-      Hora_Fin: horaFin,
-      Descripcion: `Turno agregado manualmente - ${servicioSeleccionado?.nombre || formData.servicio}`,
-      Estado: 'Completado',
-      "Valor del turno": parseFloat(formData.valor),
-      "Servicios incluidos": servicioSeleccionado?.nombre || formData.servicio,
-      Responsable: formData.responsable
-    };
+    setEnviando(true);
+    setError('');
 
     try {
-      const datos = {
-        action: "crearReserva",
-        apiKey: API_SECRET_KEY,
-        data: JSON.stringify(reservaData)
+      const turnoData = {
+        titulo: `Turno: ${formData.nombre}`,
+        nombre: formData.nombre,
+        email: formData.email,
+        fecha: formData.fecha,
+        horaInicio: formData.hora,
+        horaFin: calcularHoraFin(formData.hora, formData.servicio),
+        descripcion: formData.descripcion || `Turno para ${formData.servicio}`,
+        servicio: formData.servicio,
+        valor: PRECIOS_SERVICIOS[formData.servicio] || 0,
+        responsable: formData.responsable,
+        estado: 'Confirmado',
+        origen: 'manual', // Marcar como turno agregado manualmente
+        apiKey: API_SECRET_KEY
       };
 
-      const formDataToSend = new URLSearchParams();
-      for (const key in datos) {
-        formDataToSend.append(key, datos[key]);
-      }
+      console.log('Enviando turno:', turnoData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: formDataToSend
+        body: JSON.stringify(turnoData)
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
-
       const result = await response.json();
-      
+      console.log('Respuesta del servidor:', result);
+
       if (result.success) {
-        alert('¡Turno agregado exitosamente!');
-        onTurnoAgregado();
+        setMensajeExito('Turno agregado exitosamente');
+        setFormData({
+          nombre: '',
+          email: '',
+          fecha: '',
+          hora: '',
+          servicio: '',
+          descripcion: '',
+          responsable: ''
+        });
+        setTimeout(() => {
+          setMensajeExito('');
+          onTurnoAgregado();
+          onClose();
+        }, 2000);
       } else {
-        alert('Error al agregar el turno: ' + (result.error || 'Error desconocido'));
+        setError(result.error || 'Error al agregar el turno');
       }
     } catch (error) {
       console.error('Error:', error);
-      alert('Error al procesar el turno: ' + error.message);
+      setError('Error de conexión. Inténtalo nuevamente.');
     } finally {
-      setCargando(false);
+      setEnviando(false);
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Agregar Turno</CardTitle>
-            <Button variant="ghost" size="sm" onClick={onClose}>
-              <X className="h-4 w-4" />
-            </Button>
+      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+        <h2 className="text-lg font-semibold mb-4">Agregar Nuevo Turno</h2>
+
+        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {mensajeExito && <div className="text-green-500 mb-4">{mensajeExito}</div>}
+
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="nombre">Nombre del Cliente</Label>
+            <Input
+              type="text"
+              id="nombre"
+              value={formData.nombre}
+              onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
+            />
           </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="text-sm font-medium">Servicio *</label>
-              <Select value={formData.servicio} onValueChange={(value) => {
-                const servicio = contenido?.find(s => s.id === value);
-                setFormData({
-                  ...formData, 
-                  servicio: value,
-                  valor: servicio?.precio_oferta?.toString() || servicio?.precio?.toString() || ''
-                });
-              }}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un servicio" />
-                </SelectTrigger>
-                <SelectContent>
-                  {contenido?.map((servicio) => (
-                    <SelectItem key={servicio.id} value={servicio.id}>
-                      {servicio.nombre} - ${servicio.precio_oferta || servicio.precio}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
 
-            <div>
-              <label className="text-sm font-medium">Valor del turno *</label>
-              <Input
-                type="number"
-                value={formData.valor}
-                onChange={(e) => setFormData({...formData, valor: e.target.value})}
-                placeholder="0"
-                required
-              />
-            </div>
+          <div>
+            <Label htmlFor="email">Email del Cliente</Label>
+            <Input
+              type="email"
+              id="email"
+              value={formData.email}
+              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            />
+          </div>
 
-            <div>
-              <label className="text-sm font-medium">Hora de inicio *</label>
-              <Input
-                type="time"
-                value={formData.horaInicio}
-                onChange={(e) => setFormData({...formData, horaInicio: e.target.value})}
-                required
-              />
-              {horaFin && (
-                <p className="text-xs text-gray-600 mt-1">
-                  Duración: {duracionMinutos} min - Fin: {horaFin}
-                </p>
-              )}
-            </div>
+          <div>
+            <Label>Fecha</Label>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant={"outline"}
+                  className={format(date || new Date(), 'PPP', { locale: es }) ? "justify-start text-left font-normal" : "justify-start text-left font-normal text-muted-foreground"}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  {date ? format(date, 'PPP', { locale: es }) : <span>Seleccionar fecha</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <CalendarDate
+                  mode="single"
+                  locale={es}
+                  selected={date}
+                  onSelect={(date) => {
+                    setDate(date);
+                    if (date) {
+                      setFormData({ ...formData, fecha: date.toISOString().split('T')[0] });
+                    }
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
 
-            <div>
-              <label className="text-sm font-medium">Barbero responsable *</label>
-              <Select value={formData.responsable} onValueChange={(value) => setFormData({...formData, responsable: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un barbero" />
-                </SelectTrigger>
-                <SelectContent>
-                  {BARBEROS.map((barbero) => (
-                    <SelectItem key={barbero} value={barbero}>
-                      {barbero}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <div>
+            <Label htmlFor="hora">Hora (HH:MM)</Label>
+            <Input
+              type="text"
+              id="hora"
+              placeholder="10:00"
+              value={formData.hora}
+              onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
+            />
+          </div>
 
-            <div>
-              <label className="text-sm font-medium">Nombre del cliente</label>
-              <Input
-                value={formData.nombreCliente}
-                onChange={(e) => setFormData({...formData, nombreCliente: e.target.value})}
-                placeholder="Cliente Walk-in"
-              />
-            </div>
+          <div>
+            <Label htmlFor="servicio">Servicio</Label>
+            <Select onValueChange={(value) => setFormData({ ...formData, servicio: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un servicio" />
+              </SelectTrigger>
+              <SelectContent>
+                {SERVICIOS.map((servicio) => (
+                  <SelectItem key={servicio} value={servicio}>{servicio} (${PRECIOS_SERVICIOS[servicio]})</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
 
-            <div className="flex gap-2">
-              <Button type="button" variant="outline" onClick={onClose} className="flex-1">
-                Cancelar
-              </Button>
-              <Button type="submit" disabled={cargando} className="flex-1">
-                {cargando ? 'Agregando...' : 'Agregar Turno'}
-              </Button>
-            </div>
-          </form>
-        </CardContent>
-      </Card>
+          <div>
+            <Label htmlFor="responsable">Barbero Responsable</Label>
+            <Select onValueChange={(value) => setFormData({ ...formData, responsable: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un barbero" />
+              </SelectTrigger>
+              <SelectContent>
+                {BARBEROS.map((barbero) => (
+                  <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div>
+            <Label htmlFor="descripcion">Descripción (opcional)</Label>
+            <Input
+              type="text"
+              id="descripcion"
+              value={formData.descripcion}
+              onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-2 mt-4">
+          <Button type="button" variant="secondary" onClick={onClose}>
+            Cancelar
+          </Button>
+          <Button type="button" onClick={enviarTurno} disabled={enviando}>
+            {enviando ? 'Enviando...' : 'Agregar Turno'}
+          </Button>
+        </div>
+      </div>
     </div>
   );
 };

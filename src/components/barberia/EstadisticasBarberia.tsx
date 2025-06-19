@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, DollarSign, Calendar, XCircle, BarChart } from 'lucide-react';
+import { TrendingUp, DollarSign, Calendar, XCircle, BarChart, CheckCircle, Clock } from 'lucide-react';
 
 interface Turno {
   ID_Evento: string;
@@ -16,6 +16,7 @@ interface Turno {
   "Valor del turno": number;
   "Servicios incluidos": string;
   Responsable: string;
+  origen?: 'web' | 'manual'; // Nuevo campo para distinguir origen
 }
 
 interface ServicioStats {
@@ -82,28 +83,34 @@ const EstadisticasBarberia: React.FC = () => {
   const añoActual = fechaActual.getFullYear();
   const mesActual = fechaActual.getMonth() + 1;
 
-  // Filtros de turnos
+  // Clasificación de turnos
+  const turnosReservados = turnos.filter(t => 
+    t.Estado === 'Confirmado' && 
+    (!t.origen || t.origen === 'web') // Turnos que vienen del formulario web
+  );
+  
+  const turnosConfirmadosManual = turnos.filter(t => 
+    t.Estado === 'Confirmado' && 
+    t.origen === 'manual' // Turnos agregados manualmente
+  );
+  
   const turnosCompletados = turnos.filter(t => t.Estado === 'Completado');
   
-  const turnosHoy = turnosCompletados.filter(t => normalizarFecha(t.Fecha) === hoy);
+  // Filtros por fecha para hoy
+  const turnosReservadosHoy = turnosReservados.filter(t => normalizarFecha(t.Fecha) === hoy);
+  const turnosConfirmadosManualHoy = turnosConfirmadosManual.filter(t => normalizarFecha(t.Fecha) === hoy);
+  const turnosCompletadosHoy = turnosCompletados.filter(t => normalizarFecha(t.Fecha) === hoy);
   
-  const turnosMesActual = turnosCompletados.filter(t => {
+  // Filtros por mes
+  const turnosMesActual = (filtro: Turno[]) => filtro.filter(t => {
     const fechaNorm = normalizarFecha(t.Fecha);
     const [año, mes] = fechaNorm.split('-').map(Number);
     return año === añoActual && mes === mesActual;
   });
 
-  const turnosPrimeraQuincena = turnosMesActual.filter(t => {
-    const fechaNorm = normalizarFecha(t.Fecha);
-    const dia = parseInt(fechaNorm.split('-')[2]);
-    return dia <= 15;
-  });
-
-  const turnosSegundaQuincena = turnosMesActual.filter(t => {
-    const fechaNorm = normalizarFecha(t.Fecha);
-    const dia = parseInt(fechaNorm.split('-')[2]);
-    return dia > 15;
-  });
+  const turnosReservadosMes = turnosMesActual(turnosReservados);
+  const turnosConfirmadosManualMes = turnosMesActual(turnosConfirmadosManual);
+  const turnosCompletadosMes = turnosMesActual(turnosCompletados);
 
   const cancelacionesMes = turnos.filter(t => {
     const fechaNorm = normalizarFecha(t.Fecha);
@@ -112,16 +119,17 @@ const EstadisticasBarberia: React.FC = () => {
   });
 
   // Cálculos de ingresos
-  const ingresosDia = turnosHoy.reduce((sum, t) => sum + (t["Valor del turno"] || 0), 0);
-  const ingresosPrimeraQuincena = turnosPrimeraQuincena.reduce((sum, t) => sum + (t["Valor del turno"] || 0), 0);
-  const ingresosSegundaQuincena = turnosSegundaQuincena.reduce((sum, t) => sum + (t["Valor del turno"] || 0), 0);
-  const ingresosMes = turnosMesActual.reduce((sum, t) => sum + (t["Valor del turno"] || 0), 0);
+  const calcularIngresos = (listaTurnos: Turno[]) => 
+    listaTurnos.reduce((sum, t) => sum + (t["Valor del turno"] || 0), 0);
 
-  // Estadísticas por servicio
+  const ingresosCompletadosHoy = calcularIngresos(turnosCompletadosHoy);
+  const ingresosCompletadosMes = calcularIngresos(turnosCompletadosMes);
+
+  // Estadísticas por servicio (solo turnos completados)
   const serviciosStats: ServicioStats[] = [];
   const serviciosMap = new Map<string, { ingresos: number; cantidad: number }>();
 
-  turnosMesActual.forEach(turno => {
+  turnosCompletadosMes.forEach(turno => {
     const servicio = turno["Servicios incluidos"] || 'Sin especificar';
     const valor = turno["Valor del turno"] || 0;
     
@@ -135,7 +143,7 @@ const EstadisticasBarberia: React.FC = () => {
   });
 
   serviciosMap.forEach((stats, nombre) => {
-    const porcentaje = ingresosMes > 0 ? (stats.ingresos / ingresosMes) * 100 : 0;
+    const porcentaje = ingresosCompletadosMes > 0 ? (stats.ingresos / ingresosCompletadosMes) * 100 : 0;
     serviciosStats.push({
       nombre,
       ingresos: stats.ingresos,
@@ -158,59 +166,94 @@ const EstadisticasBarberia: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Cards de facturación */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Hoy
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${ingresosDia.toLocaleString()}</div>
-            <p className="text-xs text-gray-600">{turnosHoy.length} turnos completados</p>
-          </CardContent>
-        </Card>
+      {/* Cards de estado de turnos para HOY */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Estado de Turnos - Hoy</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-600" />
+                Turnos Reservados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{turnosReservadosHoy.length}</div>
+              <p className="text-xs text-gray-600">Desde formulario web</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              1ª Quincena
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${ingresosPrimeraQuincena.toLocaleString()}</div>
-            <p className="text-xs text-gray-600">{turnosPrimeraQuincena.length} turnos</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                Turnos Confirmados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{turnosConfirmadosManualHoy.length}</div>
+              <p className="text-xs text-gray-600">Agregados manualmente</p>
+            </CardContent>
+          </Card>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              2ª Quincena
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${ingresosSegundaQuincena.toLocaleString()}</div>
-            <p className="text-xs text-gray-600">{turnosSegundaQuincena.length} turnos</p>
-          </CardContent>
-        </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-purple-600" />
+                Turnos Completados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">{turnosCompletadosHoy.length}</div>
+              <p className="text-xs text-gray-600">${ingresosCompletadosHoy.toLocaleString()} facturados</p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
 
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <TrendingUp className="h-4 w-4" />
-              Mes Actual
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">${ingresosMes.toLocaleString()}</div>
-            <p className="text-xs text-gray-600">{turnosMesActual.length} turnos completados</p>
-          </CardContent>
-        </Card>
+      {/* Cards de estado de turnos para EL MES */}
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Estado de Turnos - Mes Actual</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <Clock className="h-4 w-4 text-blue-600" />
+                Reservados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">{turnosReservadosMes.length}</div>
+              <p className="text-xs text-gray-600">Turnos desde web</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <CheckCircle className="h-4 w-4 text-green-600" />
+                Confirmados
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">{turnosConfirmadosManualMes.length}</div>
+              <p className="text-xs text-gray-600">Agregados manualmente</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-medium flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-purple-600" />
+                Ingresos del Mes
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-purple-600">${ingresosCompletadosMes.toLocaleString()}</div>
+              <p className="text-xs text-gray-600">{turnosCompletadosMes.length} turnos completados</p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
