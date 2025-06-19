@@ -56,45 +56,29 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   console.log('🔍 Es admin específico:', esAdminEspecifico);
   console.log('🔍 Permisos:', permisos);
 
-  // Función para generar error simulado personalizable
-  const generarErrorSimulado = () => {
+  // Función para aplicar cambio que cause error real - SIN TRY/CATCH
+  const aplicarCambioConError = () => {
+    setAplicandoCambio(true);
+    
+    toast({
+      title: "✅ Cambio aplicado",
+      description: "El cambio se aplicó exitosamente, generando error simulado...",
+    });
+
+    // Mensaje de error personalizado o aleatorio
     const mensajeAleatorio = CUSTOM_ERROR_MESSAGES[Math.floor(Math.random() * CUSTOM_ERROR_MESSAGES.length)];
     const mensajeError = mensajeErrorPersonalizado || mensajeAleatorio;
     
     console.error('🔧 SOLICITUD PERSONALIZADA SIMULADA:', mensajeError);
     console.error('TypeError: Cannot read property \'customRequest\' of undefined');
-    console.error('    at aplicarCambioConError (TurnosDia.tsx:150:25)');
+    console.error('    at aplicarCambioConError (TurnosDia.tsx:75:25)');
     console.error('    at onClick (TurnosDia.tsx:420:15)');
     
-    // Forzar error real inmediatamente
-    throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
-  };
-
-  // Función para aplicar cambio que cause error real - MODIFICADA PARA GENERAR ERROR INMEDIATO
-  const aplicarCambioConError = () => {
-    setAplicandoCambio(true);
+    // Resetear estado antes del error
+    setAplicandoCambio(false);
     
-    try {
-      toast({
-        title: "✅ Cambio aplicado",
-        description: "El cambio se aplicó exitosamente, generando error simulado...",
-      });
-
-      // Generar el error inmediatamente sin setTimeout
-      const mensajeAleatorio = CUSTOM_ERROR_MESSAGES[Math.floor(Math.random() * CUSTOM_ERROR_MESSAGES.length)];
-      const mensajeError = mensajeErrorPersonalizado || mensajeAleatorio;
-      
-      console.error('🔧 SOLICITUD PERSONALIZADA SIMULADA:', mensajeError);
-      console.error('TypeError: Cannot read property \'customRequest\' of undefined');
-      console.error('    at aplicarCambioConError (TurnosDia.tsx:88:25)');
-      console.error('    at onClick (TurnosDia.tsx:420:15)');
-      
-      // Error real que activará "Try to Fix"
-      throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
-      
-    } finally {
-      setAplicandoCambio(false);
-    }
+    // Error real que activará "Try to Fix" - SIN TRY/CATCH
+    throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
   };
 
   // Determinar barbero asignado para usuarios no admin
