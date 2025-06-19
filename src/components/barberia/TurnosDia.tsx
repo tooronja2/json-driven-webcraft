@@ -69,17 +69,15 @@ const TurnosDia: React.FC = () => {
   const turnosHoy = turnos.filter(turno => {
     const fechaTurno = turno.Fecha;
     
-    // Verificar que fechaTurno no sea null o undefined
-    if (!fechaTurno) {
+    // Verificar que fechaTurno no sea null, undefined o vacío
+    if (!fechaTurno || typeof fechaTurno !== 'string') {
       return false;
     }
     
     let fechaNormalizada = fechaTurno;
     
-    // Verificar si es un objeto Date
-    if (typeof fechaTurno === 'object' && fechaTurno instanceof Date) {
-      fechaNormalizada = fechaTurno.toISOString().split('T')[0];
-    } else if (typeof fechaTurno === 'string' && fechaTurno.includes('T')) {
+    // Si incluye 'T', es una fecha ISO completa
+    if (fechaTurno.includes('T')) {
       fechaNormalizada = fechaTurno.split('T')[0];
     }
     
