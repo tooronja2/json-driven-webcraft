@@ -6,15 +6,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Lock, User } from 'lucide-react';
 
 interface LoginBarberiaProps {
-  onLogin: (usuario: string, rol: string) => void;
+  onLogin: (usuario: string, rol: string, permisos: string[]) => void;
 }
 
-// Usuarios autorizados (en producción esto debería venir del backend)
-const USUARIOS_AUTORIZADOS = [
-  { usuario: 'hector.medina', password: 'barberia2025', nombre: 'Héctor Medina', rol: 'Dueño' },
-  { usuario: 'lucas.peralta', password: 'barbero2025', nombre: 'Lucas Peralta', rol: 'Barbero' },
-  { usuario: 'camila.gonzalez', password: 'barbera2025', nombre: 'Camila González', rol: 'Barbera' },
-];
+// Usuario admin principal
+const ADMIN_USER = {
+  usuario: 'tomasradeljakadmin',
+  password: 'tr4d3lJaK4Dm1N',
+  nombre: 'Tomás Radelj',
+  rol: 'Administrador',
+  permisos: ['admin', 'crear_usuarios', 'ver_todos', 'eliminar']
+};
 
 const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
   const [usuario, setUsuario] = useState('');
@@ -22,21 +24,38 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [cargando, setCargando] = useState(false);
 
+  const obtenerUsuarios = () => {
+    const usuariosGuardados = localStorage.getItem('barberia_usuarios');
+    return usuariosGuardados ? JSON.parse(usuariosGuardados) : [];
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
     setError('');
 
-    // Simular delay de autenticación
     setTimeout(() => {
-      const usuarioEncontrado = USUARIOS_AUTORIZADOS.find(
-        u => u.usuario === usuario && u.password === password
+      // Verificar admin principal
+      if (usuario === ADMIN_USER.usuario && password === ADMIN_USER.password) {
+        localStorage.setItem('barberia_usuario', ADMIN_USER.nombre);
+        localStorage.setItem('barberia_rol', ADMIN_USER.rol);
+        localStorage.setItem('barberia_permisos', JSON.stringify(ADMIN_USER.permisos));
+        onLogin(ADMIN_USER.nombre, ADMIN_USER.rol, ADMIN_USER.permisos);
+        setCargando(false);
+        return;
+      }
+
+      // Verificar usuarios creados
+      const usuarios = obtenerUsuarios();
+      const usuarioEncontrado = usuarios.find(
+        (u: any) => u.usuario === usuario && u.password === password
       );
 
       if (usuarioEncontrado) {
         localStorage.setItem('barberia_usuario', usuarioEncontrado.nombre);
         localStorage.setItem('barberia_rol', usuarioEncontrado.rol);
-        onLogin(usuarioEncontrado.nombre, usuarioEncontrado.rol);
+        localStorage.setItem('barberia_permisos', JSON.stringify(usuarioEncontrado.permisos));
+        onLogin(usuarioEncontrado.nombre, usuarioEncontrado.rol, usuarioEncontrado.permisos);
       } else {
         setError('Usuario o contraseña incorrectos');
       }
@@ -49,7 +68,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Barbería Estilo</CardTitle>
-          <p className="text-gray-600">Acceso para empleados</p>
+          <p className="text-gray-600">Sistema de Gestión PWA</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -61,7 +80,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
                   type="text"
                   value={usuario}
                   onChange={(e) => setUsuario(e.target.value)}
-                  placeholder="hector.medina"
+                  placeholder="Ingresa tu usuario"
                   className="pl-10"
                   required
                 />
@@ -91,13 +110,6 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
               {cargando ? 'Iniciando sesión...' : 'Iniciar Sesión'}
             </Button>
           </form>
-
-          <div className="mt-6 text-xs text-gray-500 text-center">
-            <p>Usuarios de prueba:</p>
-            <p>hector.medina / barberia2025</p>
-            <p>lucas.peralta / barbero2025</p>
-            <p>camila.gonzalez / barbera2025</p>
-          </div>
         </CardContent>
       </Card>
     </div>

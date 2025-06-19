@@ -19,15 +19,38 @@ interface Turno {
   Responsable: string;
 }
 
+interface TurnosDiaProps {
+  permisos: string[];
+  usuario: string;
+}
+
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 const BARBEROS = ['Héctor Medina', 'Lucas Peralta', 'Camila González'];
 
-const TurnosDia: React.FC = () => {
+const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [turnos, setTurnos] = useState<Turno[]>([]);
   const [barberoSeleccionado, setBarberoSeleccionado] = useState<string>('todos');
   const [cargando, setCargando] = useState(true);
+
+  // Determinar barbero asignado para usuarios no admin
+  const obtenerBarberoAsignado = () => {
+    if (permisos.includes('admin')) return null;
+    
+    const usuarios = JSON.parse(localStorage.getItem('barberia_usuarios') || '[]');
+    const usuarioActual = usuarios.find((u: any) => u.nombre === usuario);
+    return usuarioActual?.barberoAsignado;
+  };
+
+  const barberoAsignado = obtenerBarberoAsignado();
+
+  useEffect(() => {
+    // Si el usuario tiene un barbero asignado, configurarlo por defecto
+    if (barberoAsignado) {
+      setBarberoSeleccionado(barberoAsignado);
+    }
+  }, [barberoAsignado]);
 
   const cargarTurnos = async () => {
     try {
@@ -130,17 +153,19 @@ const TurnosDia: React.FC = () => {
               <Calendar className="h-5 w-5" />
               Turnos de Hoy
             </CardTitle>
-            <Select value={barberoSeleccionado} onValueChange={setBarberoSeleccionado}>
-              <SelectTrigger className="w-48">
-                <SelectValue placeholder="Filtrar por barbero" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="todos">Todos los barberos</SelectItem>
-                {BARBEROS.map(barbero => (
-                  <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            {(!barberoAsignado || permisos.includes('admin')) && (
+              <Select value={barberoSeleccionado} onValueChange={setBarberoSeleccionado}>
+                <SelectTrigger className="w-48">
+                  <SelectValue placeholder="Filtrar por barbero" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todos">Todos los barberos</SelectItem>
+                  {BARBEROS.map(barbero => (
+                    <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
           </div>
           <p className="text-sm text-gray-600">
             Total: {turnosFiltrados.length} turnos

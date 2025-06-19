@@ -1,24 +1,30 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Plus } from 'lucide-react';
+import { LogOut, Plus, Users } from 'lucide-react';
 import TurnosDia from '@/components/barberia/TurnosDia';
 import EstadisticasBarberia from '@/components/barberia/EstadisticasBarberia';
 import AgregarTurno from '@/components/barberia/AgregarTurno';
+import GestionUsuarios from '@/components/barberia/GestionUsuarios';
 
 interface DashboardBarberiaProps {
   usuario: string;
   rol: string;
+  permisos: string[];
   onLogout: () => void;
 }
 
-const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, onLogout }) => {
+const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, permisos, onLogout }) => {
   const [mostrarAgregarTurno, setMostrarAgregarTurno] = useState(false);
+  const [mostrarGestionUsuarios, setMostrarGestionUsuarios] = useState(false);
+
+  const esAdmin = permisos.includes('admin');
 
   const handleLogout = () => {
     localStorage.removeItem('barberia_usuario');
     localStorage.removeItem('barberia_rol');
+    localStorage.removeItem('barberia_permisos');
     onLogout();
   };
 
@@ -40,6 +46,16 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, onL
               <Plus className="h-4 w-4 mr-1" />
               Turno
             </Button>
+            {esAdmin && (
+              <Button
+                onClick={() => setMostrarGestionUsuarios(true)}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Users className="h-4 w-4 mr-1" />
+                Usuarios
+              </Button>
+            )}
             <Button onClick={handleLogout} variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-1" />
               Salir
@@ -51,29 +67,34 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, onL
       {/* Contenido principal */}
       <div className="max-w-4xl mx-auto p-4">
         <Tabs defaultValue="turnos" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className={`grid w-full ${esAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
             <TabsTrigger value="turnos">Turnos del Día</TabsTrigger>
-            <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>
+            {esAdmin && <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>}
           </TabsList>
           
           <TabsContent value="turnos">
-            <TurnosDia />
+            <TurnosDia permisos={permisos} usuario={usuario} />
           </TabsContent>
           
-          <TabsContent value="estadisticas">
-            <EstadisticasBarberia />
-          </TabsContent>
+          {esAdmin && (
+            <TabsContent value="estadisticas">
+              <EstadisticasBarberia />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
 
-      {/* Modal para agregar turno */}
+      {/* Modales */}
       {mostrarAgregarTurno && (
         <AgregarTurno 
           onClose={() => setMostrarAgregarTurno(false)}
-          onTurnoAgregado={() => {
-            setMostrarAgregarTurno(false);
-            // Aquí podrías recargar los datos si fuera necesario
-          }}
+          onTurnoAgregado={() => setMostrarAgregarTurno(false)}
+        />
+      )}
+
+      {mostrarGestionUsuarios && esAdmin && (
+        <GestionUsuarios 
+          onClose={() => setMostrarGestionUsuarios(false)}
         />
       )}
     </div>

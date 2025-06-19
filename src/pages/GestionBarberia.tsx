@@ -7,29 +7,34 @@ import SEOHead from '@/components/SEOHead';
 const GestionBarberia: React.FC = () => {
   const [usuario, setUsuario] = useState<string | null>(null);
   const [rol, setRol] = useState<string | null>(null);
+  const [permisos, setPermisos] = useState<string[]>([]);
   const [cargando, setCargando] = useState(true);
 
   useEffect(() => {
     // Verificar si hay una sesión activa
     const usuarioGuardado = localStorage.getItem('barberia_usuario');
     const rolGuardado = localStorage.getItem('barberia_rol');
+    const permisosGuardados = localStorage.getItem('barberia_permisos');
     
-    if (usuarioGuardado && rolGuardado) {
+    if (usuarioGuardado && rolGuardado && permisosGuardados) {
       setUsuario(usuarioGuardado);
       setRol(rolGuardado);
+      setPermisos(JSON.parse(permisosGuardados));
     }
     
     setCargando(false);
   }, []);
 
-  const handleLogin = (nombreUsuario: string, rolUsuario: string) => {
+  const handleLogin = (nombreUsuario: string, rolUsuario: string, permisosUsuario: string[]) => {
     setUsuario(nombreUsuario);
     setRol(rolUsuario);
+    setPermisos(permisosUsuario);
   };
 
   const handleLogout = () => {
     setUsuario(null);
     setRol(null);
+    setPermisos([]);
   };
 
   if (cargando) {
@@ -43,14 +48,15 @@ const GestionBarberia: React.FC = () => {
   return (
     <>
       <SEOHead 
-        title="Gestión Barbería - Acceso Empleados"
-        description="Sistema de gestión interna para empleados de Barbería Estilo"
+        title="Gestión Barbería - Sistema PWA"
+        description="Sistema de gestión interno PWA para empleados de Barbería Estilo"
       />
       
       {usuario && rol ? (
         <DashboardBarberia 
           usuario={usuario} 
-          rol={rol} 
+          rol={rol}
+          permisos={permisos}
           onLogout={handleLogout} 
         />
       ) : (
