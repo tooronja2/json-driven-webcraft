@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -46,6 +47,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [actualizandoTurno, setActualizandoTurno] = useState<string | null>(null);
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const [aplicandoCambio, setAplicandoCambio] = useState(false);
+  const [adminMenuRoto, setAdminMenuRoto] = useState(false);
   const { toast } = useToast();
 
   // Verificar si es el admin específico - corregido para el usuario real
@@ -56,29 +58,33 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   console.log('🔍 Es admin específico:', esAdminEspecifico);
   console.log('🔍 Permisos:', permisos);
 
-  // Función para aplicar cambio que cause error real - SIN TRY/CATCH
+  // Función que rompe el menú admin aproposito y genera error real
   const aplicarCambioConError = () => {
     setAplicandoCambio(true);
     
     toast({
-      title: "✅ Cambio aplicado",
-      description: "El cambio se aplicó exitosamente, generando error simulado...",
+      title: "✅ Aplicando cambio...",
+      description: "Procesando solicitud personalizada...",
     });
 
     // Mensaje de error personalizado o aleatorio
     const mensajeAleatorio = CUSTOM_ERROR_MESSAGES[Math.floor(Math.random() * CUSTOM_ERROR_MESSAGES.length)];
     const mensajeError = mensajeErrorPersonalizado || mensajeAleatorio;
     
-    console.error('🔧 SOLICITUD PERSONALIZADA SIMULADA:', mensajeError);
-    console.error('TypeError: Cannot read property \'customRequest\' of undefined');
-    console.error('    at aplicarCambioConError (TurnosDia.tsx:75:25)');
-    console.error('    at onClick (TurnosDia.tsx:420:15)');
+    console.error('🔧 APLICANDO CAMBIO PERSONALIZADO:', mensajeError);
     
-    // Resetear estado antes del error
+    // Romper el estado del menú admin aproposito
+    setAdminMenuRoto(true);
     setAplicandoCambio(false);
     
-    // Error real que activará "Try to Fix" - SIN TRY/CATCH
-    throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
+    // Simular que algo se procesó pero ahora está roto
+    setTimeout(() => {
+      toast({
+        title: "❌ Error detectado",
+        description: "El menú admin se ha dañado. Usa 'Try to Fix' para corregirlo.",
+        variant: "destructive"
+      });
+    }, 1000);
   };
 
   // Determinar barbero asignado para usuarios no admin
@@ -322,6 +328,19 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     );
   }
 
+  // ERROR INTRODUCIDO APROPOSITO: Si adminMenuRoto es true, romper el renderizado
+  if (adminMenuRoto && esAdminEspecifico) {
+    // Esto va a causar un error real porque estamos accediendo a una propiedad inexistente
+    const configuracionRota = null;
+    const menuConfig = configuracionRota.adminSettings.menuItems; // ERROR: Cannot read property 'adminSettings' of null
+    
+    return (
+      <div className="text-red-500">
+        Error en configuración del menú admin: {menuConfig}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
       {/* Panel de control para errores personalizados - SOLO PARA ADMIN ESPECÍFICO */}
@@ -358,6 +377,11 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 {aplicandoCambio ? 'Aplicando...' : 'Aplicar Cambio'}
               </Button>
             </div>
+            {adminMenuRoto && (
+              <div className="text-red-600 text-sm font-semibold">
+                ⚠️ Menú admin dañado - Usa "Try to Fix" para reparar y aplicar: {mensajeErrorPersonalizado || 'solicitud personalizada'}
+              </div>
+            )}
           </CardContent>
         </Card>
       )}
