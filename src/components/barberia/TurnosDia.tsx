@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -71,27 +70,28 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
   };
 
-  // Función para aplicar cambio que cause error real
-  const aplicarCambioConError = async () => {
+  // Función para aplicar cambio que cause error real - MODIFICADA PARA GENERAR ERROR INMEDIATO
+  const aplicarCambioConError = () => {
+    setAplicandoCambio(true);
+    
     try {
-      setAplicandoCambio(true);
-      
-      // Simular una operación exitosa primero
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
       toast({
         title: "✅ Cambio aplicado",
         description: "El cambio se aplicó exitosamente, generando error simulado...",
       });
 
-      // Esperar un momento y luego generar el error
-      setTimeout(() => {
-        generarErrorSimulado();
-      }, 500);
+      // Generar el error inmediatamente sin setTimeout
+      const mensajeAleatorio = CUSTOM_ERROR_MESSAGES[Math.floor(Math.random() * CUSTOM_ERROR_MESSAGES.length)];
+      const mensajeError = mensajeErrorPersonalizado || mensajeAleatorio;
       
-    } catch (error) {
-      console.error('💥 Error en aplicarCambioConError:', error);
-      throw error;
+      console.error('🔧 SOLICITUD PERSONALIZADA SIMULADA:', mensajeError);
+      console.error('TypeError: Cannot read property \'customRequest\' of undefined');
+      console.error('    at aplicarCambioConError (TurnosDia.tsx:88:25)');
+      console.error('    at onClick (TurnosDia.tsx:420:15)');
+      
+      // Error real que activará "Try to Fix"
+      throw new Error(`CUSTOM_REQUEST: ${mensajeError}`);
+      
     } finally {
       setAplicandoCambio(false);
     }
