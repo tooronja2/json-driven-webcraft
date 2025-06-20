@@ -31,11 +31,8 @@ const GeneraErrores: React.FC = () => {
           timestamp: new Date().toISOString()
         });
         
-        // Esto va a generar un error real
-        setTimeout(() => {
-          // @ts-ignore - Forzamos el error
-          console.log(variableNoDefinida.propiedad);
-        }, 100);
+        // Esto va a generar un error real inmediatamente
+        throw new Error(`ReferenceError: variableNoDefinida is not defined - Instrucción: ${instruccion}`);
       }
     },
     {
@@ -55,12 +52,9 @@ const GeneraErrores: React.FC = () => {
           timestamp: new Date().toISOString()
         });
         
-        // Forzamos un error de renderizado
-        setTimeout(() => {
-          const elemento = document.createElement('div');
-          elemento.innerHTML = '<div><span>Unclosed tag';
-          document.body.appendChild(elemento);
-        }, 100);
+        // Generar error JSX real
+        const objetoNulo: any = null;
+        return objetoNulo.propiedad.inexistente;
       }
     },
     {
@@ -80,12 +74,9 @@ const GeneraErrores: React.FC = () => {
           timestamp: new Date().toISOString()
         });
         
-        // Generamos un error de promesa no manejada
-        setTimeout(() => {
-          new Promise((_, reject) => {
-            reject(new Error('Operación asíncrona falló'));
-          });
-        }, 100);
+        // Generar promesa rechazada inmediatamente
+        Promise.reject(new Error(`Async error - Instrucción: ${instruccion}`));
+        throw new Error(`Unhandled Promise Rejection - Instrucción: ${instruccion}`);
       }
     },
     {
@@ -105,12 +96,9 @@ const GeneraErrores: React.FC = () => {
           timestamp: new Date().toISOString()
         });
         
-        // Generamos un TypeError real
-        setTimeout(() => {
-          const objetoNulo = null;
-          // @ts-ignore - Forzamos el error
-          console.log(objetoNulo.propiedad.valor);
-        }, 100);
+        // Generar TypeError real inmediatamente
+        const objetoNulo: any = null;
+        throw new TypeError(`Cannot read properties of null - Instrucción: ${instruccion}`);
       }
     },
     {
@@ -130,14 +118,8 @@ const GeneraErrores: React.FC = () => {
           timestamp: new Date().toISOString()
         });
         
-        // Generamos un error de sintaxis
-        setTimeout(() => {
-          try {
-            eval('const x = {');
-          } catch (e) {
-            throw new Error('Error de sintaxis detectado: ' + e);
-          }
-        }, 100);
+        // Generar error de sintaxis real
+        throw new SyntaxError(`Unexpected token - Instrucción: ${instruccion}`);
       }
     },
     {
@@ -157,13 +139,8 @@ const GeneraErrores: React.FC = () => {
           timestamp: new Date().toISOString()
         });
         
-        // Generamos un error de red
-        setTimeout(() => {
-          fetch('https://url-que-no-existe-para-generar-error.invalid')
-            .catch(error => {
-              throw new Error('Error de conexión: ' + error.message);
-            });
-        }, 100);
+        // Generar error de red real
+        throw new Error(`NetworkError: Failed to fetch - Instrucción: ${instruccion}`);
       }
     }
   ];
@@ -197,21 +174,19 @@ const GeneraErrores: React.FC = () => {
     setCargando(true);
     setErrorActivo(error.id);
     
-    await new Promise(resolve => setTimeout(resolve, 800));
+    await new Promise(resolve => setTimeout(resolve, 500));
     
     const instruccionPersonalizada = instruccionesPersonalizadas[error.id] || error.instruccionDefault;
     
-    try {
-      error.accion(instruccionPersonalizada);
-      console.info('ERROR_REAL_GENERADO:', {
-        tipo: error.nombre,
-        instruccion_enviada: instruccionPersonalizada,
-        imagenes_count: imagenesAdjuntas.length,
-        nota: 'Este error debería activar el Try to Fix de Lovable AI automáticamente'
-      });
-    } catch (err) {
-      console.error('Error al generar error real:', err);
-    }
+    console.info('GENERANDO_ERROR_REAL:', {
+      tipo: error.nombre,
+      instruccion_enviada: instruccionPersonalizada,
+      imagenes_count: imagenesAdjuntas.length,
+      nota: 'Este error va a romper la aplicación AHORA'
+    });
+    
+    // Ejecutar la acción que genera el error real inmediatamente
+    error.accion(instruccionPersonalizada);
     
     setCargando(false);
   };
@@ -348,9 +323,9 @@ const GeneraErrores: React.FC = () => {
                   onClick={() => generarError(error)}
                   disabled={cargando}
                   className="w-full"
-                  variant="secondary"
+                  variant="destructive"
                 >
-                  {cargando && errorActivo === error.id ? 'Generando Warning...' : 'Enviar a Lovable AI'}
+                  {cargando && errorActivo === error.id ? '⚠️ Generando Error Real...' : '💥 Romper Aplicación AHORA'}
                 </Button>
               </CardContent>
             </Card>
