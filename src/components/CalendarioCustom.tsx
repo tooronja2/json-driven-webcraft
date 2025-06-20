@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -135,18 +136,24 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   const servicio = contenido?.find(s => s.id === servicioId);
   const duracionMinutos = parseInt(servicio?.detalles?.duracion?.replace('min', '') || '30');
 
-  // Cargar eventos desde Google Sheets
-  const cargarEventos = useCallback(async () => {
+  // Cargar eventos desde Google Sheets con FORZAR RELOAD
+  const cargarEventos = useCallback(async (forzarReload = false) => {
     try {
       console.log('🔄 Cargando eventos desde Google Sheets...');
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`;
+      // Agregar timestamp único para evitar cache
+      const timestamp = Date.now();
+      const randomParam = Math.random().toString(36).substring(7);
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${timestamp}&rand=${randomParam}&force=${forzarReload}`;
       
       const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Accept': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          'Pragma': 'no-cache',
+          'Expires': '0'
         },
-        cache: 'no-cache'
+        cache: 'no-store'
       });
 
       if (!response.ok) {
@@ -157,6 +164,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       
       if (data.success) {
         console.log('📅 Eventos RAW recibidos:', data.eventos);
+        console.log('📊 Total de eventos recibidos:', data.eventos.length);
         
         // Procesar eventos para normalizar formato de fecha
         const eventosProcesados = data.eventos.map((evento: any) => {
@@ -220,7 +228,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     return false; // Para días futuros, ninguna hora ha pasado
   };
 
-  // Filtrado de horarios MEJORADO considerando duraciones reales
+  // Filtrado de horarios MEJORADO considerando duraciones reales y TODOS LOS ESTADOS
   useEffect(() => {
     if (!fechaSeleccionada) {
       setHorasDisponibles([]);
@@ -228,6 +236,9 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     }
 
     console.log('🔍 === INICIO FILTRADO DE HORARIOS CON DURACIONES REALES ===');
+    console.log('🎯 Responsable buscado:', responsable);
+    console.log('📅 Fecha seleccionada:', fechaSeleccionada.toISOString().split('T')[0]);
+    console.log('⏱️ Duración nuevo servicio:', duracionMinutos, 'minutos');
     
     // 1. Obtener horarios laborales del especialista para esta fecha
     const horariosLaborales = obtenerHorariosDisponibles(responsable, fechaSeleccionada, duracionMinutos);
@@ -238,17 +249,34 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       return;
     }
 
-    // 2. Filtrar eventos ocupados para esta fecha y responsable
+    console.log('⏰ Horarios laborales base:', horariosLaborales);
+
+    // 2. Filtrar eventos ocupados para esta fecha y responsable (TODOS LOS ESTADOS ACTIVOS)
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
     const eventosRelevantes = eventos.filter(evento => {
-      const esConfirmado = evento.Estado === 'Confirmado' || evento.Estado === 'Completado';
+      // INCLUIR TODOS LOS ESTADOS EXCEPTO CANCELADO
+      const esEstadoActivo = evento.Estado !== 'Cancelado';
       const esDelResponsable = evento.Responsable === responsable;
       const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
       
-      return esConfirmado && esDelResponsable && esMismaFecha;
+      const esRelevante = esEstadoActivo && esDelResponsable && esMismaFecha;
+      
+      if (esRelevante) {
+        console.log('📍 Evento relevante encontrado:', {
+          nombre: evento.Nombre_Cliente,
+          estado: evento.Estado,
+          fecha: evento.Fecha,
+          horaInicio: evento["Hora Inicio"],
+          horaFin: evento["Hora Fin"],
+          responsable: evento.Responsable
+        });
+      }
+      
+      return esRelevante;
     });
 
-    console.log('✅ Eventos ocupados relevantes:', eventosRelevantes);
+    console.log('✅ Eventos ocupados relevantes:', eventosRelevantes.length);
+    console.log('📋 Detalle de eventos ocupados:', eventosRelevantes);
 
     // 3. NUEVA LÓGICA: Verificar solapamientos considerando duraciones reales
     const disponibles = horariosLaborales.filter(hora => {
@@ -269,7 +297,13 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
           return false;
         }
 
-        return verificarSolapamiento(hora, duracionMinutos, horaInicioExistente, horaFinExistente);
+        const solapamiento = verificarSolapamiento(hora, duracionMinutos, horaInicioExistente, horaFinExistente);
+        
+        if (solapamiento) {
+          console.log(`❌ CONFLICTO detectado: Nueva cita ${hora} (${duracionMinutos}min) vs Existente ${horaInicioExistente}-${horaFinExistente} (${evento.Nombre_Cliente})`);
+        }
+        
+        return solapamiento;
       });
 
       const disponible = !tieneSolapamiento;
@@ -284,9 +318,18 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     setHorasDisponibles(disponibles);
   }, [fechaSeleccionada, eventos, responsable, duracionMinutos, obtenerHorariosDisponibles]);
 
+  // Cargar eventos al montar y cuando cambie la fecha
   useEffect(() => {
-    cargarEventos();
+    cargarEventos(true); // Forzar reload inicial
   }, [cargarEventos]);
+
+  // Recargar eventos cada vez que se selecciona una fecha
+  useEffect(() => {
+    if (fechaSeleccionada) {
+      console.log('📅 Fecha seleccionada cambió, recargando eventos...');
+      cargarEventos(true);
+    }
+  }, [fechaSeleccionada, cargarEventos]);
 
   const crearReserva = async () => {
     if (!fechaSeleccionada || !horaSeleccionada || !datosCliente.nombre || !datosCliente.email) {
@@ -349,7 +392,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       if (result.success) {
         alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
         // Recargar eventos para actualizar la disponibilidad
-        await cargarEventos();
+        await cargarEventos(true);
         onReservaConfirmada();
       } else {
         alert('Error al crear la reserva: ' + (result.error || 'Error desconocido'));
