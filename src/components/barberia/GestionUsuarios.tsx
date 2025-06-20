@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,10 +77,9 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
   const cargarUsuarios = async () => {
     try {
       setCargando(true);
-      
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getUsuarios&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`, {
-        method: 'GET'
-      });
+      const response = await fetch(
+        `${GOOGLE_APPS_SCRIPT_URL}?action=getUsuarios&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`
+      );
       
       const data = await response.json();
       console.log('📄 Respuesta getUsuarios:', data);
