@@ -82,6 +82,35 @@ const extraerHora = (horaInput: string | Date): string => {
   return '';
 };
 
+// Función para convertir hora "HH:MM" a minutos desde las 00:00
+const horaAMinutos = (hora: string): number => {
+  const [horas, minutos] = hora.split(':').map(Number);
+  return horas * 60 + minutos;
+};
+
+// Función para verificar si un horario se solapa con un turno existente
+const verificarSolapamiento = (
+  horaInicioNueva: string,
+  duracionNueva: number,
+  horaInicioExistente: string,
+  horaFinExistente: string
+): boolean => {
+  const inicioNuevaMin = horaAMinutos(horaInicioNueva);
+  const finNuevaMin = inicioNuevaMin + duracionNueva;
+  const inicioExistenteMin = horaAMinutos(horaInicioExistente);
+  const finExistenteMin = horaAMinutos(horaFinExistente);
+
+  // Verificar si hay solapamiento
+  const haySolapamiento = !(finNuevaMin <= inicioExistenteMin || inicioNuevaMin >= finExistenteMin);
+  
+  console.log(`🔍 Verificando solapamiento:
+    Nueva: ${horaInicioNueva} - ${inicioNuevaMin + duracionNueva} min (${duracionNueva} min)
+    Existente: ${horaInicioExistente} - ${horaFinExistente} (${inicioExistenteMin}-${finExistenteMin} min)
+    Solapamiento: ${haySolapamiento}`);
+  
+  return haySolapamiento;
+};
+
 // 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
@@ -191,14 +220,14 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     return false; // Para días futuros, ninguna hora ha pasado
   };
 
-  // Filtrado de horarios mejorado con memoización
+  // Filtrado de horarios MEJORADO considerando duraciones reales
   useEffect(() => {
     if (!fechaSeleccionada) {
       setHorasDisponibles([]);
       return;
     }
 
-    console.log('🔍 === INICIO FILTRADO DE HORARIOS CON HORARIOS LABORALES ===');
+    console.log('🔍 === INICIO FILTRADO DE HORARIOS CON DURACIONES REALES ===');
     
     // 1. Obtener horarios laborales del especialista para esta fecha
     const horariosLaborales = obtenerHorariosDisponibles(responsable, fechaSeleccionada, duracionMinutos);
@@ -212,7 +241,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     // 2. Filtrar eventos ocupados para esta fecha y responsable
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
     const eventosRelevantes = eventos.filter(evento => {
-      const esConfirmado = evento.Estado === 'Confirmado';
+      const esConfirmado = evento.Estado === 'Confirmado' || evento.Estado === 'Completado';
       const esDelResponsable = evento.Responsable === responsable;
       const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
       
@@ -221,25 +250,35 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     console.log('✅ Eventos ocupados relevantes:', eventosRelevantes);
 
-    // 3. Extraer horarios ocupados
-    const horariosOcupados = eventosRelevantes
-      .map(evento => extraerHora(evento["Hora Inicio"]))
-      .filter(hora => hora !== '');
-
-    const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
-    console.log('⏰ Horarios ocupados:', horariosOcupadosUnicos);
-
-    // 4. Filtrar horarios laborales que no estén ocupados Y que no hayan pasado (si es el día actual)
+    // 3. NUEVA LÓGICA: Verificar solapamientos considerando duraciones reales
     const disponibles = horariosLaborales.filter(hora => {
-      const estaOcupado = horariosOcupadosUnicos.includes(hora);
+      // Verificar si la hora ya pasó
       const yaPaso = yaEsHoraPasada(hora, fechaSeleccionada);
+      if (yaPaso) {
+        console.log(`⏰ Hora ${hora} ya pasó`);
+        return false;
+      }
+
+      // Verificar solapamientos con eventos existentes
+      const tieneSolapamiento = eventosRelevantes.some(evento => {
+        const horaInicioExistente = extraerHora(evento["Hora Inicio"]);
+        const horaFinExistente = extraerHora(evento["Hora Fin"]);
+        
+        if (!horaInicioExistente || !horaFinExistente) {
+          console.log('⚠️ No se pudieron extraer horas del evento:', evento);
+          return false;
+        }
+
+        return verificarSolapamiento(hora, duracionMinutos, horaInicioExistente, horaFinExistente);
+      });
+
+      const disponible = !tieneSolapamiento;
+      console.log(`⏱️ Hora ${hora}: disponible=${disponible} (duración nueva: ${duracionMinutos}min)`);
       
-      console.log(`⏱️ Hora ${hora}: ocupada=${estaOcupado}, ya pasó=${yaPaso}, disponible=${!estaOcupado && !yaPaso}`);
-      
-      return !estaOcupado && !yaPaso;
+      return disponible;
     });
     
-    console.log('✅ === HORARIOS FINALES DISPONIBLES ===:', disponibles);
+    console.log('✅ === HORARIOS FINALES DISPONIBLES (CON DURACIONES) ===:', disponibles);
     console.log('🔍 === FIN FILTRADO DE HORARIOS ===');
     
     setHorasDisponibles(disponibles);
