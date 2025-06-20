@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -5,7 +6,7 @@ import { Button } from '@/components/ui/button';
 // 🔐 API KEY SECRETA - DEBE SER LA MISMA QUE EN CalendarioCustom
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
-// NUEVA URL de tu Google Apps Script actualizada
+// URL ACTUALIZADA de Google Apps Script
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 
 const CancelTurno = () => {
