@@ -40,14 +40,56 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [mostrarAgregarTurno, setMostrarAgregarTurno] = useState(false);
   const { toast } = useToast();
 
+  const realizarFetchConReintentos = async (url: string, options?: RequestInit, maxReintentos = 3) => {
+    let ultimoError;
+    
+    for (let intento = 1; intento <= maxReintentos; intento++) {
+      try {
+        console.log(`Intento ${intento} de ${maxReintentos} para fetch`);
+        
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos timeout
+        
+        const response = await fetch(url, {
+          ...options,
+          signal: controller.signal
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        
+        return response;
+      } catch (error) {
+        ultimoError = error;
+        console.error(`Error en intento ${intento}:`, error);
+        
+        if (intento < maxReintentos) {
+          console.log(`Reintentando en ${intento * 1000}ms...`);
+          await new Promise(resolve => setTimeout(resolve, intento * 1000));
+        }
+      }
+    }
+    
+    throw ultimoError;
+  };
+
   const obtenerTurnos = async () => {
     setCargando(true);
     setError('');
     try {
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`);
+      console.log('Iniciando obtención de turnos...');
+      const response = await realizarFetchConReintentos(
+        `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`
+      );
+      
       const data = await response.json();
+      console.log('Datos recibidos:', data);
 
       if (data.success) {
+        // ... keep existing code (conversion logic for turnosConvertidos)
         const turnosConvertidos = data.eventos.map((evento: any) => {
           let fechaEvento, horaInicio, horaFin;
           
@@ -108,12 +150,38 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         turnosFiltrados.sort((a: Turno, b: Turno) => a.horaInicio.localeCompare(b.horaInicio));
         
         setTurnos(turnosFiltrados);
+        console.log('Turnos cargados exitosamente:', turnosFiltrados.length);
       } else {
-        setError(data.error || 'Error al cargar los turnos');
+        const errorMsg = data.error || 'Error desconocido al cargar los turnos';
+        console.error('Error de API:', errorMsg);
+        setError(errorMsg);
+        
+        toast({
+          title: "Error al cargar turnos",
+          description: errorMsg,
+          variant: "destructive",
+        });
       }
     } catch (e) {
-      console.error("Error al obtener los turnos:", e);
-      setError('Error al conectar con el servidor');
+      console.error("Error completo al obtener los turnos:", e);
+      let errorMessage = 'Error de conexión al cargar los turnos';
+      
+      if (e instanceof Error) {
+        if (e.name === 'AbortError') {
+          errorMessage = 'Tiempo de espera agotado. Verifique su conexión a internet.';
+        } else if (e.message.includes('fetch')) {
+          errorMessage = 'Error de red. Verifique su conexión a internet y que el servidor esté disponible.';
+        } else {
+          errorMessage = `Error de conexión: ${e.message}`;
+        }
+      }
+      
+      setError(errorMessage);
+      toast({
+        title: "Error de conexión",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setCargando(false);
     }
@@ -133,20 +201,13 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
       console.log('Request body:', requestBody);
 
-      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+      const response = await realizarFetchConReintentos(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(requestBody)
       });
-
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
 
       const result = await response.json();
       console.log('Response result:', result);
@@ -175,12 +236,23 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       }
     } catch (error) {
       console.error('Error completo al actualizar el estado del turno:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error de conexión al actualizar el turno';
+      
+      let errorMessage = 'Error de conexión al actualizar el turno';
+      if (error instanceof Error) {
+        if (error.name === 'AbortError') {
+          errorMessage = 'Tiempo de espera agotado al actualizar el turno';
+        } else if (error.message.includes('fetch')) {
+          errorMessage = 'Error de red al actualizar el turno. Verifique su conexión.';
+        } else {
+          errorMessage = `Error al actualizar: ${error.message}`;
+        }
+      }
+      
       setError(errorMessage);
       
       toast({
         title: "Error de conexión",
-        description: "No se pudo conectar con el servidor. Inténtalo de nuevo.",
+        description: errorMessage,
         variant: "destructive",
       });
     }
