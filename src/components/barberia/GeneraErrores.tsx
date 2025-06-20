@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertTriangle, Bug, X, Edit3, Image, Play, Zap } from 'lucide-react';
+import { AlertTriangle, Bug, X, Edit3, Image, Play, Zap, Code } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const GeneraErrores: React.FC = () => {
@@ -13,6 +13,7 @@ const GeneraErrores: React.FC = () => {
   const [forceError, setForceError] = useState(false);
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
+  const [mostrarAppsScript, setMostrarAppsScript] = useState(false);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -73,6 +74,7 @@ const GeneraErrores: React.FC = () => {
     setSolicitudesEnviadas([]);
     setMensajeErrorPersonalizado('');
     setImagenesAdjuntas([]);
+    setMostrarAppsScript(false);
     
     toast({
       title: "Sistema reseteado",
@@ -88,6 +90,11 @@ const GeneraErrores: React.FC = () => {
 
   // Componente de estadísticas que mantiene el error PERSISTENTE
   const renderEstadisticasAdmin = () => {
+    // TEMPORALMENTE DESHABILITADO PARA MOSTRAR EL APPS SCRIPT
+    if (mostrarAppsScript) {
+      return null; // No generar error cuando se muestra el Apps Script
+    }
+
     // MANTENER EL ERROR ACTIVO - No resetear automáticamente
     if (errorEstadisticas && forceError && solicitudesEnviadas.length > 0) {
       console.log('🔧 MÚLTIPLES SOLICITUDES ACTIVAS:', solicitudesEnviadas.length);
@@ -107,6 +114,324 @@ const GeneraErrores: React.FC = () => {
     setImagenesAdjuntas(prev => prev.filter((_, i) => i !== index));
   };
 
+  const appsScriptCompleto = `
+/**************************************
+ *  Barbería Estilo · API & Emails
+ **************************************/
+const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
+
+/* ────────────────────────────────────
+ * 🔒 Verificar API-KEY
+ * ──────────────────────────────────── */
+function verificarApiKey(apiKey) {
+  return apiKey && apiKey === API_SECRET_KEY;
+}
+
+/* ────────────────────────────────────
+ * 🚚 Endpoints HTTP con CORS COMPLETO
+ * ──────────────────────────────────── */
+function doGet(e) {
+  let response = { error: 'Acción no válida' };
+
+  if (e && e.parameter && e.parameter.action) {
+    const { action, apiKey } = e.parameter;
+    if (!verificarApiKey(apiKey)) return outputJSONWithCORS({ success:false, error:'API Key inválida' });
+
+    if      (action === 'getEventos')    response = getEventos();
+    else if (action === 'getTurno')      response = getTurno(e.parameter.id);
+    else if (action === 'getHorarios')   response = getHorarios();
+    else if (action === 'getDiasLibres') response = getDiasLibres();
+    else if (action === 'updateEstado')  response = updateEstadoTurno(e.parameter.id, e.parameter.estado, e.parameter.origen_panel);
+  }
+  return outputJSONWithCORS(response);
+}
+
+function doPost(e) {
+  let response = { error: 'Acción no válida' };
+  let params = {};
+
+  // MANEJAR TANTO PARÁMETROS URL COMO BODY JSON
+  try {
+    // Intentar parsear el body como JSON primero
+    if (e.postData && e.postData.contents) {
+      const bodyData = JSON.parse(e.postData.contents);
+      params = bodyData;
+    } else if (e.parameter) {
+      // Fallback a parámetros URL
+      params = e.parameter;
+    }
+  } catch (error) {
+    // Si falla el JSON, usar parámetros URL
+    params = e.parameter || {};
+  }
+
+  if (params.action) {
+    const { action, apiKey } = params;
+    if (!verificarApiKey(apiKey)) return outputJSONWithCORS({ success:false, error:'API Key inválida' });
+
+    if      (action === 'crearReserva')  response = crearReserva(params.data ? JSON.parse(params.data) : params);
+    else if (action === 'cancelarTurno') response = cancelarTurno(params.eventId || params.id);
+    else if (action === 'updateEstado')  response = updateEstadoTurno(params.id, params.estado, params.origen_panel);
+  }
+  return outputJSONWithCORS(response);
+}
+
+// CORS COMPLETO para todas las solicitudes OPTIONS
+function doOptions() {
+  const output = ContentService.createTextOutput('');
+  output.setMimeType(ContentService.MimeType.TEXT);
+  
+  // Headers CORS completos
+  output.setHeaders({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin',
+    'Access-Control-Max-Age': '86400'
+  });
+  
+  return output;
+}
+
+// FUNCIÓN PARA INCLUIR CORS EN TODAS LAS RESPUESTAS JSON
+function outputJSONWithCORS(data) {
+  const output = ContentService.createTextOutput(JSON.stringify(data));
+  output.setMimeType(ContentService.MimeType.JSON);
+  
+  // Headers CORS en todas las respuestas
+  output.setHeaders({
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With, Accept, Origin'
+  });
+  
+  return output;
+}
+
+// FUNCIÓN LEGACY (mantener por compatibilidad)
+function outputJSON(data) {
+  return outputJSONWithCORS(data);
+}
+
+/* ────────────────────────────────────
+ * 📊 Operaciones Sheets
+ * ──────────────────────────────────── */
+const SHEET_ID = '1d5HogKo6RU2o07ewfb2_MWs3atv28YaAcrxMf3DemEU';
+function sheetData(name) {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(name) ||
+                SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
+  const data   = sheet.getDataRange().getValues();
+  const header = data.shift();
+  return data.map(r => header.reduce((o,h,i)=>(o[h]=r[i],o),{}));
+}
+
+function getEventos()     { return { success:true, eventos: sheetData('Turnos') }; }
+function getHorarios()    { return { success:true, horarios: sheetData('Horarios_Especialistas') }; }
+function getDiasLibres()  { return { success:true, diasLibres: sheetData('Dias_Libres') }; }
+
+function getTurno(id) {
+  const t = sheetData('Turnos').find(x => x.ID_Evento === id);
+  return t ? { success:true, turno:t } : { success:false, error:'Turno no encontrado' };
+}
+
+/* ────────────────────────────────────
+ * ➕ / ✖️  Crear - Cancelar - Actualizar
+ * ──────────────────────────────────── */
+function crearReserva(d) {
+  const sheet  = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
+  // Las reservas se crean con estado "Reservado" en lugar de "Confirmado"
+  sheet.appendRow([
+    d.ID_Evento, d.Titulo_Evento, d.Nombre_Cliente, d.Email_Cliente,
+    d.Fecha, d.Hora_Inicio, d.Hora_Fin, d.Descripcion,
+    'Reservado', d['Valor del turno'], d['Servicios incluidos'], d.Responsable
+  ]);
+  enviarEmailConfirmacion(d);
+  return { success:true };
+}
+
+function cancelarTurno(id) {
+  const s   = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
+  const arr = s.getDataRange().getValues();
+  for (let i=1;i<arr.length;i++){
+    if (arr[i][0] === id){
+      s.getRange(i+1,9).setValue('Cancelado');
+      return { success:true };
+    }
+  }
+  return { success:false, error:'Turno no encontrado' };
+}
+
+// Actualizar estado de turno desde el panel
+function updateEstadoTurno(id, nuevoEstado, origenPanel) {
+  const s   = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
+  const arr = s.getDataRange().getValues();
+  
+  for (let i=1;i<arr.length;i++){
+    if (arr[i][0] === id){
+      s.getRange(i+1,9).setValue(nuevoEstado);
+      
+      // Si se está confirmando desde el panel y el cliente tiene email, enviar notificación
+      if (nuevoEstado === 'Confirmado' && origenPanel && arr[i][3]) {
+        enviarEmailConfirmacionPanel({
+          ID_Evento: arr[i][0],
+          Titulo_Evento: arr[i][1],
+          Nombre_Cliente: arr[i][2],
+          Email_Cliente: arr[i][3],
+          Fecha: arr[i][4],
+          Hora_Inicio: arr[i][5],
+          Hora_Fin: arr[i][6],
+          Responsable: arr[i][11],
+          'Valor del turno': arr[i][9]
+        });
+      }
+      
+      return { success:true };
+    }
+  }
+  return { success:false, error:'Turno no encontrado' };
+}
+
+/* ────────────────────────────────────
+ * ✉️  Email · Plantillas
+ * ──────────────────────────────────── */
+function enviarEmailConfirmacion(d) {
+  const cancelUrl = \`https://json-driven-webcraft.vercel.app/cancelar-turno?id=\${d.ID_Evento}\`;
+  const subject   = \`Reserva recibida - \${d.Titulo_Evento}\`;
+  const ownerMail = 'tradeljakntnlatam@gmail.com';
+
+  /* === Cliente === */
+  const htmlCliente = \`
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f2f0ed;font-family:'Roboto',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f2f0ed;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.08);">
+        <tr><td style="background:#693f29;text-align:center;padding:32px;">
+          <h1 style="margin:0;font-size:30px;color:#fff;font-weight:700;">Barbería Estilo</h1>
+        </td></tr>
+        <tr><td style="padding:40px 48px 32px;color:#1f2937;">
+          <h2 style="margin:0 0 12px;font-size:26px;">Hola \${d.Nombre_Cliente}!</h2>
+          <p style="margin:0 0 24px;font-size:16px;color:#4b5563;">Hemos recibido tu reserva. Te confirmaremos pronto los detalles:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;border-radius:12px;padding:24px;font-size:15px;">
+            <tr><td><strong>Servicio:</strong></td><td>\${d.Titulo_Evento}</td></tr>
+            <tr><td><strong>Fecha:</strong></td><td>\${new Date(d.Fecha).toLocaleDateString('es-AR')}</td></tr>
+            <tr><td><strong>Hora inicio:</strong></td><td>\${d.Hora_Inicio}</td></tr>
+            <tr><td><strong>Hora fin:</strong></td><td>\${d.Hora_Fin}</td></tr>
+            <tr><td><strong>Especialista:</strong></td><td>\${d.Responsable}</td></tr>
+            <tr><td><strong>Precio:</strong></td><td>$\${d['Valor del turno']}</td></tr>
+          </table>
+          <p style="margin:32px 0 8px;font-size:15px;color:#374151;">Estado: <strong>RESERVADO</strong> - Esperando confirmación</p>
+          <p style="margin:8px 0;font-size:15px;color:#374151;">Si necesitás cancelar tu reserva, hacelo desde aquí:</p>
+          <table align="center"><tr><td bgcolor="#693f29" style="border-radius:8px;">
+            <a href="\${cancelUrl}" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#fff;text-decoration:none;border-radius:8px;">Cancelar reserva</a>
+          </td></tr></table>
+        </td></tr>
+        <tr><td style="text-align:center;padding:24px 32px;font-size:13px;color:#6b7280;">¡Gracias por elegirnos! Barbería Estilo</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>\`;
+
+  /* === Dueño === */
+  const htmlOwner = \`
+<!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#111;">
+  <h2 style="text-align:center;margin:0 0 24px;">Nueva reserva recibida</h2>
+  <p><strong>Cliente:</strong> \${d.Nombre_Cliente} (\${d.Email_Cliente})</p>
+  <ul style="padding-left:18px;">
+    <li><strong>Servicio:</strong> \${d.Titulo_Evento}</li>
+    <li><strong>Fecha:</strong> \${new Date(d.Fecha).toLocaleDateString('es-AR')}</li>
+    <li><strong>Hora:</strong> \${d.Hora_Inicio}</li>
+    <li><strong>Especialista:</strong> \${d.Responsable}</li>
+    <li><strong>Precio:</strong> $\${d['Valor del turno']}</li>
+    <li><strong>Estado:</strong> RESERVADO (pendiente de confirmación)</li>
+  </ul>
+</body></html>\`;
+
+  GmailApp.sendEmail(d.Email_Cliente, subject, '', { htmlBody: htmlCliente });
+  GmailApp.sendEmail(ownerMail, \`Nueva reserva - \${d.Titulo_Evento}\`, '', { htmlBody: htmlOwner });
+}
+
+// Email cuando se confirma desde el panel
+function enviarEmailConfirmacionPanel(d) {
+  const subject = \`Turno confirmado - \${d.Titulo_Evento}\`;
+  
+  const htmlCliente = \`
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f2f0ed;font-family:'Roboto',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f2f0ed;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.08);">
+        <tr><td style="background:#693f29;text-align:center;padding:32px;">
+          <h1 style="margin:0;font-size:30px;color:#fff;font-weight:700;">Barbería Estilo</h1>
+        </td></tr>
+        <tr><td style="padding:40px 48px 32px;color:#1f2937;">
+          <h2 style="margin:0 0 12px;font-size:26px;">¡Turno confirmado!</h2>
+          <p style="margin:0 0 24px;font-size:16px;color:#4b5563;">Hola \${d.Nombre_Cliente}, tu turno ha sido confirmado por nuestro equipo:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;border-radius:12px;padding:24px;font-size:15px;">
+            <tr><td><strong>Servicio:</strong></td><td>\${d.Titulo_Evento}</td></tr>
+            <tr><td><strong>Fecha:</strong></td><td>\${new Date(d.Fecha).toLocaleDateString('es-AR')}</td></tr>
+            <tr><td><strong>Hora:</strong></td><td>\${d.Hora_Inicio}</td></tr>
+            <tr><td><strong>Especialista:</strong></td><td>\${d.Responsable}</td></tr>
+            <tr><td><strong>Precio:</strong></td><td>$\${d['Valor del turno']}</td></tr>
+          </table>
+          <p style="margin:32px 0 8px;font-size:15px;color:#374151;">Estado: <strong>CONFIRMADO</strong> ✅</p>
+        </td></tr>
+        <tr><td style="text-align:center;padding:24px 32px;font-size:13px;color:#6b7280;">¡Te esperamos! Barbería Estilo</td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>\`;
+
+  GmailApp.sendEmail(d.Email_Cliente, subject, '', { htmlBody: htmlCliente });
+}
+
+/* ────────────────────────────────────
+ * ⏰  Recordatorio (1 día antes) - SOLO RESERVADOS
+ * ──────────────────────────────────── */
+function enviarRecordatorios() {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
+  const data  = sheet.getDataRange().getValues();
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  for (let i=1;i<data.length;i++){
+    const [id,titulo,nombre,email,fecha,hInicio,, ,estado,, ,responsable] = data[i];
+    // Solo enviar recordatorios a turnos RESERVADOS (para que vengan)
+    if (estado!=='Reservado') continue;
+    const fechaTurno = new Date(fecha); fechaTurno.setHours(0,0,0,0);
+    if ((fechaTurno - today)/(1000*60*60*24) !== 1) continue;
+
+    const html = \`
+<!DOCTYPE html><html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:0;background:#f2f0ed;font-family:'Roboto',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f2f0ed;padding:40px 0;">
+    <tr><td align="center">
+      <table width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 12px rgba(0,0,0,.08);">
+        <tr><td style="background:#693f29;text-align:center;padding:32px;">
+          <h1 style="margin:0;font-size:28px;color:#fff;font-weight:700;">Recordatorio de turno</h1>
+        </td></tr>
+        <tr><td style="padding:40px 48px 32px;color:#1f2937;">
+          <h2 style="margin:0 0 12px;font-size:24px;">Hola \${nombre}!</h2>
+          <p style="margin:0 0 24px;font-size:16px;color:#4b5563;">Te recordamos que mañana tenés turno reservado en <strong>Barbería Estilo</strong>:</p>
+          <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f4;border-radius:12px;padding:24px;font-size:15px;">
+            <tr><td><strong>Servicio:</strong></td><td>\${titulo}</td></tr>
+            <tr><td><strong>Hora:</strong></td><td>\${hInicio}</td></tr>
+            <tr><td><strong>Con:</strong></td><td>\${responsable}</td></tr>
+          </table>
+          <p style="margin-top:32px;font-size:13px;color:#6b7280;">¡Te esperamos!</p>
+        </td></tr>
+      </table>
+    </td></tr>
+  </table>
+</body></html>\`;
+
+    GmailApp.sendEmail(
+      email,
+      'Recordatorio: tu turno es mañana',
+      '',
+      { htmlBody: html }
+    );
+  }
+  `.trim();
+
   return (
     <div className="space-y-6">
       <div>
@@ -115,6 +440,45 @@ const GeneraErrores: React.FC = () => {
           ✅ MODO MÚLTIPLE: Envía varias solicitudes seguidas sin resetear
         </p>
       </div>
+
+      {/* Mostrar Apps Script completo */}
+      {mostrarAppsScript && (
+        <Card className="border-2 border-green-500 bg-green-50">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-green-800">
+              <Code className="h-5 w-5" />
+              Apps Script Completo con CORS Solucionado
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="bg-gray-900 text-green-400 p-4 rounded-lg overflow-auto max-h-96 text-xs font-mono">
+              <pre>{appsScriptCompleto}</pre>
+            </div>
+            <div className="mt-4 space-y-2">
+              <h4 className="font-semibold text-green-800">Cambios principales implementados:</h4>
+              <ul className="text-sm text-green-700 space-y-1">
+                <li>✅ <strong>doOptions()</strong> con headers CORS completos</li>
+                <li>✅ <strong>doPost()</strong> maneja tanto parámetros URL como body JSON</li>
+                <li>✅ <strong>outputJSONWithCORS()</strong> incluye headers CORS en todas las respuestas</li>
+                <li>✅ <strong>doGet()</strong> también actualizado para usar CORS</li>
+                <li>✅ Soporte para updateEstado via GET y POST</li>
+              </ul>
+              <Button 
+                onClick={() => {
+                  navigator.clipboard.writeText(appsScriptCompleto);
+                  toast({
+                    title: "Copiado al portapapeles",
+                    description: "El código Apps Script ha sido copiado",
+                  });
+                }}
+                className="mt-2 bg-green-600 hover:bg-green-700"
+              >
+                📋 Copiar código completo
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Área de paste para imágenes */}
       <Card className="border-dashed border-2 border-blue-300 bg-blue-50">
@@ -204,6 +568,14 @@ const GeneraErrores: React.FC = () => {
               >
                 <Zap className="h-3 w-3 mr-1" />
                 {aplicandoCambio ? 'Enviando...' : 'Enviar Solicitud'}
+              </Button>
+              <Button
+                onClick={() => setMostrarAppsScript(!mostrarAppsScript)}
+                size="sm"
+                className="bg-green-600 hover:bg-green-700"
+              >
+                <Code className="h-3 w-3 mr-1" />
+                {mostrarAppsScript ? 'Ocultar' : 'Ver Apps Script'}
               </Button>
               <Button
                 onClick={limpiarMensaje}
