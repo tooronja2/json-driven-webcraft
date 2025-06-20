@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar } from "@/components/ui/calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
@@ -10,6 +11,9 @@ import { es } from 'date-fns/locale';
 import { useToast } from "@/hooks/use-toast"
 
 interface CalendarioCustomProps {
+  servicioId?: string;
+  responsable?: string;
+  onReservaConfirmada?: () => void;
   onReservaExitosa?: () => void;
 }
 
@@ -46,18 +50,37 @@ const extraerHora = (fecha: Date): string => {
   return format(fecha, 'HH:mm');
 };
 
-const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ onReservaExitosa }) => {
+const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
+  servicioId, 
+  responsable, 
+  onReservaConfirmada, 
+  onReservaExitosa 
+}) => {
   const [mostrarCalendario, setMostrarCalendario] = useState(false);
   const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
   const [horaSeleccionada, setHoraSeleccionada] = useState('');
-  const [servicioSeleccionado, setServicioSeleccionado] = useState<Servicio | null>(null);
+  const [servicioSeleccionado, setServicioSeleccionado] = useState<Servicio | null>(() => {
+    // Si viene servicioId predefinido, buscar el servicio correspondiente
+    if (servicioId) {
+      const servicioMap: { [key: string]: string } = {
+        'corte-barba': 'Corte de barba',
+        'corte-pelo': 'Corte de pelo',
+        'corte-todo-maquina': 'Corte todo maquina',
+        'corte-pelo-barba': 'Corte de pelo y barba',
+        'disenos-dibujos': 'Diseños y dibujos'
+      };
+      const nombreServicio = servicioMap[servicioId];
+      return SERVICIOS.find(s => s.nombre === nombreServicio) || null;
+    }
+    return null;
+  });
   const [formData, setFormData] = useState({ nombre: '', email: '', telefono: '' });
   const [error, setError] = useState('');
   const [mensajeExito, setMensajeExito] = useState('');
   const [enviando, setEnviando] = useState(false);
   const [turnosExistentes, setTurnosExistentes] = useState<TurnoExistente[]>([]);
   const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
-  const [responsableSeleccionado, setResponsableSeleccionado] = useState('');
+  const [responsableSeleccionado, setResponsableSeleccionado] = useState(responsable || '');
   const { toast } = useToast()
 
   const calcularHoraFin = (horaInicio: string, duracion: number): string => {
@@ -182,10 +205,13 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ onReservaExitosa })
         // Limpiar formulario
         setFormData({ nombre: '', email: '', telefono: '' });
         setHoraSeleccionada('');
-        setServicioSeleccionado(null);
-        setResponsableSeleccionado('');
+        if (!servicioId) setServicioSeleccionado(null);
+        if (!responsable) setResponsableSeleccionado('');
         
-        if (onReservaExitosa) {
+        // Llamar al callback apropiado
+        if (onReservaConfirmada) {
+          onReservaConfirmada();
+        } else if (onReservaExitosa) {
           onReservaExitosa();
         }
         
@@ -261,34 +287,50 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ onReservaExitosa })
                   required
                 />
               </div>
-              <div>
-                <Label htmlFor="servicio">Servicio</Label>
-                <Select onValueChange={(value) => setServicioSeleccionado(SERVICIOS.find(s => s.nombre === value) || null)}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un servicio" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {SERVICIOS.map((servicio) => (
-                      <SelectItem key={servicio.nombre} value={servicio.nombre}>
-                        {servicio.nombre} (${servicio.precio})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="responsable">Barbero</Label>
-                <Select onValueChange={setResponsableSeleccionado}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona un barbero" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {ESPECIALISTAS.map((barbero) => (
-                      <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+              {!servicioId && (
+                <div>
+                  <Label htmlFor="servicio">Servicio</Label>
+                  <Select onValueChange={(value) => setServicioSeleccionado(SERVICIOS.find(s => s.nombre === value) || null)}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un servicio" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {SERVICIOS.map((servicio) => (
+                        <SelectItem key={servicio.nombre} value={servicio.nombre}>
+                          {servicio.nombre} (${servicio.precio})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {servicioId && servicioSeleccionado && (
+                <div className="bg-gray-100 p-3 rounded">
+                  <Label>Servicio seleccionado:</Label>
+                  <div className="font-semibold">{servicioSeleccionado.nombre} (${servicioSeleccionado.precio})</div>
+                </div>
+              )}
+              {!responsable && (
+                <div>
+                  <Label htmlFor="responsable">Barbero</Label>
+                  <Select onValueChange={setResponsableSeleccionado}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Selecciona un barbero" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {ESPECIALISTAS.map((barbero) => (
+                        <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              {responsable && (
+                <div className="bg-gray-100 p-3 rounded">
+                  <Label>Barbero seleccionado:</Label>
+                  <div className="font-semibold">{responsable}</div>
+                </div>
+              )}
               <Button
                 onClick={() => {
                   if (!formData.nombre || !formData.email || !formData.telefono || !servicioSeleccionado || !responsableSeleccionado) {
