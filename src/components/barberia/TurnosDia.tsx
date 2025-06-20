@@ -1,13 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AgregarTurno from './AgregarTurno';
 import { useToast } from '@/hooks/use-toast';
 
 interface Turno {
@@ -39,7 +36,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [date, setDate] = React.useState<Date | undefined>(new Date());
-  const [mostrarAgregarTurno, setMostrarAgregarTurno] = useState(false);
   const { toast } = useToast();
 
   const realizarFetchConReintentos = async (url: string, options?: RequestInit, maxReintentos = 3) => {
@@ -256,9 +252,9 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const completados = turnosDelDia.filter(t => t.estado === 'Completado').length;
     const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
 
-    // Los ingresos del día se calculan solo con turnos RESERVADOS
+    // Los ingresos del día se calculan con turnos CONFIRMADOS de hoy
     const totalIngresosDia = turnosDelDia
-      .filter(t => t.estado === 'Reservado')
+      .filter(t => t.estado === 'Confirmado')
       .reduce((sum, t) => sum + (t.valor || 0), 0);
 
     return {
@@ -381,13 +377,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
               />
             </PopoverContent>
           </Popover>
-          
-          <Button 
-            onClick={() => setMostrarAgregarTurno(true)}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            + Turno
-          </Button>
         </div>
       </div>
 
@@ -441,17 +430,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             </Card>
           ))}
         </div>
-      )}
-
-      {mostrarAgregarTurno && (
-        <AgregarTurno
-          onClose={() => setMostrarAgregarTurno(false)}
-          onTurnoAgregado={() => {
-            obtenerTurnos();
-            setMostrarAgregarTurno(false);
-          }}
-          fechaSeleccionada={date || new Date()}
-        />
       )}
     </div>
   );
