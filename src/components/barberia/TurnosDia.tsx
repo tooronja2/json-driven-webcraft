@@ -29,7 +29,7 @@ interface TurnosDiaProps {
   usuario: string;
 }
 
-// URL ACTUALIZADA de Google Apps Script
+// URL CORRECTA de Google Apps Script
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKOsd8hZqnvXfe46JaM59rPPXCKLEoMLrRzzdFcQvF-NhiM_eZQxSsnh-B1aUTjQiu/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
@@ -189,7 +189,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       console.log('🔄 Cancelando turno:', turnoId);
       
-      // Usar la misma estructura que la página de cancelación por email
       const response = await realizarFetchConReintentos(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
