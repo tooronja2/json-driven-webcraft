@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,8 +14,8 @@ interface AgregarTurnoProps {
   fechaSeleccionada: Date;
 }
 
-// URL CORRECTA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKOsd8hZqnvXfe46JaM59rPPXCKLEoMLrRzzdFcQvF-NhiM_eZQxSsnh-B1aUTjQiu/exec';
+// URL ACTUALIZADA de Google Apps Script
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 // Usar los mismos servicios que están en servicios.json
@@ -65,7 +66,9 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
   };
 
   const generarId = (): string => {
-    return `evento_${Date.now()}`;
+    const timestamp = Date.now();
+    const random = Math.floor(Math.random() * 1000);
+    return `TURNO_${timestamp}_${random}`;
   };
 
   const filtrarHorariosPasados = (horarios: string[]): string[] => {
@@ -125,76 +128,73 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
       const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
 
-      // Usar la misma estructura que CalendarioCustom.tsx
-      const reservaData = {
-        action: 'crearReserva',
-        apiKey: API_SECRET_KEY,
-        ID_Evento: generarId(),
-        Titulo_Evento: formData.servicio,
-        Nombre_Cliente: 'Atención directa en local',
-        Email_Cliente: 'atencion@barberiaestilo.com',
-        Fecha: fechaISO,
-        Hora_Inicio: formData.hora,
-        Hora_Fin: calcularHoraFin(formData.hora, formData.servicio),
-        Descripcion: `Turno sin reserva - ${formData.servicio}`,
-        Estado: 'Completado',
-        'Valor del turno': servicioSeleccionado?.precio || 0,
-        'Servicios incluidos': formData.servicio,
-        Responsable: formData.responsable
+      const turnoData = {
+        action: 'createEvento',
+        id: generarId(),
+        titulo: 'Atención directa en local',
+        nombre: 'Atención directa en local',
+        email: 'atencion@barberiaestilo.com',
+        fecha: fechaISO,
+        horaInicio: formData.hora,
+        horaFin: calcularHoraFin(formData.hora, formData.servicio),
+        descripcion: `Turno sin reserva - ${formData.servicio}`,
+        servicio: formData.servicio,
+        valor: servicioSeleccionado?.precio || 0,
+        responsable: formData.responsable,
+        estado: 'Completado',
+        origen: 'manual',
+        origen_panel: true,
+        apiKey: API_SECRET_KEY
       };
 
-      console.log('Enviando turno sin reserva:', reservaData);
+      console.log('Enviando turno sin reserva:', turnoData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(reservaData)
+        body: JSON.stringify(turnoData)
       });
 
       const result = await response.json();
       console.log('Respuesta del servidor:', result);
 
-      // Siempre mostrar éxito porque sabemos que el turno se procesó
-      setMensajeExito('Turno agregado exitosamente');
-      setFormData({
-        servicio: '',
-        hora: '',
-        responsable: ''
-      });
-      
-      toast({
-        title: "Turno agregado",
-        description: "El turno se agregó correctamente como completado.",
-      });
-      
-      setTimeout(() => {
-        setMensajeExito('');
-        onTurnoAgregado();
-        onClose();
-      }, 2000);
-
+      if (result.success) {
+        setMensajeExito('Turno agregado exitosamente');
+        setFormData({
+          servicio: '',
+          hora: '',
+          responsable: ''
+        });
+        
+        toast({
+          title: "Turno agregado",
+          description: "El turno se agregó correctamente como completado.",
+        });
+        
+        setTimeout(() => {
+          setMensajeExito('');
+          onTurnoAgregado();
+          onClose();
+        }, 2000);
+      } else {
+        setError(result.error || 'Error al agregar el turno');
+        toast({
+          title: "Error",
+          description: result.error || 'Error al agregar el turno',
+          variant: "destructive",
+        });
+      }
     } catch (error) {
       console.error('Error:', error);
-      // Incluso en caso de error, asumimos que se procesó correctamente
-      setMensajeExito('Turno agregado exitosamente');
-      setFormData({
-        servicio: '',
-        hora: '',
-        responsable: ''
-      });
-      
+      const errorMessage = 'Error de conexión. Inténtalo nuevamente.';
+      setError(errorMessage);
       toast({
-        title: "Turno agregado",
-        description: "El turno se agregó correctamente como completado.",
+        title: "Error de conexión",
+        description: errorMessage,
+        variant: "destructive",
       });
-      
-      setTimeout(() => {
-        setMensajeExito('');
-        onTurnoAgregado();
-        onClose();
-      }, 2000);
     } finally {
       setEnviando(false);
     }

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 
 interface HorarioEspecialista {
@@ -14,8 +15,8 @@ interface DiaLibre {
   Dia: string;
 }
 
-// URL CORRECTA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKOsd8hZqnvXfe46JaM59rPPXCKLEoMLrRzzdFcQvF-NhiM_eZQxSsnh-B1aUTjQiu/exec';
+// URL ACTUALIZADA de Google Apps Script
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 
 // Función para normalizar hora a formato "HH:MM"
 const normalizarHora = (hora: string | number): string => {
