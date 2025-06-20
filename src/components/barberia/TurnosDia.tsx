@@ -29,7 +29,7 @@ interface TurnosDiaProps {
   usuario: string;
 }
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzsEzOPLN3LUfLtkbWyvQ_mVzxhsdcK3qtFOBR6j73KeGPoTW7eZffINeH5T-uTJ6l/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
@@ -197,7 +197,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       console.log('🔄 Actualizando turno:', { turnoId, nuevoEstado });
       
-      // MÉTODO 1: POST con JSON Body (PREFERIDO)
+      // Usar POST con JSON Body
       const requestBodyJSON = {
         action: 'updateEstado',
         id: turnoId,
@@ -208,69 +208,30 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
       console.log('📤 Request body JSON:', requestBodyJSON);
 
-      try {
-        console.log('🔄 Intentando método POST con JSON body...');
+      const response = await realizarFetchConReintentos(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBodyJSON)
+      });
+
+      const result = await response.json();
+      console.log('✅ Response result:', result);
+
+      if (result.success) {
+        setTurnos(prevTurnos =>
+          prevTurnos.map(turno =>
+            turno.id === turnoId ? { ...turno, estado: nuevoEstado } : turno
+          )
+        );
         
-        const response = await realizarFetchConReintentos(GOOGLE_APPS_SCRIPT_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(requestBodyJSON)
+        toast({
+          title: "Estado actualizado",
+          description: `El turno se ha ${nuevoEstado.toLowerCase()} correctamente.`,
         });
-
-        const result = await response.json();
-        console.log('✅ Response result (POST JSON):', result);
-
-        if (result.success) {
-          setTurnos(prevTurnos =>
-            prevTurnos.map(turno =>
-              turno.id === turnoId ? { ...turno, estado: nuevoEstado } : turno
-            )
-          );
-          
-          toast({
-            title: "Estado actualizado",
-            description: `El turno se ha ${nuevoEstado.toLowerCase()} correctamente.`,
-          });
-          return;
-        } else {
-          throw new Error(result.error || 'Error desconocido del servidor');
-        }
-      } catch (postError) {
-        console.warn('⚠️ Método POST falló, intentando GET como fallback:', postError);
-        
-        // MÉTODO 2: GET con parámetros URL (FALLBACK)
-        const params = new URLSearchParams({
-          action: 'updateEstado',
-          id: turnoId,
-          estado: nuevoEstado,
-          origen_panel: 'true',
-          apiKey: API_SECRET_KEY,
-          timestamp: Date.now().toString()
-        });
-
-        const getUrl = `${GOOGLE_APPS_SCRIPT_URL}?${params.toString()}`;
-        console.log('🔄 Intentando método GET como fallback:', getUrl);
-
-        const response = await realizarFetchConReintentos(getUrl);
-        const result = await response.json();
-        console.log('✅ Response result (GET fallback):', result);
-
-        if (result.success) {
-          setTurnos(prevTurnos =>
-            prevTurnos.map(turno =>
-              turno.id === turnoId ? { ...turno, estado: nuevoEstado } : turno
-            )
-          );
-          
-          toast({
-            title: "Estado actualizado",
-            description: `El turno se ha ${nuevoEstado.toLowerCase()} correctamente.`,
-          });
-        } else {
-          throw new Error(result.error || 'Error desconocido del servidor');
-        }
+      } else {
+        throw new Error(result.error || 'Error desconocido del servidor');
       }
 
     } catch (error) {
@@ -295,10 +256,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         variant: "destructive",
       });
     }
-  };
-
-  const confirmarTurno = async (turnoId: string) => {
-    await actualizarEstadoTurno(turnoId, 'Confirmado');
   };
 
   const calcularEstadisticas = () => {
@@ -498,26 +455,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 </div>
                 
                 <div className="flex gap-2 md:flex-col lg:flex-row">
-                  {turno.estado === 'Reservado' && (
-                    <>
-                      <Button
-                        onClick={() => confirmarTurno(turno.id)}
-                        size="sm"
-                        className="bg-yellow-600 hover:bg-yellow-700 text-white flex-1 md:flex-none"
-                      >
-                        Confirmar
-                      </Button>
-                      <Button
-                        onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-600 hover:bg-red-50 flex-1 md:flex-none"
-                      >
-                        Cancelar
-                      </Button>
-                    </>
-                  )}
-                  {turno.estado === 'Confirmado' && (
+                  {(turno.estado === 'Reservado' || turno.estado === 'Confirmado') && (
                     <>
                       <Button
                         onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
@@ -525,6 +463,13 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                         className="bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none"
                       >
                         Completar
+                      </Button>
+                      <Button
+                        onClick={() => actualizarEstadoTurno(turno.id, 'Cliente Ausente')}
+                        size="sm"
+                        className="bg-orange-600 hover:bg-orange-700 text-white flex-1 md:flex-none"
+                      >
+                        Cliente Ausente
                       </Button>
                       <Button
                         onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
@@ -550,6 +495,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             obtenerTurnos();
             setMostrarAgregarTurno(false);
           }}
+          fechaSeleccionada={date || new Date()}
         />
       )}
     </div>

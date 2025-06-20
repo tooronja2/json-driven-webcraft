@@ -1,13 +1,16 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useHorariosEspecialistas } from '@/hooks/useHorariosEspecialistas';
+import { useToast } from '@/hooks/use-toast';
 
 interface AgregarTurnoProps {
   onClose: () => void;
   onTurnoAgregado: () => void;
+  fechaSeleccionada: Date;
 }
 
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
@@ -30,15 +33,18 @@ interface FormDataSimple {
   responsable: string;
 }
 
-const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado }) => {
+const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, fechaSeleccionada }) => {
   const [formData, setFormData] = useState<FormDataSimple>({
     servicio: '',
     hora: '',
     responsable: ''
   });
+  const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
   const [error, setError] = useState('');
   const [mensajeExito, setMensajeExito] = useState('');
   const [enviando, setEnviando] = useState(false);
+  const { obtenerHorariosDisponibles } = useHorariosEspecialistas();
+  const { toast } = useToast();
 
   const calcularHoraFin = (horaInicio: string, servicio: string): string => {
     const servicioSeleccionado = SERVICIOS.find(s => s.nombre === servicio);
@@ -63,6 +69,50 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
     return `TURNO_${timestamp}_${random}`;
   };
 
+  const filtrarHorariosPasados = (horarios: string[]): string[] => {
+    const ahora = new Date();
+    const horaActual = ahora.getHours();
+    const minutoActual = ahora.getMinutes();
+    
+    // Solo filtrar si la fecha seleccionada es hoy
+    const esHoy = fechaSeleccionada.toDateString() === ahora.toDateString();
+    
+    if (!esHoy) {
+      return horarios; // Si no es hoy, mostrar todos los horarios
+    }
+    
+    return horarios.filter(horario => {
+      const [hora, minuto] = horario.split(':').map(Number);
+      const horarioEnMinutos = hora * 60 + minuto;
+      const ahoreEnMinutos = horaActual * 60 + minutoActual;
+      
+      return horarioEnMinutos > ahoreEnMinutos;
+    });
+  };
+
+  const actualizarHorarios = () => {
+    if (formData.responsable && formData.servicio) {
+      const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
+      const duracion = servicioSeleccionado?.duracion || 15;
+      
+      const horariosCompletos = obtenerHorariosDisponibles(formData.responsable, fechaSeleccionada, duracion);
+      const horariosFiltrados = filtrarHorariosPasados(horariosCompletos);
+      
+      setHorariosDisponibles(horariosFiltrados);
+      
+      // Si el horario seleccionado ya no está disponible, limpiarlo
+      if (formData.hora && !horariosFiltrados.includes(formData.hora)) {
+        setFormData(prev => ({ ...prev, hora: '' }));
+      }
+    } else {
+      setHorariosDisponibles([]);
+    }
+  };
+
+  useEffect(() => {
+    actualizarHorarios();
+  }, [formData.responsable, formData.servicio, fechaSeleccionada]);
+
   const enviarTurno = async () => {
     if (!formData.servicio || !formData.hora || !formData.responsable) {
       setError('Por favor completa todos los campos');
@@ -74,7 +124,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
 
     try {
       const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
-      const fechaHoy = new Date().toISOString().split('T')[0];
+      const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
 
       const turnoData = {
         action: 'createEvento',
@@ -82,7 +132,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
         titulo: 'Atención directa en local',
         nombre: 'Atención directa en local',
         email: 'atencion@barberiaestilo.com',
-        fecha: fechaHoy,
+        fecha: fechaISO,
         horaInicio: formData.hora,
         horaFin: calcularHoraFin(formData.hora, formData.servicio),
         descripcion: `Turno sin reserva - ${formData.servicio}`,
@@ -91,6 +141,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
         responsable: formData.responsable,
         estado: 'Completado',
         origen: 'manual',
+        origen_panel: true,
         apiKey: API_SECRET_KEY
       };
 
@@ -114,6 +165,12 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
           hora: '',
           responsable: ''
         });
+        
+        toast({
+          title: "Turno agregado",
+          description: "El turno se agregó correctamente como completado.",
+        });
+        
         setTimeout(() => {
           setMensajeExito('');
           onTurnoAgregado();
@@ -121,10 +178,21 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
         }, 2000);
       } else {
         setError(result.error || 'Error al agregar el turno');
+        toast({
+          title: "Error",
+          description: result.error || 'Error al agregar el turno',
+          variant: "destructive",
+        });
       }
     } catch (error) {
       console.error('Error:', error);
-      setError('Error de conexión. Inténtalo nuevamente.');
+      const errorMessage = 'Error de conexión. Inténtalo nuevamente.';
+      setError(errorMessage);
+      toast({
+        title: "Error de conexión",
+        description: errorMessage,
+        variant: "destructive",
+      });
     } finally {
       setEnviando(false);
     }
@@ -132,14 +200,30 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
         <h2 className="text-lg font-semibold mb-4">Agregar Turno Completado</h2>
-        <p className="text-sm text-gray-600 mb-4">Para atenciones directas sin reserva previa</p>
+        <p className="text-sm text-gray-600 mb-4">
+          Para atenciones directas sin reserva previa - Fecha: {fechaSeleccionada.toLocaleDateString('es-AR')}
+        </p>
 
-        {error && <div className="text-red-500 mb-4">{error}</div>}
-        {mensajeExito && <div className="text-green-500 mb-4">{mensajeExito}</div>}
+        {error && <div className="text-red-500 mb-4 text-sm">{error}</div>}
+        {mensajeExito && <div className="text-green-500 mb-4 text-sm">{mensajeExito}</div>}
 
         <div className="space-y-4">
+          <div>
+            <Label htmlFor="responsable">Barbero Responsable</Label>
+            <Select onValueChange={(value) => setFormData({ ...formData, responsable: value })}>
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona un barbero" />
+              </SelectTrigger>
+              <SelectContent>
+                {BARBEROS.map((barbero) => (
+                  <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
           <div>
             <Label htmlFor="servicio">Tipo de Servicio</Label>
             <Select onValueChange={(value) => setFormData({ ...formData, servicio: value })}>
@@ -157,27 +241,28 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
           </div>
 
           <div>
-            <Label htmlFor="hora">Hora de Inicio (HH:MM)</Label>
-            <Input
-              type="time"
-              id="hora"
-              value={formData.hora}
-              onChange={(e) => setFormData({ ...formData, hora: e.target.value })}
-            />
-          </div>
-
-          <div>
-            <Label htmlFor="responsable">Barbero Responsable</Label>
-            <Select onValueChange={(value) => setFormData({ ...formData, responsable: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un barbero" />
-              </SelectTrigger>
-              <SelectContent>
-                {BARBEROS.map((barbero) => (
-                  <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Label htmlFor="hora">Hora de Inicio</Label>
+            {horariosDisponibles.length > 0 ? (
+              <Select onValueChange={(value) => setFormData({ ...formData, hora: value })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecciona un horario" />
+                </SelectTrigger>
+                <SelectContent>
+                  {horariosDisponibles.map((horario) => (
+                    <SelectItem key={horario} value={horario}>
+                      {horario} - {calcularHoraFin(horario, formData.servicio || '')}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <div className="text-sm text-gray-500 p-2 border rounded">
+                {formData.responsable && formData.servicio 
+                  ? 'No hay horarios disponibles para esta fecha y especialista'
+                  : 'Selecciona primero el barbero y el servicio'
+                }
+              </div>
+            )}
           </div>
 
           {formData.servicio && formData.hora && (
@@ -196,7 +281,11 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
           <Button type="button" variant="secondary" onClick={onClose}>
             Cancelar
           </Button>
-          <Button type="button" onClick={enviarTurno} disabled={enviando}>
+          <Button 
+            type="button" 
+            onClick={enviarTurno} 
+            disabled={enviando || !formData.servicio || !formData.hora || !formData.responsable}
+          >
             {enviando ? 'Guardando...' : 'Agregar Turno'}
           </Button>
         </div>
