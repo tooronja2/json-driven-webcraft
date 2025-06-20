@@ -98,6 +98,7 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, per
         <AgregarTurno 
           onClose={() => setMostrarAgregarTurno(false)}
           onTurnoAgregado={() => setMostrarAgregarTurno(false)}
+          fechaSeleccionada={new Date()}
         />
       )}
 
