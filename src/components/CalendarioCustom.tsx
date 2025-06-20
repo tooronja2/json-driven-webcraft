@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -26,8 +25,11 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
+// 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
+const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
+
 // URL ACTUALIZADA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp2anjrxl3maBSUwqw6DbdW5K2wGM7nBLORzxdGwX8bXVkgmkZrVyb8Sy8QNjaBM-P/exec';
 
 // Función mejorada para extraer hora en formato HH:MM
 const extraerHora = (horaInput: string | Date): string => {
@@ -82,12 +84,6 @@ const extraerHora = (horaInput: string | Date): string => {
   console.log('⚠️ No se pudo extraer hora de:', horaInput);
   return '';
 };
-
-// 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
-const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
-
-// URL ACTUALIZADA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp2anjrxl3maBSUwqw6DbdW5K2wGM7nBLORzxdGwX8bXVkgmkZrVyb8Sy8QNjaBM-P/exec';
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
