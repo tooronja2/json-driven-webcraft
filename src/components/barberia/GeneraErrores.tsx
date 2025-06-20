@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,11 +18,6 @@ const GeneraErrores: React.FC = () => {
       color: 'text-red-600',
       instruccionIA: 'Por favor revisa el componente GeneraErrores.tsx línea 45. Hay un JSX mal formado que necesita ser corregido. Asegúrate de cerrar correctamente todas las etiquetas.',
       accion: () => {
-        // Generar error de sintaxis JSX real
-        const elementoRoto = React.createElement('div', { 
-          dangerouslySetInnerHTML: { __html: '<div><span>Elemento sin cerrar' }
-        });
-        
         console.error('ERROR SINTAXIS JSX:', {
           error: 'JSX element not properly closed',
           ubicacion: 'GeneraErrores.tsx:45',
@@ -51,10 +45,11 @@ const GeneraErrores: React.FC = () => {
           archivos_adjuntos: archivosAdjuntos.length > 0 ? `${archivosAdjuntos.length} archivo(s) adjunto(s)` : 'ninguno'
         });
         
-        // @ts-ignore - Forzar error de tipos
-        const datos: { nombre: string } = { nombre: 'test' };
-        const resultado = datos.propiedadInexistente.valor;
-        throw new Error(`TYPESCRIPT_ERROR: Property 'propiedadInexistente' does not exist on type`);
+        // Generar error de tipos en runtime
+        const datos: any = { nombre: 'test' };
+        const propiedadInexistente = 'propiedadInexistente';
+        const resultado = datos[propiedadInexistente].valor;
+        throw new Error(`TYPESCRIPT_ERROR: Property '${propiedadInexistente}' does not exist on type`);
       }
     },
     {
