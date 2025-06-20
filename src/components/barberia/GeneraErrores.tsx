@@ -1,219 +1,244 @@
-import React, { useState } from 'react';
+
+import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { AlertTriangle, Bug, Zap, Database, Network, Clock, Upload, X } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { AlertTriangle, Bug, Zap, Database, Network, Clock, Upload, X, Edit3, Image } from 'lucide-react';
 
 const GeneraErrores: React.FC = () => {
   const [errorActivo, setErrorActivo] = useState<string | null>(null);
   const [cargando, setCargando] = useState(false);
-  const [archivosAdjuntos, setArchivosAdjuntos] = useState<File[]>([]);
+  const [instruccionesPersonalizadas, setInstruccionesPersonalizadas] = useState<{[key: string]: string}>({});
+  const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
+  const pasteAreaRef = useRef<HTMLDivElement>(null);
 
   const erroresPosibles = [
     {
-      id: 'syntax',
-      nombre: 'Error de Sintaxis JSX',
-      descripcion: 'Rompe un componente React generando JSX inválido',
+      id: 'console-warning',
+      nombre: 'Warning de Consola',
+      descripcion: 'Genera un warning controlado en consola',
       icon: Bug,
-      color: 'text-red-600',
-      instruccionIA: 'Por favor revisa el componente GeneraErrores.tsx línea 45. Hay un JSX mal formado que necesita ser corregido. Asegúrate de cerrar correctamente todas las etiquetas.',
-      accion: () => {
-        console.error('ERROR SINTAXIS JSX:', {
-          error: 'JSX element not properly closed',
-          ubicacion: 'GeneraErrores.tsx:45',
-          descripcion: 'Elemento JSX mal formado detectado',
-          instruccion_para_ai: 'Por favor revisa el componente GeneraErrores.tsx línea 45. Hay un JSX mal formado que necesita ser corregido. Asegúrate de cerrar correctamente todas las etiquetas.',
-          archivos_adjuntos: archivosAdjuntos.length > 0 ? `${archivosAdjuntos.length} archivo(s) adjunto(s)` : 'ninguno'
+      color: 'text-orange-500',
+      instruccionDefault: 'Hay un warning en consola que necesita atención. Revisa el componente y optimiza el código para eliminar este warning.',
+      accion: (instruccion: string) => {
+        console.warn('LOVABLE_AI_WARNING:', {
+          error: 'React component optimization needed',
+          ubicacion: 'GeneraErrores.tsx:42',
+          descripcion: 'Warning de optimización detectado',
+          instruccion_para_ai: instruccion,
+          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
+          timestamp: new Date().toISOString()
         });
-        
-        throw new Error('JSX_SYNTAX_ERROR: Unclosed JSX element at GeneraErrores.tsx:45');
       }
     },
     {
-      id: 'type',
-      nombre: 'Error de TypeScript',
-      descripcion: 'Genera un error de tipos que rompe la compilación',
+      id: 'prop-validation',
+      nombre: 'Error de Props',
+      descripcion: 'Simula error de validación de props',
       icon: AlertTriangle,
-      color: 'text-orange-600',
-      instruccionIA: 'Hay un error de tipos en la variable "datos". Se está intentando acceder a una propiedad que no existe en el tipo definido. Corrige la interface o la forma de acceder a los datos.',
-      accion: () => {
-        console.error('ERROR TYPESCRIPT:', {
-          error: 'Property does not exist on type',
-          ubicacion: 'GeneraErrores.tsx:67',
-          descripcion: 'Intento de acceso a propiedad inexistente',
-          instruccion_para_ai: 'Hay un error de tipos en la variable "datos". Se está intentando acceder a una propiedad que no existe en el tipo definido. Corrige la interface o la forma de acceder a los datos.',
-          archivos_adjuntos: archivosAdjuntos.length > 0 ? `${archivosAdjuntos.length} archivo(s) adjunto(s)` : 'ninguno'
-        });
-        
-        // Generar error de tipos en runtime
-        const datos: any = { nombre: 'test' };
-        const propiedadInexistente = 'propiedadInexistente';
-        const resultado = datos[propiedadInexistente].valor;
-        throw new Error(`TYPESCRIPT_ERROR: Property '${propiedadInexistente}' does not exist on type`);
-      }
-    },
-    {
-      id: 'state',
-      nombre: 'Error de Estado React',
-      descripcion: 'Rompe el estado del componente',
-      icon: Zap,
       color: 'text-yellow-600',
-      instruccionIA: 'El hook useState está siendo llamado condicionalmente, lo que viola las reglas de React Hooks. Mueve la llamada al hook fuera de cualquier condicional.',
-      accion: () => {
-        console.error('ERROR REACT HOOKS:', {
-          error: 'React Hook called conditionally',
-          ubicacion: 'GeneraErrores.tsx:89',
-          descripcion: 'Violación de las reglas de React Hooks',
-          instruccion_para_ai: 'El hook useState está siendo llamado condicionalmente, lo que viola las reglas de React Hooks. Mueve la llamada al hook fuera de cualquier condicional.',
-          archivos_adjuntos: archivosAdjuntos.length > 0 ? `${archivosAdjuntos.length} archivo(s) adjunto(s)` : 'ninguno'
+      instruccionDefault: 'Las props del componente no están siendo validadas correctamente. Añade PropTypes o mejora las interfaces TypeScript.',
+      accion: (instruccion: string) => {
+        console.error('LOVABLE_AI_PROPS_ERROR:', {
+          error: 'Invalid prop type detected',
+          ubicacion: 'GeneraErrores.tsx:67',
+          descripcion: 'Error de validación de props',
+          instruccion_para_ai: instruccion,
+          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
+          timestamp: new Date().toISOString()
         });
-        
-        if (Math.random() > 0.5) {
-          const [nuevoEstado] = useState('error'); // Esto rompe las reglas de hooks
-        }
-        throw new Error('REACT_HOOKS_ERROR: Hook called conditionally');
       }
     },
     {
-      id: 'import',
-      nombre: 'Error de Importación',
-      descripcion: 'Intenta importar un módulo inexistente',
-      icon: Network,
+      id: 'state-update',
+      nombre: 'State Update Warning',
+      descripcion: 'Warning sobre actualización de estado',
+      icon: Zap,
       color: 'text-blue-600',
-      instruccionIA: 'Hay un import de un módulo que no existe. Revisa las importaciones en la parte superior del archivo y elimina o corrige las importaciones incorrectas.',
-      accion: () => {
-        console.error('ERROR IMPORTACION:', {
-          error: 'Module not found',
-          ubicacion: 'GeneraErrores.tsx:1',
-          descripcion: 'Intento de importar módulo inexistente',
-          instruccion_para_ai: 'Hay un import de un módulo que no existe. Revisa las importaciones en la parte superior del archivo y elimina o corrige las importaciones incorrectas.',
-          archivos_adjuntos: archivosAdjuntos.length > 0 ? `${archivosAdjuntos.length} archivo(s) adjunto(s)` : 'ninguno'
+      instruccionDefault: 'Se está intentando actualizar el estado después de que el componente se desmontó. Añade cleanup en useEffect.',
+      accion: (instruccion: string) => {
+        console.warn('LOVABLE_AI_STATE_WARNING:', {
+          error: 'Cannot update state on unmounted component',
+          ubicacion: 'GeneraErrores.tsx:89',
+          descripcion: 'Warning de actualización de estado',
+          instruccion_para_ai: instruccion,
+          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
+          timestamp: new Date().toISOString()
         });
-        
-        throw new Error('MODULE_NOT_FOUND: Cannot resolve module "./moduloInexistente"');
       }
     },
     {
-      id: 'memory',
-      nombre: 'Error de Memoria/Loop',
-      descripcion: 'Genera un loop infinito que consume memoria',
-      icon: Clock,
+      id: 'accessibility',
+      nombre: 'Warning de Accesibilidad',
+      descripcion: 'Problema de accesibilidad detectado',
+      icon: Network,
       color: 'text-purple-600',
-      instruccionIA: 'Hay un useEffect sin dependencias correctas que está generando un loop infinito. Revisa las dependencias del useEffect y añade las variables necesarias al array de dependencias.',
-      accion: () => {
-        console.error('ERROR LOOP INFINITO:', {
-          error: 'Infinite re-render loop detected',
+      instruccionDefault: 'Faltan atributos de accesibilidad. Añade aria-labels, alt text y mejora la navegación por teclado.',
+      accion: (instruccion: string) => {
+        console.warn('LOVABLE_AI_A11Y_WARNING:', {
+          error: 'Accessibility issues detected',
           ubicacion: 'GeneraErrores.tsx:125',
-          descripcion: 'Loop infinito en useEffect',
-          instruccion_para_ai: 'Hay un useEffect sin dependencias correctas que está generando un loop infinito. Revisa las dependencias del useEffect y añade las variables necesarias al array de dependencias.',
-          archivos_adjuntos: archivosAdjuntos.length > 0 ? `${archivosAdjuntos.length} archivo(s) adjunto(s)` : 'ninguno'
+          descripcion: 'Warning de accesibilidad',
+          instruccion_para_ai: instruccion,
+          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
+          timestamp: new Date().toISOString()
         });
-        
-        // Simular loop infinito con setTimeout para no bloquear completamente
-        const crearLoop = () => {
-          setTimeout(() => {
-            throw new Error('INFINITE_LOOP: useEffect re-rendering infinitely');
-          }, 100);
-        };
-        crearLoop();
       }
     },
     {
-      id: 'api',
-      nombre: 'Error de API/Red',
-      descripcion: 'Simula error en llamada a API',
+      id: 'performance',
+      nombre: 'Warning de Performance',
+      descripcion: 'Problema de rendimiento detectado',
+      icon: Clock,
+      color: 'text-red-500',
+      instruccionDefault: 'El componente se está re-renderizando innecesariamente. Optimiza con React.memo o useMemo.',
+      accion: (instruccion: string) => {
+        console.warn('LOVABLE_AI_PERFORMANCE_WARNING:', {
+          error: 'Unnecessary re-renders detected',
+          ubicacion: 'GeneraErrores.tsx:151',
+          descripcion: 'Warning de performance',
+          instruccion_para_ai: instruccion,
+          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
+          timestamp: new Date().toISOString()
+        });
+      }
+    },
+    {
+      id: 'css-issue',
+      nombre: 'Problema de CSS',
+      descripcion: 'Warning de estilos CSS',
       icon: Database,
       color: 'text-gray-600',
-      instruccionIA: 'La llamada a la API está fallando. Verifica la URL del endpoint, los headers de autenticación y maneja el error apropiadamente con try/catch.',
-      accion: () => {
-        console.error('ERROR API:', {
-          error: 'Failed to fetch API data',
-          ubicacion: 'GeneraErrores.tsx:151',
-          descripcion: 'Error en llamada a API externa',
-          instruccion_para_ai: 'La llamada a la API está fallando. Verifica la URL del endpoint, los headers de autenticación y maneja el error apropiadamente con try/catch.',
-          archivos_adjuntos: archivosAdjuntos.length > 0 ? `${archivosAdjuntos.length} archivo(s) adjunto(s)` : 'ninguno'
+      instruccionDefault: 'Hay conflictos en los estilos CSS. Revisa las clases Tailwind y corrige los conflictos de especificidad.',
+      accion: (instruccion: string) => {
+        console.warn('LOVABLE_AI_CSS_WARNING:', {
+          error: 'CSS styling conflicts detected',
+          ubicacion: 'GeneraErrores.tsx:177',
+          descripcion: 'Warning de CSS',
+          instruccion_para_ai: instruccion,
+          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
+          timestamp: new Date().toISOString()
         });
-        
-        throw new Error('API_ERROR: Failed to fetch data from https://api.nonexistent.com/data');
       }
     }
   ];
+
+  // Manejar paste de imágenes
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      const items = e.clipboardData?.items;
+      if (!items) return;
+
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+              const preview = event.target?.result as string;
+              setImagenesAdjuntas(prev => [...prev, { file, preview }]);
+            };
+            reader.readAsDataURL(file);
+          }
+        }
+      }
+    };
+
+    document.addEventListener('paste', handlePaste);
+    return () => document.removeEventListener('paste', handlePaste);
+  }, []);
 
   const generarError = async (error: typeof erroresPosibles[0]) => {
     setCargando(true);
     setErrorActivo(error.id);
     
-    // Simular delay antes del error
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    await new Promise(resolve => setTimeout(resolve, 800));
+    
+    const instruccionPersonalizada = instruccionesPersonalizadas[error.id] || error.instruccionDefault;
     
     try {
-      error.accion();
+      error.accion(instruccionPersonalizada);
+      console.info('ERROR_GENERADO_EXITOSAMENTE:', {
+        tipo: error.nombre,
+        instruccion_enviada: instruccionPersonalizada,
+        imagenes_count: imagenesAdjuntas.length
+      });
     } catch (err) {
-      // El error ya fue loggeado en la acción
-      setCargando(false);
-      throw err; // Re-lanzar para que Lovable lo detecte
+      console.error('Error al generar warning:', err);
     }
+    
+    setCargando(false);
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      const nuevosArchivos = Array.from(e.target.files);
-      setArchivosAdjuntos(prev => [...prev, ...nuevosArchivos]);
-    }
+  const actualizarInstruccion = (errorId: string, nuevaInstruccion: string) => {
+    setInstruccionesPersonalizadas(prev => ({
+      ...prev,
+      [errorId]: nuevaInstruccion
+    }));
   };
 
-  const eliminarArchivo = (index: number) => {
-    setArchivosAdjuntos(prev => prev.filter((_, i) => i !== index));
+  const eliminarImagen = (index: number) => {
+    setImagenesAdjuntas(prev => prev.filter((_, i) => i !== index));
   };
 
   const limpiarTodo = () => {
     setErrorActivo(null);
-    setArchivosAdjuntos([]);
+    setImagenesAdjuntas([]);
+    setInstruccionesPersonalizadas({});
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">Genera Errores - Testing Lovable AI</h2>
+        <h2 className="text-2xl font-bold mb-4">Genera Errores Controlados - Testing Lovable AI</h2>
         <p className="text-gray-600 mb-6">
-          Herramienta para testing del sistema "Try to Fix" de Lovable. Genera errores reales que activan la detección automática de errores.
+          Genera warnings y errores controlados con instrucciones personalizadas para testing del sistema "Try to Fix" de Lovable AI.
         </p>
       </div>
 
-      {/* Sección de archivos adjuntos */}
-      <Card className="border-blue-200 bg-blue-50">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Upload className="h-5 w-5 text-blue-600" />
-            Archivos Adjuntos para Lovable AI
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <input
-              type="file"
-              multiple
-              accept="image/*,.pdf,.txt,.json"
-              onChange={handleFileChange}
-              className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
-            />
+      {/* Área de paste para imágenes */}
+      <Card className="border-dashed border-2 border-blue-300 bg-blue-50">
+        <CardContent className="p-6">
+          <div 
+            ref={pasteAreaRef}
+            className="text-center space-y-4"
+          >
+            <div className="flex items-center justify-center gap-2 text-blue-600">
+              <Image className="h-6 w-6" />
+              <span className="font-medium">Área de Imágenes para Lovable AI</span>
+            </div>
+            <p className="text-sm text-gray-600">
+              Presiona <kbd className="bg-gray-200 px-2 py-1 rounded text-xs">Ctrl + V</kbd> en cualquier lugar para pegar imágenes del portapapeles
+            </p>
             
-            {archivosAdjuntos.length > 0 && (
-              <div className="space-y-2">
-                <p className="text-sm font-medium">Archivos listos para enviar a Lovable AI:</p>
-                {archivosAdjuntos.map((archivo, index) => (
-                  <div key={index} className="flex items-center justify-between bg-white p-2 rounded border">
-                    <span className="text-sm">{archivo.name} ({(archivo.size / 1024).toFixed(1)} KB)</span>
-                    <Button
-                      onClick={() => eliminarArchivo(index)}
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 w-6 p-0 text-red-500 hover:text-red-700"
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  </div>
-                ))}
+            {imagenesAdjuntas.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-blue-700">
+                  {imagenesAdjuntas.length} imagen(es) lista(s) para enviar a Lovable AI:
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {imagenesAdjuntas.map((imagen, index) => (
+                    <div key={index} className="relative bg-white rounded border p-2">
+                      <img 
+                        src={imagen.preview} 
+                        alt={`Imagen ${index + 1}`}
+                        className="w-full h-20 object-cover rounded"
+                      />
+                      <Button
+                        onClick={() => eliminarImagen(index)}
+                        variant="ghost"
+                        size="sm"
+                        className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        {(imagen.file.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
@@ -221,22 +246,22 @@ const GeneraErrores: React.FC = () => {
       </Card>
 
       {errorActivo && (
-        <Alert className="border-red-200 bg-red-50">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
+        <Alert className="border-orange-200 bg-orange-50">
+          <AlertTriangle className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-800">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <strong>Error activo generado:</strong> {erroresPosibles.find(e => e.id === errorActivo)?.nombre}
+                <strong>Warning/Error generado:</strong> {erroresPosibles.find(e => e.id === errorActivo)?.nombre}
                 <br />
-                <span className="text-sm">El error ha sido enviado a la consola con instrucciones para Lovable AI</span>
+                <span className="text-sm">Revisa la consola del navegador - Lovable AI debería detectar automáticamente el problema</span>
               </div>
               <Button 
                 onClick={limpiarTodo}
                 variant="outline" 
                 size="sm"
-                className="ml-4 text-red-600 border-red-300 hover:bg-red-100"
+                className="ml-4 text-orange-600 border-orange-300 hover:bg-orange-100"
               >
-                Limpiar
+                Limpiar Todo
               </Button>
             </div>
           </AlertDescription>
@@ -254,18 +279,33 @@ const GeneraErrores: React.FC = () => {
                   {error.nombre}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 text-sm mb-4">{error.descripcion}</p>
-                <div className="bg-gray-100 p-3 rounded text-xs mb-4">
-                  <strong>Instrucción para AI:</strong> {error.instruccionIA}
+              <CardContent className="space-y-4">
+                <p className="text-gray-600 text-sm">{error.descripcion}</p>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Edit3 className="h-4 w-4 text-gray-500" />
+                    <label className="text-sm font-medium">Instrucción personalizada para Lovable AI:</label>
+                  </div>
+                  <Textarea
+                    placeholder={error.instruccionDefault}
+                    value={instruccionesPersonalizadas[error.id] || ''}
+                    onChange={(e) => actualizarInstruccion(error.id, e.target.value)}
+                    className="text-sm"
+                    rows={3}
+                  />
+                  <p className="text-xs text-gray-500">
+                    Si está vacío, se usará: "{error.instruccionDefault}"
+                  </p>
                 </div>
+                
                 <Button 
                   onClick={() => generarError(error)}
                   disabled={cargando}
                   className="w-full"
-                  variant="destructive"
+                  variant="secondary"
                 >
-                  {cargando && errorActivo === error.id ? 'Generando Error...' : 'Generar Error Real'}
+                  {cargando && errorActivo === error.id ? 'Generando Warning...' : 'Enviar a Lovable AI'}
                 </Button>
               </CardContent>
             </Card>
@@ -275,14 +315,15 @@ const GeneraErrores: React.FC = () => {
 
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg">Información de Debug</CardTitle>
+          <CardTitle className="text-lg">Estado del Sistema</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><strong>Sistema:</strong> Generación de errores reales para testing</div>
-          <div><strong>Archivos adjuntos:</strong> {archivosAdjuntos.length} archivo(s)</div>
+          <div><strong>Modo:</strong> Errores controlados y seguros</div>
+          <div><strong>Imágenes adjuntas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
+          <div><strong>Instrucciones personalizadas:</strong> {Object.keys(instruccionesPersonalizadas).length} configurada(s)</div>
           <div><strong>Timestamp:</strong> {new Date().toLocaleString('es-AR')}</div>
-          <div><strong>Estado:</strong> {errorActivo ? `Error ${errorActivo} activo` : 'Listo para generar errores'}</div>
-          <div><strong>Detección Lovable:</strong> Los errores aparecerán en consola y activarán "Try to Fix"</div>
+          <div><strong>Estado:</strong> {errorActivo ? `Warning ${errorActivo} enviado` : 'Listo para generar warnings'}</div>
+          <div><strong>Detección Lovable:</strong> Los warnings aparecen en consola y activan "Try to Fix"</div>
         </CardContent>
       </Card>
     </div>
