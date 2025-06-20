@@ -1,21 +1,20 @@
-import React, { useState, useEffect } from 'react';
-import { useSearchParams, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle, Loader } from 'lucide-react';
-import SEOHead from '@/components/SEOHead';
 
-// URL de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9wzn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+
+// 🔐 API KEY SECRETA - DEBE SER LA MISMA QUE EN CalendarioCustom
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
+
+// URL ACTUALIZADA de Google Apps Script
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 
 const CancelTurno = () => {
   const [searchParams] = useSearchParams();
   const [cargando, setCargando] = useState(false);
   const [mensaje, setMensaje] = useState('');
   const [turnoData, setTurnoData] = useState<any>(null);
-  const navigate = useNavigate();
-
+  
   const eventId = searchParams.get('id');
 
   useEffect(() => {
@@ -89,7 +88,7 @@ const CancelTurno = () => {
         <div className="bg-white rounded-xl p-6 shadow text-center">
           <p className="text-lg">{mensaje}</p>
           <Button 
-            onClick={() => navigate('/')} 
+            onClick={() => window.location.href = '/'} 
             className="mt-4"
           >
             Volver al inicio
@@ -115,7 +114,7 @@ const CancelTurno = () => {
               <div className="flex gap-3">
                 <Button 
                   variant="outline" 
-                  onClick={() => navigate('/')}
+                  onClick={() => window.location.href = '/'}
                   className="flex-1"
                 >
                   No, mantener turno
@@ -133,7 +132,7 @@ const CancelTurno = () => {
           ) : (
             <div className="text-center">
               <p className="text-red-600">Este turno ya fue cancelado</p>
-              <Button onClick={() => navigate('/')} className="mt-4">
+              <Button onClick={() => window.location.href = '/'} className="mt-4">
                 Volver al inicio
               </Button>
             </div>

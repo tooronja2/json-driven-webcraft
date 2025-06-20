@@ -25,9 +25,6 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
-// 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
-const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
-
 // URL ACTUALIZADA de Google Apps Script
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 
@@ -84,6 +81,9 @@ const extraerHora = (horaInput: string | Date): string => {
   console.log('⚠️ No se pudo extraer hora de:', horaInput);
   return '';
 };
+
+// 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
+const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
@@ -272,7 +272,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       Hora_Inicio: horaSeleccionada,
       Hora_Fin: horaFin,
       Descripcion: `${servicio?.nombre} - Tel: ${datosCliente.telefono || 'No proporcionado'}`,
-      Estado: 'Reservado',
+      Estado: 'Confirmado',
       "Valor del turno": servicio?.precio_oferta || servicio?.precio || 0,
       "Servicios incluidos": servicio?.nombre || '',
       Responsable: responsable
