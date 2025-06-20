@@ -57,18 +57,44 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       if (data.success) {
         // Convertir los datos de Google Sheets al formato que esperamos
         const turnosConvertidos = data.eventos.map((evento: any) => {
-          // Convertir las fechas de Google Sheets
-          const fechaEvento = new Date(evento.Fecha);
-          const horaInicio = new Date(evento['Hora Inicio']);
-          const horaFin = new Date(evento['Hora Fin']);
+          // Parsear fechas correctamente
+          let fechaEvento, horaInicio, horaFin;
+          
+          try {
+            // Si la fecha viene en formato ISO, usar directamente
+            if (typeof evento.Fecha === 'string' && evento.Fecha.includes('T')) {
+              fechaEvento = new Date(evento.Fecha);
+            } else {
+              fechaEvento = new Date(evento.Fecha);
+            }
+
+            // Para las horas, crear fechas base y extraer solo la hora
+            if (typeof evento['Hora Inicio'] === 'string' && evento['Hora Inicio'].includes('T')) {
+              horaInicio = new Date(evento['Hora Inicio']);
+            } else {
+              horaInicio = new Date(evento['Hora Inicio']);
+            }
+
+            if (typeof evento['Hora Fin'] === 'string' && evento['Hora Fin'].includes('T')) {
+              horaFin = new Date(evento['Hora Fin']);
+            } else {
+              horaFin = new Date(evento['Hora Fin']);
+            }
+          } catch (e) {
+            console.error('Error parsing dates for event:', evento, e);
+            // Valores por defecto si hay error
+            fechaEvento = new Date();
+            horaInicio = new Date();
+            horaFin = new Date();
+          }
           
           return {
             id: evento.ID_Evento,
             nombre: evento.Nombre_Cliente,
             email: evento.Email_Cliente,
             fecha: fechaEvento.toISOString().split('T')[0], // formato YYYY-MM-DD
-            horaInicio: horaInicio.toTimeString().slice(0, 5), // formato HH:MM
-            horaFin: horaFin.toTimeString().slice(0, 5), // formato HH:MM
+            horaInicio: horaInicio.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            horaFin: horaFin.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
             servicio: evento.Titulo_Evento || evento['Servicios incluidos'],
             valor: evento['Valor del turno'] || 0,
             responsable: evento.Responsable,
@@ -102,6 +128,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
+          action: 'updateEstado',
           id: turnoId,
           estado: nuevoEstado,
           apiKey: API_SECRET_KEY
@@ -127,18 +154,10 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   };
 
   const calcularEstadisticas = () => {
-    const turnosHoy = turnos.filter(turno => {
-      const fechaTurno = new Date(turno.fecha);
-      const fechaHoy = new Date();
-      
-      // Normalizar fechas para comparación
-      fechaTurno.setHours(0, 0, 0, 0);
-      fechaHoy.setHours(0, 0, 0, 0);
-      
-      return fechaTurno.getTime() === fechaHoy.getTime();
-    });
+    const fechaHoy = format(new Date(), 'yyyy-MM-dd');
+    const turnosHoy = turnos.filter(turno => turno.fecha === fechaHoy);
 
-    // Nuevas categorías según tu solicitud
+    // Categorías actualizadas según la solicitud
     const reservados = turnosHoy.filter(t => t.estado === 'Confirmado' && t.origen === 'reserva').length;
     const completadosConReserva = turnosHoy.filter(t => t.estado === 'Completado' && t.origen === 'reserva').length;
     const completadosSinReserva = turnosHoy.filter(t => t.estado === 'Completado' && t.origen === 'manual').length;
@@ -268,24 +287,26 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 <td className="px-6 py-4 whitespace-nowrap">{turno.servicio}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{turno.responsable}</td>
                 <td className="px-6 py-4 whitespace-nowrap">{turno.estado}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right">
+                <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
                   {turno.estado === 'Confirmado' && (
-                    <Button
-                      onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
-                      size="icon"
-                      variant="ghost"
-                    >
-                      <UserRoundCheck className="h-5 w-5" />
-                    </Button>
-                  )}
-                  {turno.estado === 'Confirmado' && (
-                    <Button
-                      onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
-                      size="icon"
-                      variant="ghost"
-                    >
-                      <UserRoundX className="h-5 w-5 text-red-500" />
-                    </Button>
+                    <>
+                      <Button
+                        onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
+                        size="sm"
+                        variant="outline"
+                        className="text-green-600 border-green-600 hover:bg-green-50"
+                      >
+                        Completar
+                      </Button>
+                      <Button
+                        onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-600 hover:bg-red-50"
+                      >
+                        Cancelar
+                      </Button>
+                    </>
                   )}
                 </td>
               </tr>

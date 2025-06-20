@@ -77,6 +77,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado })
       const fechaHoy = new Date().toISOString().split('T')[0];
 
       const turnoData = {
+        action: 'createEvento',
         id: generarId(),
         titulo: 'Atención directa en local',
         nombre: 'Atención directa en local',
