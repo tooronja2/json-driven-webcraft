@@ -3,6 +3,7 @@ import SEOHead from "@/components/SEOHead";
 import CalendarioCustom from "@/components/CalendarioCustom";
 import { useBusiness } from "@/context/BusinessContext";
 import { useRevealOnScroll } from "@/hooks/useRevealOnScroll";
+import { useGlobalReload, setGlobalReloadInstance } from "@/hooks/useGlobalReload";
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 
@@ -38,6 +39,12 @@ const ESPECIALISTAS = [
 const ReservaTurno = () => {
   const { config, contenido } = useBusiness();
   const navigate = useNavigate();
+  const { reloadCounter, triggerReload } = useGlobalReload();
+  
+  // Registrar la instancia global al montar
+  useEffect(() => {
+    setGlobalReloadInstance({ triggerReload });
+  }, [triggerReload]);
   
   // Leemos la preselección desde localStorage solo UNA vez al arrancar
   const [servicio, setServicio] = useState<string | null>(() => {
@@ -138,6 +145,7 @@ const ReservaTurno = () => {
           servicioId={servicio}
           responsable={especialista.nombre}
           onReservaConfirmada={handleReservaConfirmada}
+          forceReload={reloadCounter}
         />
       </main>
     );

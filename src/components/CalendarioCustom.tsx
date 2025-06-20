@@ -134,8 +134,8 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   });
   const [cargando, setCargando] = useState(false);
   const [eventos, setEventos] = useState<EventoReserva[]>([]);
-  // Nuevo estado para forzar recargas
-  const [ultimaRecarga, setUltimaRecarga] = useState(0);
+  // Nuevo estado para controlar recargas
+  const [reloadTrigger, setReloadTrigger] = useState(0);
 
   const servicio = contenido?.find(s => s.id === servicioId);
   const duracionMinutos = parseInt(servicio?.detalles?.duracion?.replace('min', '') || '30');
@@ -146,13 +146,14 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       console.log('🔄 === CARGANDO EVENTOS DESDE GOOGLE SHEETS ===');
       console.log('🔄 Forzar reload:', forzarReload);
       
-      // Agregar múltiples parámetros únicos para evitar cache
+      // Agregar múltiples parámetros únicos para evitar cache COMPLETAMENTE
       const timestamp = Date.now();
       const randomParam = Math.random().toString(36).substring(7);
       const reloadParam = forzarReload ? '&force=true' : '';
-      const ultimaRecargaParam = `&lastReload=${ultimaRecarga}`;
+      const triggerParam = `&trigger=${reloadTrigger}`;
+      const forceParam = forceReload > 0 ? `&external=${forceReload}` : '';
       
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${timestamp}&rand=${randomParam}${reloadParam}${ultimaRecargaParam}`;
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${timestamp}&rand=${randomParam}${reloadParam}${triggerParam}${forceParam}`;
       
       console.log('📡 URL de carga:', url);
       
@@ -196,7 +197,6 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         
         console.log('✅ Total eventos procesados:', eventosProcesados.length);
         setEventos(eventosProcesados);
-        setUltimaRecarga(Date.now());
       } else {
         console.error('❌ Error del servidor:', data.error);
         setEventos([]);
@@ -205,7 +205,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       console.error('❌ Error cargando eventos:', error);
       setEventos([]);
     }
-  }, [ultimaRecarga]);
+  }, [reloadTrigger, forceReload]);
 
   // Función para obtener la fecha de hoy sin hora (solo año, mes, día)
   const obtenerFechaHoySoloFecha = () => {
@@ -340,6 +340,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   useEffect(() => {
     if (forceReload > 0) {
       console.log('🔄 RECARGA EXTERNA SOLICITADA desde panel admin');
+      setReloadTrigger(prev => prev + 1);
       cargarEventos(true);
     }
   }, [forceReload, cargarEventos]);
@@ -418,8 +419,22 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       
       if (result.success) {
         alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
-        // Recargar eventos para actualizar la disponibilidad
-        await cargarEventos(true);
+        
+        // FORZAR RECARGA INMEDIATA MÚLTIPLE
+        console.log('🔄 FORZANDO RECARGA DESPUÉS DE CREAR RESERVA');
+        setReloadTrigger(prev => prev + 1);
+        
+        // Esperar un poco y recargar nuevamente
+        setTimeout(() => {
+          console.log('🔄 SEGUNDA RECARGA DESPUÉS DE CREAR RESERVA');
+          cargarEventos(true);
+        }, 1000);
+        
+        // Reset del formulario
+        setFechaSeleccionada(undefined);
+        setHoraSeleccionada('');
+        setDatosCliente({ nombre: '', email: '', telefono: '' });
+        
         onReservaConfirmada();
       } else {
         alert('Error al crear la reserva: ' + (result.error || 'Error desconocido'));
