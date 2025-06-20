@@ -4,14 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertTriangle, Bug, X, Edit3, Image, Play } from 'lucide-react';
+import { AlertTriangle, Bug, X, Edit3, Image, Play, Zap } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const GeneraErrores: React.FC = () => {
-  const [errorActivo, setErrorActivo] = useState<string | null>(null);
-  const [forceError, setForceError] = useState(false);
+  const [aplicandoCambio, setAplicandoCambio] = useState(false);
+  const [errorEstadisticas, setErrorEstadisticas] = useState(false);
   const [ultimaSolicitudPersonalizada, setUltimaSolicitudPersonalizada] = useState('');
+  const [forceError, setForceError] = useState(false);
+  const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
+  const { toast } = useToast();
 
   // Manejar paste de imágenes
   useEffect(() => {
@@ -38,39 +42,72 @@ const GeneraErrores: React.FC = () => {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
-  const generarErrorControlado = () => {
-    const instruccion = ultimaSolicitudPersonalizada || 'Error personalizado generado desde Genera Errores';
-    
-    console.warn('🚨 EJECUTANDO ERROR ESTRUCTURAL CRÍTICO:', {
-      pagina: '/gestion',
-      componente: 'GeneraErrores',
-      error_tipo: '🔧 ERROR PERSONALIZADO REAL',
-      instruccion: instruccion,
-      imagenes: imagenesAdjuntas.length,
-      timestamp: new Date().toISOString(),
-      advertencia: 'ERROR CRÍTICO QUE VA A ROMPER LA APLICACIÓN'
-    });
+  // Función que aplica cambio con error controlado
+  const aplicarCambioConError = () => {
+    if (!mensajeErrorPersonalizado.trim()) return;
 
-    setErrorActivo('custom-error');
-    setForceError(true);
+    setAplicandoCambio(true);
+    setUltimaSolicitudPersonalizada(mensajeErrorPersonalizado);
     
-    // Ejecutar el error crítico inmediatamente
-    setTimeout(() => {
+    // Activar error en estadísticas (componente aislado)
+    setErrorEstadisticas(true);
+    setForceError(true); // Forzar error real
+    setAplicandoCambio(false);
+    
+    // Mostrar feedback
+    toast({
+      title: "Error controlado generado",
+      description: "El error se ha aplicado. Usa 'Try to Fix' para implementar la solicitud.",
+      variant: "destructive",
+    });
+  };
+
+  // Función que resetea el error (para poder volver a generarlo)
+  const resetearError = () => {
+    setErrorEstadisticas(false);
+    setForceError(false); // Resetear el forzado de error
+    setUltimaSolicitudPersonalizada('');
+    setMensajeErrorPersonalizado('');
+    
+    toast({
+      title: "Error reseteado",
+      description: "Puedes generar un nuevo error controlado",
+    });
+  };
+
+  // Componente de estadísticas que falla cuando hay error - MODIFICADO para permitir regeneración
+  const renderEstadisticasAdmin = () => {
+    // ERROR CONTROLADO: Ahora se puede regenerar usando forceError
+    if (errorEstadisticas && forceError) {
       // Simular error real que bloquea la ejecución
-      console.error('🔧 ERROR CONTROLADO REGENERABLE: Forzado intencionalmente');
-      console.error('🔧 SOLICITUD PERSONALIZADA:', instruccion);
+      console.error('🔧 ERROR CONTROLADO REGENERABLE: Estadísticas fallan intencionalmente');
+      console.error('🔧 SOLICITUD PERSONALIZADA:', ultimaSolicitudPersonalizada);
       console.error('🔧 IMÁGENES ADJUNTAS:', imagenesAdjuntas.length);
       console.error('🔧 ACCIÓN REQUERIDA: Implementar funcionalidad solicitada');
       
-      // Forzar error real que Lovable puede detectar - MÉTODO EXACTO QUE FUNCIONABA
+      // Forzar error real que Lovable puede detectar
       const errorObj: any = null;
       // Esta línea causará el error real cuando forceError esté activo
-      const causarError = errorObj.configuracion.adminSettings || (() => {
-        throw new Error(`CUSTOM_REQUEST_ERROR: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
-      })();
+      const causarError = errorObj.configuracion.adminSettings; // Esto genera el error real
       
-      return causarError;
-    }, 500);
+      return (
+        <Card className="border-red-200 bg-red-50 mt-4">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-red-800">
+              <AlertTriangle className="h-4 w-4" />
+              Error en Estadísticas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-red-600 text-sm">
+              Error detectado en el cálculo de estadísticas. Solicitud: {ultimaSolicitudPersonalizada}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    return null;
   };
 
   const eliminarImagen = (index: number) => {
@@ -134,28 +171,8 @@ const GeneraErrores: React.FC = () => {
         </CardContent>
       </Card>
 
-      {errorActivo && (
-        <Alert className="border-red-200 bg-red-50">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            <div className="flex justify-between items-start">
-              <div className="flex-1">
-                <strong>🔧 ERROR CONTROLADO EJECUTADO:</strong> Si puedes leer esto, recarga la página.
-                <br />
-                <span className="text-sm">El error fue generado exitosamente para que Lovable lo detecte.</span>
-              </div>
-              <Button 
-                onClick={() => window.location.reload()}
-                variant="outline" 
-                size="sm"
-                className="ml-4 text-red-600 border-red-300 hover:bg-red-100"
-              >
-                Recargar
-              </Button>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+      {/* Renderizar estadísticas que pueden fallar */}
+      {renderEstadisticasAdmin()}
 
       <Card className="hover:shadow-md transition-shadow border-l-4 border-l-red-500 bg-red-50">
         <CardHeader className="pb-3">
@@ -175,27 +192,49 @@ const GeneraErrores: React.FC = () => {
               <Edit3 className="h-4 w-4 text-gray-500" />
               <label className="text-sm font-medium">Mensaje personalizado para el log:</label>
             </div>
-            <Textarea
-              placeholder="Describe qué quieres que implemente Lovable..."
-              value={ultimaSolicitudPersonalizada}
-              onChange={(e) => setUltimaSolicitudPersonalizada(e.target.value)}
-              className="text-sm"
-              rows={3}
-            />
+            <div className="flex gap-2">
+              <Textarea
+                placeholder="Describe qué quieres que implemente Lovable..."
+                value={mensajeErrorPersonalizado}
+                onChange={(e) => setMensajeErrorPersonalizado(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-md text-sm"
+                disabled={aplicandoCambio}
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={aplicarCambioConError}
+                size="sm"
+                className="bg-red-600 hover:bg-red-700"
+                disabled={aplicandoCambio}
+              >
+                <Zap className="h-3 w-3 mr-1" />
+                {aplicandoCambio ? 'Aplicando...' : 'Aplicar Cambio'}
+              </Button>
+              <Button
+                onClick={resetearError}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Resetear
+              </Button>
+            </div>
+            {errorEstadisticas && forceError && (
+              <div className="text-red-600 text-sm font-semibold">
+                ⚠️ Error activo en estadísticas - Usa "Try to Fix" para reparar e implementar: {ultimaSolicitudPersonalizada}
+              </div>
+            )}
+            {ultimaSolicitudPersonalizada && !forceError && (
+              <div className="text-green-600 text-sm font-semibold">
+                ✅ Última solicitud implementada: {ultimaSolicitudPersonalizada}
+              </div>
+            )}
           </div>
-          
-          <Button 
-            onClick={generarErrorControlado}
-            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold"
-            variant="destructive"
-          >
-            <Play className="h-4 w-4 mr-2" />
-            🔧 GENERAR ERROR CONTROLADO
-          </Button>
           
           <div className="text-xs text-gray-500 bg-red-100 p-2 rounded border border-red-300">
             <strong>⚠️ ADVERTENCIA:</strong> Va a generar un error real que rompe la aplicación<br/>
-            <strong>Mensaje actual:</strong> {ultimaSolicitudPersonalizada || 'Error personalizado generado desde Genera Errores'}<br/>
+            <strong>Mensaje actual:</strong> {mensajeErrorPersonalizado || 'Pendiente'}<br/>
             <strong>Imágenes:</strong> {imagenesAdjuntas.length}
           </div>
         </CardContent>
@@ -209,8 +248,8 @@ const GeneraErrores: React.FC = () => {
           <div><strong>Página actual:</strong> /gestion</div>
           <div><strong>Componente:</strong> GeneraErrores (Tab activo)</div>
           <div><strong>Imágenes listas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
-          <div><strong>Mensaje personalizado:</strong> {ultimaSolicitudPersonalizada ? 'Configurado' : 'Pendiente'}</div>
-          <div><strong>Último error:</strong> {errorActivo || 'Ninguno'}</div>
+          <div><strong>Mensaje personalizado:</strong> {mensajeErrorPersonalizado ? 'Configurado' : 'Pendiente'}</div>
+          <div><strong>Error activo:</strong> {errorEstadisticas && forceError ? 'SÍ' : 'NO'}</div>
           <div><strong>Estado Lovable:</strong> Listo para detectar errores controlados</div>
           <div className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
             ✅ <strong>MÉTODO PROBADO:</strong> Este es el método exacto que funcionaba para generar errores reales que Lovable puede detectar y reparar.
