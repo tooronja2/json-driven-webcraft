@@ -1,411 +1,418 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Calendar } from "@/components/ui/calendar"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { format, addMinutes } from 'date-fns';
-import { es } from 'date-fns/locale';
-import { useToast } from "@/hooks/use-toast"
+import { Calendar } from '@/components/ui/calendar';
+import { Button } from '@/components/ui/button';
+import { useBusiness } from '@/context/BusinessContext';
+import { useHorariosEspecialistas } from '@/hooks/useHorariosEspecialistas';
 
-interface CalendarioCustomProps {
-  servicioId?: string;
-  responsable?: string;
-  onReservaConfirmada?: () => void;
-  onReservaExitosa?: () => void;
-}
-
-interface Servicio {
-  nombre: string;
-  precio: number;
-  duracion: number;
-}
-
-interface TurnoExistente {
-  Fecha: string;
-  Hora_Inicio: string;
-  Hora_Fin: string;
+interface EventoReserva {
+  ID_Evento: string;
+  Titulo_Evento: string;
+  Nombre_Cliente: string;
+  Email_Cliente: string;
+  Fecha: string; // "2025-06-23"
+  "Hora Inicio": string | Date; // "11:15" o Date object
+  "Hora Fin": string | Date; // "11:30" o Date object
+  Descripcion: string;
+  Estado: string;
+  "Valor del turno": number;
+  "Servicios incluidos": string;
   Responsable: string;
 }
 
-// 🔐 API KEY SECRETA - DEBE SER LA MISMA QUE EN CalendarioCustom
-const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
+interface CalendarioCustomProps {
+  servicioId: string;
+  responsable: string;
+  onReservaConfirmada: () => void;
+}
 
 // URL ACTUALIZADA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKOsd8hZqnvXfe46JaM59rPPXCKLEoMLrRzzdFcQvF-NhiM_eZQxSsnh-B1aUTjQiu/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
 
-const SERVICIOS: Servicio[] = [
-  { nombre: 'Corte de barba', precio: 6500, duracion: 15 },
-  { nombre: 'Corte de pelo', precio: 8500, duracion: 15 },
-  { nombre: 'Corte todo maquina', precio: 8000, duracion: 15 },
-  { nombre: 'Corte de pelo y barba', precio: 9500, duracion: 25 },
-  { nombre: 'Diseños y dibujos', precio: 6500, duracion: 15 }
-];
-
-const ESPECIALISTAS = ['Héctor Medina', 'Lucas Peralta', 'Camila González'];
-
-const extraerHora = (fecha: Date): string => {
-  return format(fecha, 'HH:mm');
+// Función mejorada para extraer hora en formato HH:MM
+const extraerHora = (horaInput: string | Date): string => {
+  console.log('🕐 Extrayendo hora de:', horaInput, 'Tipo:', typeof horaInput);
+  
+  // Si es string directo (formato HH:MM)
+  if (typeof horaInput === 'string') {
+    const horaLimpia = horaInput.trim();
+    if (horaLimpia.match(/^\d{1,2}:\d{2}$/)) {
+      const [hora, minuto] = horaLimpia.split(':');
+      const horaFinal = `${hora.padStart(2, '0')}:${minuto}`;
+      console.log('✅ Hora extraída (string):', horaFinal);
+      return horaFinal;
+    }
+    
+    // Si es string pero viene como ISO (1899-12-30T15:31:48.000Z)
+    if (horaLimpia.includes('T') && horaLimpia.includes('Z')) {
+      const fecha = new Date(horaLimpia);
+      const horas = fecha.getHours().toString().padStart(2, '0');
+      const minutos = fecha.getMinutes().toString().padStart(2, '0');
+      const horaFinal = `${horas}:${minutos}`;
+      console.log('✅ Hora extraída (string ISO):', horaFinal);
+      return horaFinal;
+    }
+  }
+  
+  // Si es Date object
+  if (horaInput instanceof Date) {
+    const horas = horaInput.getHours().toString().padStart(2, '0');
+    const minutos = horaInput.getMinutes().toString().padStart(2, '0');
+    const horaFinal = `${horas}:${minutos}`;
+    console.log('✅ Hora extraída (Date):', horaFinal);
+    return horaFinal;
+  }
+  
+  // Si es object pero no Date, intentar convertir a Date
+  if (typeof horaInput === 'object' && horaInput !== null) {
+    try {
+      const fecha = new Date(horaInput);
+      if (!isNaN(fecha.getTime())) {
+        const horas = fecha.getHours().toString().padStart(2, '0');
+        const minutos = fecha.getMinutes().toString().padStart(2, '0');
+        const horaFinal = `${horas}:${minutos}`;
+        console.log('✅ Hora extraída (object convertido):', horaFinal);
+        return horaFinal;
+      }
+    } catch (e) {
+      console.log('❌ Error convirtiendo object a Date:', e);
+    }
+  }
+  
+  console.log('⚠️ No se pudo extraer hora de:', horaInput);
+  return '';
 };
+
+// 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
+const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
   responsable, 
-  onReservaConfirmada, 
-  onReservaExitosa 
+  onReservaConfirmada 
 }) => {
-  const [mostrarCalendario, setMostrarCalendario] = useState(false);
-  const [fechaSeleccionada, setFechaSeleccionada] = useState<Date>(new Date());
-  const [horaSeleccionada, setHoraSeleccionada] = useState('');
-  const [servicioSeleccionado, setServicioSeleccionado] = useState<Servicio | null>(() => {
-    // Si viene servicioId predefinido, buscar el servicio correspondiente
-    if (servicioId) {
-      const servicioMap: { [key: string]: string } = {
-        'corte-barba': 'Corte de barba',
-        'corte-pelo': 'Corte de pelo',
-        'corte-todo-maquina': 'Corte todo maquina',
-        'corte-pelo-barba': 'Corte de pelo y barba',
-        'disenos-dibujos': 'Diseños y dibujos'
-      };
-      const nombreServicio = servicioMap[servicioId];
-      return SERVICIOS.find(s => s.nombre === nombreServicio) || null;
-    }
-    return null;
+  const { contenido, config } = useBusiness();
+  const { obtenerHorariosDisponibles } = useHorariosEspecialistas();
+  const [fechaSeleccionada, setFechaSeleccionada] = useState<Date | undefined>();
+  const [horaSeleccionada, setHoraSeleccionada] = useState<string>('');
+  const [horasDisponibles, setHorasDisponibles] = useState<string[]>([]);
+  const [datosCliente, setDatosCliente] = useState({
+    nombre: '',
+    email: '',
+    telefono: ''
   });
-  const [formData, setFormData] = useState({ nombre: '', email: '', telefono: '' });
-  const [error, setError] = useState('');
-  const [mensajeExito, setMensajeExito] = useState('');
-  const [enviando, setEnviando] = useState(false);
-  const [turnosExistentes, setTurnosExistentes] = useState<TurnoExistente[]>([]);
-  const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
-  const [responsableSeleccionado, setResponsableSeleccionado] = useState(responsable || '');
-  const { toast } = useToast()
+  const [cargando, setCargando] = useState(false);
+  const [eventos, setEventos] = useState<EventoReserva[]>([]);
 
-  const calcularHoraFin = (horaInicio: string, duracion: number): string => {
-    const [horas, minutos] = horaInicio.split(':').map(Number);
-    const fechaInicio = new Date();
-    fechaInicio.setHours(horas, minutos, 0, 0);
-    const fechaFin = addMinutes(fechaInicio, duracion);
-    return format(fechaFin, 'HH:mm');
-  };
+  const servicio = contenido?.find(s => s.id === servicioId);
+  const duracionMinutos = parseInt(servicio?.detalles?.duracion?.replace('min', '') || '30');
 
-  const cargarTurnosExistentes = useCallback(async () => {
+  // Cargar eventos desde Google Sheets
+  const cargarEventos = useCallback(async () => {
     try {
-      const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&fecha=${fechaISO}`;
-      const response = await fetch(url);
-      const data = await response.json();
+      console.log('🔄 Cargando eventos desde Google Sheets...');
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`;
+      
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+        cache: 'no-cache'
+      });
 
-      if (data.success && data.eventos) {
-        // Filtrar los turnos por el responsable seleccionado
-        const turnosFiltrados = data.eventos.filter((turno: any) => turno.Responsable === responsableSeleccionado);
-        setTurnosExistentes(turnosFiltrados);
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.success) {
+        console.log('📅 Eventos RAW recibidos:', data.eventos);
+        
+        // Procesar eventos para normalizar formato de fecha
+        const eventosProcesados = data.eventos.map((evento: any) => {
+          console.log('🔍 Procesando evento original:', evento);
+          
+          // Normalizar fecha - puede venir como Date object o string
+          let fechaNormalizada = evento.Fecha;
+          if (typeof evento.Fecha === 'object' && evento.Fecha instanceof Date) {
+            fechaNormalizada = evento.Fecha.toISOString().split('T')[0];
+          } else if (typeof evento.Fecha === 'string' && evento.Fecha.includes('T')) {
+            fechaNormalizada = evento.Fecha.split('T')[0];
+          }
+
+          const eventoNormalizado = {
+            ...evento,
+            Fecha: fechaNormalizada
+          };
+          
+          console.log('✅ Evento normalizado:', eventoNormalizado);
+          return eventoNormalizado;
+        });
+        
+        console.log('📋 Todos los eventos procesados:', eventosProcesados);
+        setEventos(eventosProcesados);
       } else {
-        console.error('Error al cargar turnos existentes:', data.error);
-        setTurnosExistentes([]);
+        console.error('❌ Error del servidor:', data.error);
+        setEventos([]);
       }
     } catch (error) {
-      console.error('Error al cargar turnos existentes:', error);
-      setTurnosExistentes([]);
+      console.error('❌ Error cargando eventos:', error);
+      setEventos([]);
     }
-  }, [fechaSeleccionada, responsableSeleccionado]);
+  }, []);
 
-  const cargarHorarios = useCallback(() => {
-    if (!servicioSeleccionado || !responsableSeleccionado) {
-      setHorariosDisponibles([]);
+  // Función para obtener la fecha de hoy sin hora (solo año, mes, día)
+  const obtenerFechaHoySoloFecha = () => {
+    const hoy = new Date();
+    return new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+  };
+
+  // Función para obtener la hora actual en formato HH:MM
+  const obtenerHoraActual = () => {
+    const ahora = new Date();
+    const horas = ahora.getHours().toString().padStart(2, '0');
+    const minutos = ahora.getMinutes().toString().padStart(2, '0');
+    return `${horas}:${minutos}`;
+  };
+
+  // Función para comparar si una hora ya pasó (solo para el día actual)
+  const yaEsHoraPasada = (hora: string, fechaSeleccionada: Date): boolean => {
+    const fechaHoy = obtenerFechaHoySoloFecha();
+    const fechaComparar = new Date(fechaSeleccionada.getFullYear(), fechaSeleccionada.getMonth(), fechaSeleccionada.getDate());
+    
+    // Solo verificar si es el día actual
+    if (fechaComparar.getTime() === fechaHoy.getTime()) {
+      const horaActual = obtenerHoraActual();
+      console.log(`⏰ Comparando horarios - Actual: ${horaActual}, Disponible: ${hora}`);
+      return hora <= horaActual;
+    }
+    
+    return false; // Para días futuros, ninguna hora ha pasado
+  };
+
+  // Filtrado de horarios mejorado con memoización
+  useEffect(() => {
+    if (!fechaSeleccionada) {
+      setHorasDisponibles([]);
       return;
     }
 
-    const duracion = servicioSeleccionado.duracion;
-    const horarios: string[] = [];
-    let horaInicio = 9;
-    let minutoInicio = 0;
-    const horaFin = 18;
-
-    while (horaInicio < horaFin) {
-      const horario = `${String(horaInicio).padStart(2, '0')}:${String(minutoInicio).padStart(2, '0')}`;
-      horarios.push(horario);
-
-      minutoInicio += duracion;
-      if (minutoInicio >= 60) {
-        horaInicio++;
-        minutoInicio -= 60;
-      }
-    }
-
-    // Filtrar horarios ocupados
-    const horariosOcupados = turnosExistentes.map(turno => turno.Hora_Inicio);
-    const horariosDisponiblesFiltrados = horarios.filter(horario => !horariosOcupados.includes(horario));
-    setHorariosDisponibles(horariosDisponiblesFiltrados);
-  }, [servicioSeleccionado, turnosExistentes, responsableSeleccionado]);
-
-  useEffect(() => {
-    cargarTurnosExistentes();
-  }, [cargarTurnosExistentes]);
-
-  useEffect(() => {
-    cargarHorarios();
-  }, [cargarHorarios]);
-
-  const enviarReserva = async () => {
-    if (!formData.nombre || !formData.email || !formData.telefono || !horaSeleccionada || !servicioSeleccionado || !responsableSeleccionado) {
-      setError('Por favor completa todos los campos');
+    console.log('🔍 === INICIO FILTRADO DE HORARIOS CON HORARIOS LABORALES ===');
+    
+    // 1. Obtener horarios laborales del especialista para esta fecha
+    const horariosLaborales = obtenerHorariosDisponibles(responsable, fechaSeleccionada, duracionMinutos);
+    
+    if (horariosLaborales.length === 0) {
+      console.log('❌ No hay horarios laborales configurados');
+      setHorasDisponibles([]);
       return;
     }
 
-    setEnviando(true);
-    setError('');
+    // 2. Filtrar eventos ocupados para esta fecha y responsable
+    const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
+    const eventosRelevantes = eventos.filter(evento => {
+      const esConfirmado = evento.Estado === 'Confirmado';
+      const esDelResponsable = evento.Responsable === responsable;
+      const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
+      
+      return esConfirmado && esDelResponsable && esMismaFecha;
+    });
+
+    console.log('✅ Eventos ocupados relevantes:', eventosRelevantes);
+
+    // 3. Extraer horarios ocupados
+    const horariosOcupados = eventosRelevantes
+      .map(evento => extraerHora(evento["Hora Inicio"]))
+      .filter(hora => hora !== '');
+
+    const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
+    console.log('⏰ Horarios ocupados:', horariosOcupadosUnicos);
+
+    // 4. Filtrar horarios laborales que no estén ocupados Y que no hayan pasado (si es el día actual)
+    const disponibles = horariosLaborales.filter(hora => {
+      const estaOcupado = horariosOcupadosUnicos.includes(hora);
+      const yaPaso = yaEsHoraPasada(hora, fechaSeleccionada);
+      
+      console.log(`⏱️ Hora ${hora}: ocupada=${estaOcupado}, ya pasó=${yaPaso}, disponible=${!estaOcupado && !yaPaso}`);
+      
+      return !estaOcupado && !yaPaso;
+    });
+    
+    console.log('✅ === HORARIOS FINALES DISPONIBLES ===:', disponibles);
+    console.log('🔍 === FIN FILTRADO DE HORARIOS ===');
+    
+    setHorasDisponibles(disponibles);
+  }, [fechaSeleccionada, eventos, responsable, duracionMinutos, obtenerHorariosDisponibles]);
+
+  useEffect(() => {
+    cargarEventos();
+  }, [cargarEventos]);
+
+  const crearReserva = async () => {
+    if (!fechaSeleccionada || !horaSeleccionada || !datosCliente.nombre || !datosCliente.email) {
+      alert('Por favor completa todos los campos obligatorios (nombre y email)');
+      return;
+    }
+
+    setCargando(true);
+
+    // Calcular hora de fin
+    const [horas, minutos] = horaSeleccionada.split(':').map(Number);
+    const fechaFin = new Date();
+    fechaFin.setHours(horas, minutos + duracionMinutos);
+    const horaFin = `${fechaFin.getHours().toString().padStart(2, '0')}:${fechaFin.getMinutes().toString().padStart(2, '0')}`;
+
+    const reservaData = {
+      ID_Evento: `evento_${Date.now()}`,
+      Titulo_Evento: servicio?.nombre || '',
+      Nombre_Cliente: datosCliente.nombre,
+      Email_Cliente: datosCliente.email,
+      Fecha: fechaSeleccionada.toISOString().split('T')[0],
+      Hora_Inicio: horaSeleccionada,
+      Hora_Fin: horaFin,
+      Descripcion: `${servicio?.nombre} - Tel: ${datosCliente.telefono || 'No proporcionado'}`,
+      Estado: 'Confirmado',
+      "Valor del turno": servicio?.precio_oferta || servicio?.precio || 0,
+      "Servicios incluidos": servicio?.nombre || '',
+      Responsable: responsable
+    };
 
     try {
-      const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
-      const horaFin = calcularHoraFin(horaSeleccionada, servicioSeleccionado.duracion);
-      
-      // Datos adaptados al nuevo formato del Google Apps Script
-      const reservaData = {
-        action: 'crearReserva',
+      const datos = {
+        action: "crearReserva",
         apiKey: API_SECRET_KEY,
-        data: JSON.stringify({
-          ID_Evento: `evento_${Date.now()}`,
-          Titulo_Evento: servicioSeleccionado.nombre,
-          Nombre_Cliente: formData.nombre,
-          Email_Cliente: formData.email,
-          Fecha: fechaISO,
-          Hora_Inicio: horaSeleccionada,
-          Hora_Fin: horaFin,
-          Descripcion: `${servicioSeleccionado.nombre} - Tel: ${formData.telefono}`,
-          'Valor del turno': servicioSeleccionado.precio,
-          'Servicios incluidos': servicioSeleccionado.nombre,
-          Responsable: responsableSeleccionado
-        })
+        data: JSON.stringify(reservaData)
       };
 
-      console.log('📤 Enviando reserva:', reservaData);
+      const formData = new URLSearchParams();
+      for (const key in datos) {
+        formData.append(key, datos[key]);
+      }
 
-      const formDataToSend = new URLSearchParams();
-      Object.entries(reservaData).forEach(([key, value]) => {
-        formDataToSend.append(key, value.toString());
-      });
+      console.log('🚀 Enviando nueva reserva');
+      console.log('📦 Datos de reserva:', reservaData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: formDataToSend
+        body: formData
       });
 
-      const result = await response.json();
-      console.log('📥 Respuesta del servidor:', result);
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+      }
 
+      const result = await response.json();
+      
       if (result.success) {
-        setMensajeExito('¡Reserva enviada exitosamente! Te enviaremos un email de confirmación.');
-        
-        // Limpiar formulario
-        setFormData({ nombre: '', email: '', telefono: '' });
-        setHoraSeleccionada('');
-        if (!servicioId) setServicioSeleccionado(null);
-        if (!responsable) setResponsableSeleccionado('');
-        
-        // Llamar al callback apropiado
-        if (onReservaConfirmada) {
-          onReservaConfirmada();
-        } else if (onReservaExitosa) {
-          onReservaExitosa();
-        }
-        
-        setTimeout(() => {
-          setMensajeExito('');
-          setMostrarCalendario(false);
-        }, 3000);
+        alert('¡Reserva confirmada! Te enviamos un email de confirmación.');
+        // Recargar eventos para actualizar la disponibilidad
+        await cargarEventos();
+        onReservaConfirmada();
       } else {
-        setError(result.error || 'Error al procesar la reserva');
+        alert('Error al crear la reserva: ' + (result.error || 'Error desconocido'));
       }
     } catch (error) {
       console.error('❌ Error completo:', error);
-      setError('Error de conexión. Por favor, inténtalo nuevamente.');
+      alert('Error al procesar la reserva: ' + error.message);
     } finally {
-      setEnviando(false);
+      setCargando(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Reserva tu turno
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            ¡Agendá tu cita de forma rápida y sencilla!
-          </p>
-        </div>
-        <div className="mt-8 space-y-6">
-          {error && (
-            <div className="rounded-md bg-red-100 p-4">
-              <div className="text-sm leading-5 text-red-700">{error}</div>
-            </div>
-          )}
-          {mensajeExito && (
-            <div className="rounded-md bg-green-100 p-4">
-              <div className="text-sm leading-5 text-green-700">{mensajeExito}</div>
-            </div>
-          )}
-          {!mostrarCalendario ? (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="nombre">Nombre</Label>
-                <Input
-                  id="nombre"
-                  type="text"
-                  placeholder="Tu nombre completo"
-                  value={formData.nombre}
-                  onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="tu@email.com"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  required
-                />
-              </div>
-              <div>
-                <Label htmlFor="telefono">Teléfono</Label>
-                <Input
-                  id="telefono"
-                  type="tel"
-                  placeholder="11-2345-6789"
-                  value={formData.telefono}
-                  onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
-                  required
-                />
-              </div>
-              {!servicioId && (
-                <div>
-                  <Label htmlFor="servicio">Servicio</Label>
-                  <Select onValueChange={(value) => setServicioSeleccionado(SERVICIOS.find(s => s.nombre === value) || null)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un servicio" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {SERVICIOS.map((servicio) => (
-                        <SelectItem key={servicio.nombre} value={servicio.nombre}>
-                          {servicio.nombre} (${servicio.precio})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {servicioId && servicioSeleccionado && (
-                <div className="bg-gray-100 p-3 rounded">
-                  <Label>Servicio seleccionado:</Label>
-                  <div className="font-semibold">{servicioSeleccionado.nombre} (${servicioSeleccionado.precio})</div>
-                </div>
-              )}
-              {!responsable && (
-                <div>
-                  <Label htmlFor="responsable">Barbero</Label>
-                  <Select onValueChange={setResponsableSeleccionado}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecciona un barbero" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ESPECIALISTAS.map((barbero) => (
-                        <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-              {responsable && (
-                <div className="bg-gray-100 p-3 rounded">
-                  <Label>Barbero seleccionado:</Label>
-                  <div className="font-semibold">{responsable}</div>
-                </div>
-              )}
-              <Button
-                onClick={() => {
-                  if (!formData.nombre || !formData.email || !formData.telefono || !servicioSeleccionado || !responsableSeleccionado) {
-                    setError('Por favor completa todos los campos antes de seleccionar la fecha');
-                    return;
-                  }
-                  setError('');
-                  setMostrarCalendario(true);
-                }}
-                className="w-full"
-              >
-                Seleccionar Fecha y Hora
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant={"outline"}
-                    className={
-                      "w-full justify-start text-left font-normal" +
-                      (fechaSeleccionada ? " pl-3.5" : "")
-                    }
-                  >
-                    {fechaSeleccionada ? (
-                      format(fechaSeleccionada, "PPP", { locale: es })
-                    ) : (
-                      <span>Pick a date</span>
-                    )}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0" align="center" side="bottom">
-                  <Calendar
-                    mode="single"
-                    selected={fechaSeleccionada}
-                    onSelect={setFechaSeleccionada}
-                    disabled={(date) => date < new Date()}
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
-              <div>
-                <Label htmlFor="hora">Hora</Label>
-                <Select onValueChange={setHoraSeleccionada} disabled={horariosDisponibles.length === 0}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Selecciona una hora" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {horariosDisponibles.map((hora) => (
-                      <SelectItem key={hora} value={hora}>{hora} - {calcularHoraFin(hora, servicioSeleccionado?.duracion || 15)}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                {horariosDisponibles.length === 0 && (
-                  <p className="text-sm text-gray-500 mt-2">No hay horarios disponibles para este día y servicio.</p>
-                )}
-              </div>
-              <Button
-                onClick={enviarReserva}
-                className="w-full"
-                disabled={enviando}
-              >
-                {enviando ? 'Enviando...' : 'Reservar'}
-              </Button>
-              <Button
-                onClick={() => setMostrarCalendario(false)}
-                className="w-full"
-                variant="secondary"
-              >
-                Volver
-              </Button>
-            </div>
-          )}
-        </div>
+    <div className="max-w-md mx-auto p-4 space-y-6">
+      <div>
+        <h3 className="text-lg font-semibold mb-2">Selecciona la fecha</h3>
+        <Calendar
+          mode="single"
+          selected={fechaSeleccionada}
+          onSelect={setFechaSeleccionada}
+          disabled={(date) => {
+            const fechaHoy = obtenerFechaHoySoloFecha();
+            const fechaComparar = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+            
+            // Solo bloquear días anteriores al día de hoy (no el día actual)
+            // Y bloquear domingos (día 0)
+            return fechaComparar < fechaHoy || date.getDay() === 0;
+          }}
+          className="rounded-md border"
+        />
       </div>
+
+      {fechaSeleccionada && (
+        <div>
+          <h3 className="text-lg font-semibold mb-2">Horarios disponibles</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {horasDisponibles.map((hora) => (
+              <Button
+                key={hora}
+                variant={horaSeleccionada === hora ? "default" : "outline"}
+                onClick={() => setHoraSeleccionada(hora)}
+                className="text-sm"
+              >
+                {hora}
+              </Button>
+            ))}
+          </div>
+          {horasDisponibles.length === 0 && (
+            <p className="text-gray-500 text-sm">No hay horarios disponibles para esta fecha</p>
+          )}
+        </div>
+      )}
+
+      {horaSeleccionada && (
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold">Datos del cliente</h3>
+          
+          <input
+            type="text"
+            placeholder="Nombre completo *"
+            value={datosCliente.nombre}
+            onChange={(e) => setDatosCliente({...datosCliente, nombre: e.target.value})}
+            className="w-full p-2 border rounded-md"
+            required
+          />
+          
+          <input
+            type="email"
+            placeholder="Email *"
+            value={datosCliente.email}
+            onChange={(e) => setDatosCliente({...datosCliente, email: e.target.value})}
+            className="w-full p-2 border rounded-md"
+            required
+          />
+          
+          <input
+            type="tel"
+            placeholder="Teléfono (opcional)"
+            value={datosCliente.telefono}
+            onChange={(e) => setDatosCliente({...datosCliente, telefono: e.target.value})}
+            className="w-full p-2 border rounded-md"
+          />
+
+          <div className="bg-gray-50 p-4 rounded-md">
+            <h4 className="font-semibold">Resumen de la reserva:</h4>
+            <p><strong>Servicio:</strong> {servicio?.nombre}</p>
+            <p><strong>Fecha:</strong> {fechaSeleccionada.toLocaleDateString()}</p>
+            <p><strong>Hora:</strong> {horaSeleccionada}</p>
+            <p><strong>Duración:</strong> {duracionMinutos} minutos</p>
+            <p><strong>Especialista:</strong> {responsable}</p>
+            <p><strong>Precio:</strong> {config?.moneda_simbolo}{servicio?.precio_oferta || servicio?.precio}</p>
+          </div>
+
+          <Button 
+            onClick={crearReserva} 
+            disabled={cargando || !datosCliente.nombre || !datosCliente.email}
+            className="w-full"
+          >
+            {cargando ? 'Procesando...' : 'Confirmar Reserva'}
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
