@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -43,6 +42,38 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
     cargarUsuarios();
   }, []);
 
+  const limpiarDatosUsuario = (user: any) => {
+    // Función para limpiar espacios extra en las propiedades
+    const limpiarPropiedad = (valor: any) => {
+      if (typeof valor === 'string') {
+        return valor.trim();
+      }
+      return valor;
+    };
+
+    // Procesar permisos - puede venir como string JSON o array
+    let permisos = [];
+    try {
+      const permisosRaw = user.permisos || user['permisos '] || '[]';
+      permisos = typeof permisosRaw === 'string' ? JSON.parse(permisosRaw) : permisosRaw;
+      if (!Array.isArray(permisos)) {
+        permisos = ['ver_turnos'];
+      }
+    } catch (error) {
+      console.error('Error al parsear permisos:', error);
+      permisos = ['ver_turnos'];
+    }
+
+    return {
+      id: String(user.id || ''),
+      usuario: limpiarPropiedad(user.usuario || user['usuario '] || ''),
+      nombre: limpiarPropiedad(user.nombre || user['nombre '] || ''),
+      rol: limpiarPropiedad(user.rol || user['rol '] || 'Empleado'),
+      permisos: permisos,
+      barberoAsignado: limpiarPropiedad(user.barberoAsignado || user['barberoAsignado '] || '')
+    };
+  };
+
   const cargarUsuarios = async () => {
     try {
       setCargando(true);
@@ -54,16 +85,10 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
       console.log('📄 Respuesta getUsuarios:', data);
 
       if (data.success && data.usuarios) {
-        // Filtrar información sensible para el frontend - NO mostrar passwords
-        const usuariosSeguros = data.usuarios.map((user: any) => ({
-          id: user.id,
-          usuario: user.usuario,
-          nombre: user.nombre,
-          rol: user.rol,
-          permisos: Array.isArray(user.permisos) ? user.permisos : ['ver_turnos'],
-          barberoAsignado: user.barberoAsignado || ''
-        }));
-        setUsuarios(usuariosSeguros);
+        // Procesar y limpiar datos de usuarios
+        const usuariosProcesados = data.usuarios.map(limpiarDatosUsuario);
+        console.log('✅ Usuarios procesados:', usuariosProcesados);
+        setUsuarios(usuariosProcesados);
       } else {
         console.error('Error al cargar usuarios:', data.error);
         toast({
