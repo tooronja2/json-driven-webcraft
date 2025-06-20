@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -50,7 +51,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         console.log('⚙️ Options:', options);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout aumentado
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
         
         const response = await fetch(url, {
           ...options,
@@ -72,7 +73,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         console.error(`❌ Error en intento ${intento}:`, error);
         
         if (intento < maxReintentos) {
-          const delay = intento * 2000; // Aumentar delay entre reintentos
+          const delay = intento * 2000;
           console.log(`⏳ Reintentando en ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -123,7 +124,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             horaFin = new Date();
           }
           
-          // Las reservas web se muestran como "Confirmado" según el Apps Script
           let estadoMapeado = evento.Estado;
           
           return {
@@ -145,7 +145,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
         const turnosFiltrados = turnosConvertidos.filter((turno: Turno) => turno.fecha === fechaSeleccionada);
         
-        // Ordenar por hora de inicio
         turnosFiltrados.sort((a: Turno, b: Turno) => a.horaInicio.localeCompare(b.horaInicio));
         
         setTurnos(turnosFiltrados);
@@ -186,12 +185,10 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     }
   };
 
-  // Función de cancelación simplificada que replica la lógica del email
   const cancelarTurno = async (turnoId: string) => {
     try {
       console.log('🔄 Cancelando turno:', turnoId);
       
-      // Usar POST con JSON Body como en el Apps Script
       const requestBodyJSON = {
         action: 'cancelarTurno',
         id: turnoId,
@@ -212,7 +209,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       console.log('✅ Response result:', result);
 
       if (result.success) {
-        // Actualizar el estado local del turno
         setTurnos(prevTurnos =>
           prevTurnos.map(turno =>
             turno.id === turnoId ? { ...turno, estado: 'Cancelado' } : turno
@@ -255,17 +251,18 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
 
-    const confirmados = turnosDelDia.filter(t => t.estado === 'Confirmado').length;
+    const reservados = turnosDelDia.filter(t => t.estado === 'Reservado').length;
     const completados = turnosDelDia.filter(t => t.estado === 'Completado').length;
     const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
 
+    // Los ingresos del día se calculan solo con turnos RESERVADOS
     const totalIngresosDia = turnosDelDia
-      .filter(t => t.estado === 'Completado')
+      .filter(t => t.estado === 'Reservado')
       .reduce((sum, t) => sum + (t.valor || 0), 0);
 
     return {
       totalTurnos: turnosDelDia.length,
-      confirmados,
+      reservados,
       completados,
       cancelados,
       ingresosDia: totalIngresosDia
@@ -276,13 +273,13 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const stats = calcularEstadisticas();
 
     return (
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-yellow-50 border-yellow-200">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+        <Card className="bg-blue-50 border-blue-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-yellow-800">Confirmados</CardTitle>
+            <CardTitle className="text-sm text-blue-800">Reservados</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-yellow-600">{stats.confirmados}</p>
+            <p className="text-2xl font-bold text-blue-600">{stats.reservados}</p>
           </CardContent>
         </Card>
         
@@ -304,15 +301,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           </CardContent>
         </Card>
         
-        <Card className="bg-purple-50 border-purple-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-purple-800">Total Turnos</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-purple-600">{stats.totalTurnos}</p>
-          </CardContent>
-        </Card>
-        
         <Card className="bg-indigo-50 border-indigo-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-indigo-800">Ingresos del Día</CardTitle>
@@ -328,8 +316,8 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const getEstadoBadge = (estado: string) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium";
     
-    if (estado === 'Confirmado') {
-      return `${baseClasses} bg-yellow-100 text-yellow-800`;
+    if (estado === 'Reservado') {
+      return `${baseClasses} bg-blue-100 text-blue-800`;
     } else if (estado === 'Completado') {
       return `${baseClasses} bg-green-100 text-green-800`;
     } else if (estado === 'Cancelado') {
@@ -437,7 +425,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 </div>
                 
                 <div className="flex gap-2 md:flex-col lg:flex-row">
-                  {(turno.estado === 'Confirmado') && (
+                  {(turno.estado === 'Reservado') && (
                     <Button
                       onClick={() => cancelarTurno(turno.id)}
                       size="sm"
