@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertTriangle, Bug, Zap, Database, Network, Clock, Upload, X, Edit3, Image } from 'lucide-react';
+import { AlertTriangle, Bug, Zap, Database, Network, Clock, Upload, X, Edit3, Image, Play } from 'lucide-react';
 
 const GeneraErrores: React.FC = () => {
   const [errorActivo, setErrorActivo] = useState<string | null>(null);
@@ -13,134 +13,70 @@ const GeneraErrores: React.FC = () => {
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
 
-  const erroresPosibles = [
+  const erroresRapidos = [
     {
-      id: 'undefined-variable',
-      nombre: 'Variable Undefined',
-      descripcion: 'Genera error de variable no definida',
+      id: 'render-error',
+      nombre: 'Error de Renderizado',
+      descripcion: 'Rompe el renderizado del componente actual',
       icon: Bug,
       color: 'text-red-500',
-      instruccionDefault: 'Hay una variable que no está definida y está causando un error en el componente.',
+      instruccionDefault: 'El componente no se está renderizando correctamente debido a un error de JSX.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_AI_ERROR:', {
-          error: 'ReferenceError: variableNoDefinida is not defined',
-          ubicacion: 'GeneraErrores.tsx:32',
-          descripcion: 'Variable no definida',
+        console.error('LOVABLE_RENDER_ERROR:', {
+          error: 'Cannot read properties of undefined (reading \'map\')',
+          component: 'GeneraErrores',
           instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
-          timestamp: new Date().toISOString()
+          imagenes_adjuntas: imagenesAdjuntas.length,
+          timestamp: new Date().toISOString(),
+          ubicacion: '/gestion - Tab Genera Errores'
         });
         
-        // Esto va a generar un error real inmediatamente
-        throw new Error(`ReferenceError: variableNoDefinida is not defined - Instrucción: ${instruccion}`);
+        // Forzar error de renderizado inmediato
+        const datos: any = undefined;
+        return datos.map((item: any) => item.nombre);
       }
     },
     {
-      id: 'jsx-error',
-      nombre: 'Error de JSX',
-      descripcion: 'Genera error de renderizado JSX',
-      icon: AlertTriangle,
-      color: 'text-yellow-600',
-      instruccionDefault: 'Hay un problema con el JSX que está causando que el componente no se renderice correctamente.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_AI_JSX_ERROR:', {
-          error: 'Error: Cannot read properties of undefined',
-          ubicacion: 'GeneraErrores.tsx:52',
-          descripcion: 'Error de renderizado JSX',
-          instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
-          timestamp: new Date().toISOString()
-        });
-        
-        // Generar error JSX real
-        const objetoNulo: any = null;
-        return objetoNulo.propiedad.inexistente;
-      }
-    },
-    {
-      id: 'async-error',
-      nombre: 'Error Async/Promise',
-      descripcion: 'Genera error en operación asíncrona',
+      id: 'state-error', 
+      nombre: 'Error de Estado',
+      descripcion: 'Rompe el estado del componente',
       icon: Zap,
-      color: 'text-blue-600',
-      instruccionDefault: 'Hay una promesa que está siendo rechazada y no está siendo manejada correctamente.',
+      color: 'text-yellow-600',
+      instruccionDefault: 'Hay un problema con el manejo del estado que está causando que el componente falle.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_AI_ASYNC_ERROR:', {
-          error: 'Unhandled Promise Rejection: Failed to fetch',
-          ubicacion: 'GeneraErrores.tsx:74',
-          descripcion: 'Error en operación asíncrona',
-          instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
-          timestamp: new Date().toISOString()
-        });
-        
-        // Generar promesa rechazada inmediatamente
-        Promise.reject(new Error(`Async error - Instrucción: ${instruccion}`));
-        throw new Error(`Unhandled Promise Rejection - Instrucción: ${instruccion}`);
-      }
-    },
-    {
-      id: 'type-error',
-      nombre: 'TypeError',
-      descripcion: 'Genera error de tipo de dato',
-      icon: Network,
-      color: 'text-purple-600',
-      instruccionDefault: 'Se está intentando acceder a una propiedad de un valor null o undefined.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_AI_TYPE_ERROR:', {
+        console.error('LOVABLE_STATE_ERROR:', {
           error: 'TypeError: Cannot read properties of null',
-          ubicacion: 'GeneraErrores.tsx:96',
-          descripcion: 'Error de tipo de dato',
+          component: 'GeneraErrores',
           instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
-          timestamp: new Date().toISOString()
+          imagenes_adjuntas: imagenesAdjuntas.length,
+          timestamp: new Date().toISOString(),
+          ubicacion: '/gestion - Tab Genera Errores'
         });
         
-        // Generar TypeError real inmediatamente
-        const objetoNulo: any = null;
-        throw new TypeError(`Cannot read properties of null - Instrucción: ${instruccion}`);
+        // Forzar error de estado
+        const estadoNulo: any = null;
+        throw new Error(`Cannot access property of null state - ${instruccion}`);
       }
     },
     {
-      id: 'syntax-error',
-      nombre: 'Error de Sintaxis',
-      descripcion: 'Simula error de sintaxis en runtime',
-      icon: Clock,
-      color: 'text-red-500',
-      instruccionDefault: 'Hay un error de sintaxis en el código JavaScript que está siendo evaluado dinámicamente.',
+      id: 'hook-error',
+      nombre: 'Error de Hook',
+      descripcion: 'Rompe el uso de hooks de React',
+      icon: Network,
+      color: 'text-blue-600', 
+      instruccionDefault: 'Los hooks de React no se están usando correctamente en este componente.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_AI_SYNTAX_ERROR:', {
-          error: 'SyntaxError: Unexpected token',
-          ubicacion: 'GeneraErrores.tsx:118',
-          descripcion: 'Error de sintaxis',
+        console.error('LOVABLE_HOOK_ERROR:', {
+          error: 'Invalid hook call. Hooks can only be called inside function components',
+          component: 'GeneraErrores',
           instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
-          timestamp: new Date().toISOString()
+          imagenes_adjuntas: imagenesAdjuntas.length,
+          timestamp: new Date().toISOString(),
+          ubicacion: '/gestion - Tab Genera Errores'
         });
         
-        // Generar error de sintaxis real
-        throw new SyntaxError(`Unexpected token - Instrucción: ${instruccion}`);
-      }
-    },
-    {
-      id: 'network-error',
-      nombre: 'Error de Red',
-      descripcion: 'Genera error de conexión/fetch',
-      icon: Database,
-      color: 'text-gray-600',
-      instruccionDefault: 'Hay un problema con una petición de red que está fallando y necesita ser manejada.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_AI_NETWORK_ERROR:', {
-          error: 'NetworkError: Failed to fetch from invalid URL',
-          ubicacion: 'GeneraErrores.tsx:140',
-          descripcion: 'Error de red/fetch',
-          instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
-          timestamp: new Date().toISOString()
-        });
-        
-        // Generar error de red real
-        throw new Error(`NetworkError: Failed to fetch - Instrucción: ${instruccion}`);
+        // Forzar error de hook
+        throw new Error(`Hook error in component - ${instruccion}`);
       }
     }
   ];
@@ -170,25 +106,22 @@ const GeneraErrores: React.FC = () => {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
-  const generarError = async (error: typeof erroresPosibles[0]) => {
-    setCargando(true);
-    setErrorActivo(error.id);
-    
-    await new Promise(resolve => setTimeout(resolve, 500));
-    
+  const ejecutarErrorRapido = (error: typeof erroresRapidos[0]) => {
     const instruccionPersonalizada = instruccionesPersonalizadas[error.id] || error.instruccionDefault;
     
-    console.info('GENERANDO_ERROR_REAL:', {
-      tipo: error.nombre,
-      instruccion_enviada: instruccionPersonalizada,
-      imagenes_count: imagenesAdjuntas.length,
-      nota: 'Este error va a romper la aplicación AHORA'
+    console.info('🚨 EJECUTANDO ERROR REAL EN PÁGINA ACTUAL:', {
+      pagina: '/gestion',
+      componente: 'GeneraErrores',
+      error_tipo: error.nombre,
+      instruccion: instruccionPersonalizada,
+      imagenes: imagenesAdjuntas.length,
+      timestamp: new Date().toISOString()
     });
+
+    setErrorActivo(error.id);
     
-    // Ejecutar la acción que genera el error real inmediatamente
+    // Ejecutar el error inmediatamente para romper la página
     error.accion(instruccionPersonalizada);
-    
-    setCargando(false);
   };
 
   const actualizarInstruccion = (errorId: string, nuevaInstruccion: string) => {
@@ -211,9 +144,9 @@ const GeneraErrores: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">Genera Errores REALES - Activa "Try to Fix"</h2>
+        <h2 className="text-2xl font-bold mb-4">🚨 Genera Errores REALES que Rompan la Página</h2>
         <p className="text-gray-600 mb-6">
-          Genera errores reales que rompen la aplicación para activar automáticamente el "Try to Fix" de Lovable AI.
+          Estos botones van a generar errores reales que van a romper la página actual para que Lovable muestre automáticamente "Try to Fix".
         </p>
       </div>
 
@@ -271,9 +204,9 @@ const GeneraErrores: React.FC = () => {
           <AlertDescription className="text-red-800">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <strong>Error REAL generado:</strong> {erroresPosibles.find(e => e.id === errorActivo)?.nombre}
+                <strong>🚨 ERROR REAL EJECUTADO:</strong> {erroresRapidos.find(e => e.id === errorActivo)?.nombre}
                 <br />
-                <span className="text-sm">Lovable AI debería mostrar automáticamente el botón "Try to Fix"</span>
+                <span className="text-sm">Si ves este mensaje, el error no rompió la página. Intenta con otro error.</span>
               </div>
               <Button 
                 onClick={limpiarTodo}
@@ -288,15 +221,16 @@ const GeneraErrores: React.FC = () => {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {erroresPosibles.map((error) => {
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+        {erroresRapidos.map((error) => {
           const IconComponent = error.icon;
           return (
-            <Card key={error.id} className="hover:shadow-md transition-shadow">
+            <Card key={error.id} className="hover:shadow-md transition-shadow border-l-4 border-l-red-500">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <IconComponent className={`h-5 w-5 ${error.color}`} />
                   {error.nombre}
+                  <span className="text-sm bg-red-100 text-red-700 px-2 py-1 rounded">ROMPE PÁGINA</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -319,14 +253,22 @@ const GeneraErrores: React.FC = () => {
                   </p>
                 </div>
                 
-                <Button 
-                  onClick={() => generarError(error)}
-                  disabled={cargando}
-                  className="w-full"
-                  variant="destructive"
-                >
-                  {cargando && errorActivo === error.id ? '⚠️ Generando Error Real...' : '💥 Romper Aplicación AHORA'}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => ejecutarErrorRapido(error)}
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    variant="destructive"
+                  >
+                    <Play className="h-4 w-4 mr-2" />
+                    💥 ROMPER PÁGINA AHORA
+                  </Button>
+                </div>
+                
+                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                  <strong>Ubicación:</strong> /gestion → Tab "Genera Errores"<br/>
+                  <strong>Imágenes adjuntas:</strong> {imagenesAdjuntas.length}<br/>
+                  <strong>Instrucción actual:</strong> {instruccionesPersonalizadas[error.id] || error.instruccionDefault}
+                </div>
               </CardContent>
             </Card>
           );
@@ -335,15 +277,18 @@ const GeneraErrores: React.FC = () => {
 
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg">Estado del Sistema</CardTitle>
+          <CardTitle className="text-lg">🎯 Estado del Generador de Errores</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><strong>Modo:</strong> Errores REALES que activan Try to Fix</div>
-          <div><strong>Imágenes adjuntas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
+          <div><strong>Página actual:</strong> /gestion</div>
+          <div><strong>Componente:</strong> GeneraErrores (Tab activo)</div>
+          <div><strong>Imágenes listas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
           <div><strong>Instrucciones personalizadas:</strong> {Object.keys(instruccionesPersonalizadas).length} configurada(s)</div>
-          <div><strong>Timestamp:</strong> {new Date().toLocaleString('es-AR')}</div>
-          <div><strong>Estado:</strong> {errorActivo ? `Error ${errorActivo} generado` : 'Listo para generar errores reales'}</div>
-          <div><strong>Detección Lovable:</strong> Errores reales que activan "Try to Fix" automáticamente</div>
+          <div><strong>Último error:</strong> {errorActivo || 'Ninguno'}</div>
+          <div><strong>Estado Lovable:</strong> Listo para detectar errores reales automáticamente</div>
+          <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded mt-2">
+            ⚠️ <strong>ADVERTENCIA:</strong> Estos errores van a romper la página real. Lovable debería mostrar "Try to Fix" automáticamente.
+          </div>
         </CardContent>
       </Card>
     </div>
