@@ -4,7 +4,6 @@ import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AgregarTurnoMejorado from './AgregarTurnoMejorado';
 import { useToast } from '@/hooks/use-toast';
@@ -50,7 +49,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         console.log('⚙️ Options:', options);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos timeout
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
         
         const response = await fetch(url, {
           ...options,
@@ -123,18 +122,12 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             horaFin = new Date();
           }
           
-          // NUEVA LÓGICA: Las reservas web se muestran directamente como "Confirmado"
-          // Solo diferenciamos por origen, no por estado
           let estadoMapeado = evento.Estado;
-          let origenMapeado = 'reserva'; // Por defecto es reserva web
+          let origenMapeado = 'reserva';
           
-          // Si viene desde el panel administrativo, marcarlo como manual
           if (evento.origen_panel) {
             origenMapeado = 'manual';
           }
-          
-          // Las reservas web que llegan como "Confirmado" se mantienen así
-          // Ya no las cambiamos a "Reservado"
           
           return {
             id: evento.ID_Evento,
@@ -155,7 +148,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
         const turnosFiltrados = turnosConvertidos.filter((turno: Turno) => turno.fecha === fechaSeleccionada);
         
-        // Ordenar por hora de inicio
         turnosFiltrados.sort((a: Turno, b: Turno) => a.horaInicio.localeCompare(b.horaInicio));
         
         setTurnos(turnosFiltrados);
@@ -200,7 +192,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       console.log('🔄 Actualizando turno:', { turnoId, nuevoEstado });
       
-      // MÉTODO 1: POST con JSON Body (PREFERIDO)
       const requestBodyJSON = {
         action: 'updateEstado',
         id: turnoId,
@@ -243,7 +234,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       } catch (postError) {
         console.warn('⚠️ Método POST falló, intentando GET como fallback:', postError);
         
-        // MÉTODO 2: GET con parámetros URL (FALLBACK)
         const params = new URLSearchParams({
           action: 'updateEstado',
           id: turnoId,
@@ -515,7 +505,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                         Completar
                       </Button>
                       <Button
-                        onClick={() => marcarClienteAusente(turno.id)}
+                        onClick={() => actualizarEstadoTurno(turno.id, 'Cliente Ausente')}
                         size="sm"
                         variant="outline"
                         className="text-orange-600 border-orange-600 hover:bg-orange-50 flex-1 md:flex-none"
