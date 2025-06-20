@@ -77,9 +77,19 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
   const cargarUsuarios = async () => {
     try {
       setCargando(true);
-      const response = await fetch(
-        `${GOOGLE_APPS_SCRIPT_URL}?action=getUsuarios&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`
-      );
+      
+      // SEGURIDAD MEJORADA: Usar POST para operaciones sensibles
+      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          action: 'getUsuarios',
+          apiKey: API_SECRET_KEY,
+          timestamp: Date.now().toString()
+        })
+      });
       
       const data = await response.json();
       console.log('📄 Respuesta getUsuarios:', data);

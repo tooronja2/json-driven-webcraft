@@ -9,15 +9,6 @@ interface LoginBarberiaProps {
   onLogin: (usuario: string, rol: string, permisos: string[]) => void;
 }
 
-// Usuario admin principal (mantener como fallback de emergencia)
-const ADMIN_USER = {
-  usuario: 'tomasradeljakadmin',
-  password: 'tr4d3lJaK4Dm1N',
-  nombre: 'Tomás Radelj',
-  rol: 'Administrador',
-  permisos: ['admin', 'crear_usuarios', 'ver_todos', 'eliminar']
-};
-
 // URLs de Google Apps Script - ACTUALIZADA
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1YdmiFjMpQ0kVfClFRkXskNMNZXOl5iZ-04BRXOk_McN5sNeEZemg8xE8NP0CaN5Y/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
@@ -32,9 +23,20 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
     try {
       console.log('🔄 Validando usuario en Google Sheets...');
       
-      const response = await fetch(
-        `${GOOGLE_APPS_SCRIPT_URL}?action=validarUsuario&apiKey=${API_SECRET_KEY}&usuario=${encodeURIComponent(usuario)}&password=${encodeURIComponent(password)}&timestamp=${Date.now()}`
-      );
+      // SEGURIDAD MEJORADA: Usar POST en lugar de GET para enviar credenciales
+      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          action: 'validarUsuario',
+          apiKey: API_SECRET_KEY,
+          usuario: usuario,
+          password: password,
+          timestamp: Date.now().toString()
+        })
+      });
       
       const data = await response.json();
       console.log('📄 Respuesta de validación:', data);
@@ -66,18 +68,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
 
     console.log('🔐 Intentando login con:', { usuario: usuario, password: '***' });
     
-    // 1. Verificar admin principal (fallback de emergencia)
-    if (usuario === ADMIN_USER.usuario && password === ADMIN_USER.password) {
-      console.log('✅ Login exitoso como admin principal');
-      localStorage.setItem('barberia_usuario', ADMIN_USER.nombre);
-      localStorage.setItem('barberia_rol', ADMIN_USER.rol);
-      localStorage.setItem('barberia_permisos', JSON.stringify(ADMIN_USER.permisos));
-      onLogin(ADMIN_USER.nombre, ADMIN_USER.rol, ADMIN_USER.permisos);
-      setCargando(false);
-      return;
-    }
-
-    // 2. Validar en Google Sheets (método principal y único)
+    // SEGURIDAD MEJORADA: Solo validación vía Google Sheets (sin admin hardcodeado)
     const validacionGoogleSheets = await validarUsuarioEnGoogleSheets(usuario, password);
     
     if (validacionGoogleSheets.valido && validacionGoogleSheets.usuario) {
@@ -102,7 +93,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">Barbería Estilo</CardTitle>
-          <p className="text-gray-600">Sistema de Gestión PWA v3.0</p>
+          <p className="text-gray-600">Sistema de Gestión PWA v3.1</p>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -146,7 +137,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
           </form>
           
           <div className="mt-4 text-xs text-center text-gray-500">
-            🔒 Autenticación segura vía Google Sheets
+            🔒 Autenticación segura vía POST requests
           </div>
         </CardContent>
       </Card>
