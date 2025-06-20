@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
+import { BusinessProvider } from '@/context/BusinessContext';
 import LoginBarberia from './LoginBarberia';
 import DashboardBarberia from './DashboardBarberia';
 import SEOHead from '@/components/SEOHead';
@@ -46,7 +47,7 @@ const GestionBarberia: React.FC = () => {
   }
 
   return (
-    <>
+    <BusinessProvider>
       <SEOHead 
         title="Gestión Barbería - Sistema PWA"
         description="Sistema de gestión interno PWA para empleados de Barbería Estilo"
@@ -62,7 +63,7 @@ const GestionBarberia: React.FC = () => {
       ) : (
         <LoginBarberia onLogin={handleLogin} />
       )}
-    </>
+    </BusinessProvider>
   );
 };
 
