@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -495,6 +496,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 </div>
                 
                 <div className="flex gap-2 md:flex-col lg:flex-row">
+                  {/* SOLO mostrar botones para turnos "Confirmado" */}
                   {turno.estado === 'Confirmado' && (
                     <>
                       <Button
