@@ -6,7 +6,7 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import AgregarTurno from './AgregarTurno';
+import AgregarTurnoMejorado from './AgregarTurnoMejorado';
 import { useToast } from '@/hooks/use-toast';
 
 interface Turno {
@@ -29,7 +29,7 @@ interface TurnosDiaProps {
   usuario: string;
 }
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzsEzOPLN3LUfLtkbWyvQ_mVzxhsdcK3qtFOBR6j73KeGPoTW7eZffINeH5T-uTJ6l/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxa8EBhJ0Bjx1amjc7NzOXJWSMe88ExERPFuRqo5iz_OjWS0w9jMDjsN_7us0FKC9o2/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
@@ -95,7 +95,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       console.log('📄 Datos recibidos:', data);
 
       if (data.success) {
-        // ... keep existing code (conversion logic for turnosConvertidos)
         const turnosConvertidos = data.eventos.map((evento: any) => {
           let fechaEvento, horaInicio, horaFin;
           
@@ -124,14 +123,18 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             horaFin = new Date();
           }
           
-          // NUEVA LÓGICA: Las reservas de la web deben aparecer como "Reservado"
-          // Solo las que se confirman desde el panel aparecen como "Confirmado"
+          // NUEVA LÓGICA: Las reservas web se muestran directamente como "Confirmado"
+          // Solo diferenciamos por origen, no por estado
           let estadoMapeado = evento.Estado;
+          let origenMapeado = 'reserva'; // Por defecto es reserva web
           
-          // Si viene "Confirmado" pero no es desde el panel, es una reserva web -> "Reservado"
-          if (evento.Estado === 'Confirmado' && !evento.origen_panel) {
-            estadoMapeado = 'Reservado';
+          // Si viene desde el panel administrativo, marcarlo como manual
+          if (evento.origen_panel) {
+            origenMapeado = 'manual';
           }
+          
+          // Las reservas web que llegan como "Confirmado" se mantienen así
+          // Ya no las cambiamos a "Reservado"
           
           return {
             id: evento.ID_Evento,
@@ -144,7 +147,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             valor: evento['Valor del turno'] || 0,
             responsable: evento.Responsable,
             estado: estadoMapeado,
-            origen: evento.Estado === 'Completado' && evento.Nombre_Cliente === 'Atención directa en local' ? 'manual' : 'reserva',
+            origen: origenMapeado,
             descripcion: evento.Descripcion
           };
         });
@@ -301,14 +304,18 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     await actualizarEstadoTurno(turnoId, 'Confirmado');
   };
 
+  const marcarClienteAusente = async (turnoId: string) => {
+    await actualizarEstadoTurno(turnoId, 'Cliente Ausente');
+  };
+
   const calcularEstadisticas = () => {
     const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
 
-    const reservados = turnosDelDia.filter(t => t.estado === 'Reservado').length;
     const confirmados = turnosDelDia.filter(t => t.estado === 'Confirmado').length;
     const completados = turnosDelDia.filter(t => t.estado === 'Completado').length;
     const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
+    const clientesAusentes = turnosDelDia.filter(t => t.estado === 'Cliente Ausente').length;
 
     const totalIngresosDia = turnosDelDia
       .filter(t => t.estado === 'Completado')
@@ -316,10 +323,10 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
     return {
       totalTurnos: turnosDelDia.length,
-      reservados,
       confirmados,
       completados,
       cancelados,
+      clientesAusentes,
       ingresosDia: totalIngresosDia
     };
   };
@@ -329,15 +336,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-blue-800">Reservados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-blue-600">{stats.reservados}</p>
-          </CardContent>
-        </Card>
-        
         <Card className="bg-yellow-50 border-yellow-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-yellow-800">Confirmados</CardTitle>
@@ -365,6 +363,15 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           </CardContent>
         </Card>
         
+        <Card className="bg-orange-50 border-orange-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-orange-800">Cliente Ausente</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-orange-600">{stats.clientesAusentes}</p>
+          </CardContent>
+        </Card>
+        
         <Card className="bg-purple-50 border-purple-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-purple-800">Total Turnos</CardTitle>
@@ -389,14 +396,14 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const getEstadoBadge = (estado: string) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium";
     
-    if (estado === 'Reservado') {
-      return `${baseClasses} bg-blue-100 text-blue-800`;
-    } else if (estado === 'Confirmado') {
+    if (estado === 'Confirmado') {
       return `${baseClasses} bg-yellow-100 text-yellow-800`;
     } else if (estado === 'Completado') {
       return `${baseClasses} bg-green-100 text-green-800`;
     } else if (estado === 'Cancelado') {
       return `${baseClasses} bg-red-100 text-red-800`;
+    } else if (estado === 'Cliente Ausente') {
+      return `${baseClasses} bg-orange-100 text-orange-800`;
     }
     return `${baseClasses} bg-gray-100 text-gray-800`;
   };
@@ -498,25 +505,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 </div>
                 
                 <div className="flex gap-2 md:flex-col lg:flex-row">
-                  {turno.estado === 'Reservado' && (
-                    <>
-                      <Button
-                        onClick={() => confirmarTurno(turno.id)}
-                        size="sm"
-                        className="bg-yellow-600 hover:bg-yellow-700 text-white flex-1 md:flex-none"
-                      >
-                        Confirmar
-                      </Button>
-                      <Button
-                        onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-600 hover:bg-red-50 flex-1 md:flex-none"
-                      >
-                        Cancelar
-                      </Button>
-                    </>
-                  )}
                   {turno.estado === 'Confirmado' && (
                     <>
                       <Button
@@ -525,6 +513,14 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                         className="bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none"
                       >
                         Completar
+                      </Button>
+                      <Button
+                        onClick={() => marcarClienteAusente(turno.id)}
+                        size="sm"
+                        variant="outline"
+                        className="text-orange-600 border-orange-600 hover:bg-orange-50 flex-1 md:flex-none"
+                      >
+                        Cliente Ausente
                       </Button>
                       <Button
                         onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
@@ -544,12 +540,13 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       )}
 
       {mostrarAgregarTurno && (
-        <AgregarTurno
+        <AgregarTurnoMejorado
           onClose={() => setMostrarAgregarTurno(false)}
           onTurnoAgregado={() => {
             obtenerTurnos();
             setMostrarAgregarTurno(false);
           }}
+          fechaSeleccionada={date}
         />
       )}
     </div>
