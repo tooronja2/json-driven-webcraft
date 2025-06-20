@@ -75,6 +75,12 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             horaFin = new Date();
           }
           
+          // Mapear estados: Confirmado desde la web -> Reservado
+          let estadoMapeado = evento.Estado;
+          if (evento.Estado === 'Confirmado' && !evento.origen_panel) {
+            estadoMapeado = 'Reservado';
+          }
+          
           return {
             id: evento.ID_Evento,
             nombre: evento.Nombre_Cliente,
@@ -85,7 +91,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             servicio: evento.Titulo_Evento || evento['Servicios incluidos'],
             valor: evento['Valor del turno'] || 0,
             responsable: evento.Responsable,
-            estado: evento.Estado,
+            estado: estadoMapeado,
             origen: evento.Estado === 'Completado' && evento.Nombre_Cliente === 'Atención directa en local' ? 'manual' : 'reserva',
             descripcion: evento.Descripcion
           };
@@ -120,6 +126,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           action: 'updateEstado',
           id: turnoId,
           estado: nuevoEstado,
+          origen_panel: true, // Marcar que viene del panel
           apiKey: API_SECRET_KEY
         })
       });
@@ -141,21 +148,25 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     }
   };
 
+  const confirmarTurno = async (turnoId: string) => {
+    await actualizarEstadoTurno(turnoId, 'Confirmado');
+  };
+
   const calcularEstadisticas = () => {
-    const fechaHoy = format(new Date(), 'yyyy-MM-dd');
-    const turnosHoy = turnos.filter(turno => turno.fecha === fechaHoy);
+    const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+    const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
 
-    const reservados = turnosHoy.filter(t => t.estado === 'Reservado' && t.origen === 'reserva').length;
-    const completadosConReserva = turnosHoy.filter(t => t.estado === 'Completado' && t.origen === 'reserva').length;
-    const completadosSinReserva = turnosHoy.filter(t => t.estado === 'Completado' && t.origen === 'manual').length;
-    const cancelados = turnosHoy.filter(t => t.estado === 'Cancelado').length;
+    const reservados = turnosDelDia.filter(t => t.estado === 'Reservado').length;
+    const completadosConReserva = turnosDelDia.filter(t => t.estado === 'Completado' && t.origen === 'reserva').length;
+    const completadosSinReserva = turnosDelDia.filter(t => t.estado === 'Completado' && t.origen === 'manual').length;
+    const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
 
-    const totalIngresosDia = turnosHoy
+    const totalIngresosDia = turnosDelDia
       .filter(t => t.estado === 'Completado')
       .reduce((sum, t) => sum + (t.valor || 0), 0);
 
     return {
-      totalTurnos: turnosHoy.length,
+      totalTurnos: turnosDelDia.length,
       reservados,
       completadosConReserva,
       completadosSinReserva,
@@ -207,7 +218,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         
         <Card className="bg-yellow-50 border-yellow-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-yellow-800">Total Turnos Hoy</CardTitle>
+            <CardTitle className="text-sm text-yellow-800">Total Turnos</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-yellow-600">{stats.totalTurnos}</p>
@@ -226,7 +237,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     );
   };
 
-  const getEstadoBadge = (estado: string, origen: string) => {
+  const getEstadoBadge = (estado: string) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium";
     
     if (estado === 'Reservado') {
@@ -275,7 +286,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Turnos del Día</h2>
-        <div className="flex gap-2">
+        <div className="flex gap-2 relative">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="justify-start text-left font-normal">
@@ -283,13 +294,14 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 {date ? format(date, 'PPP', { locale: es }) : <span>Seleccionar fecha</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0" align="start">
+            <PopoverContent className="w-auto p-0 z-50 bg-white shadow-lg border" align="start">
               <Calendar
                 mode="single"
                 locale={es}
                 selected={date}
                 onSelect={setDate}
                 initialFocus
+                className="pointer-events-auto"
               />
             </PopoverContent>
           </Popover>
@@ -338,13 +350,32 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                     <TableCell>{turno.servicio}</TableCell>
                     <TableCell>{turno.responsable}</TableCell>
                     <TableCell>
-                      <span className={getEstadoBadge(turno.estado, turno.origen)}>
+                      <span className={getEstadoBadge(turno.estado)}>
                         {turno.estado}
                       </span>
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">
-                        {(turno.estado === 'Reservado' || turno.estado === 'Confirmado') && (
+                        {turno.estado === 'Reservado' && (
+                          <>
+                            <Button
+                              onClick={() => confirmarTurno(turno.id)}
+                              size="sm"
+                              className="bg-yellow-600 hover:bg-yellow-700 text-white"
+                            >
+                              Confirmar
+                            </Button>
+                            <Button
+                              onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              Cancelar
+                            </Button>
+                          </>
+                        )}
+                        {turno.estado === 'Confirmado' && (
                           <>
                             <Button
                               onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
