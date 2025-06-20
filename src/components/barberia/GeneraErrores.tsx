@@ -14,113 +14,186 @@ const GeneraErrores: React.FC = () => {
 
   const erroresRapidos = [
     {
-      id: 'ui-break-error',
-      nombre: '💥 Romper UI de Usuarios',
-      descripcion: 'Rompe visualmente la interfaz de gestión de usuarios',
+      id: 'crash-app-error',
+      nombre: '💥 CRASHEAR APLICACIÓN COMPLETA',
+      descripcion: 'Rompe TODA la aplicación para forzar Try to Fix',
       icon: Bug,
       color: 'text-red-500',
-      instruccionDefault: 'La interfaz de usuarios tiene un problema visual que necesita ser corregido.',
+      instruccionDefault: 'La aplicación se ha crasheado y necesita ser reparada.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_UI_BREAK_ERROR:', {
-          error: 'UI component crashed - visual interface broken',
-          component: 'GeneraErrores -> GestionUsuarios UI',
+        console.error('LOVABLE_FORCE_CRASH_ERROR:', {
+          error: 'APPLICATION COMPLETELY CRASHED - FORCE TRY TO FIX',
+          component: 'GeneraErrores -> FULL APP CRASH',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length,
           timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - Tab Genera Errores',
-          detalles: 'Error forzado para activar Try to Fix de Lovable'
+          ubicacion: '/gestion - CRASH FORZADO',
+          detalles: 'ERROR CRÍTICO - APLICACIÓN INACCESIBLE'
         });
         
-        // Romper el DOM directamente para que Lovable lo detecte
-        const headerElement = document.querySelector('h1');
-        if (headerElement) {
-          headerElement.innerHTML = `<div style="background: red; color: white; padding: 20px; position: fixed; top: 0; left: 0; right: 0; z-index: 9999; font-size: 18px; text-align: center;">
-            🚨 ERROR EJECUTADO: ${instruccion} | Imágenes: ${imagenesAdjuntas.length} | Lovable debe mostrar "Try to Fix" ahora
-          </div>` + headerElement.innerHTML;
-        }
-        
-        // También romper el componente actual
-        throw new Error(`UI_BREAK_FORCED: ${instruccion} - Imágenes adjuntas: ${imagenesAdjuntas.length}`);
-      }
-    },
-    {
-      id: 'text-corruption-error',
-      nombre: '📝 Corromper Texto de Página',
-      descripcion: 'Corrompe el texto visible de la página actual',
-      icon: Zap,
-      color: 'text-orange-500',
-      instruccionDefault: 'El texto de la página se ha corrompido y necesita ser restaurado.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_TEXT_CORRUPTION_ERROR:', {
-          error: 'Page text corruption detected',
-          component: 'GeneraErrores -> Page Text',
-          instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length,
-          timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - Tab Genera Errores',
-          detalles: 'Texto corrompido intencionalmente'
-        });
-        
-        // Corromper todo el texto visible de la página
-        const allTextElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, button, label');
-        allTextElements.forEach((element, index) => {
-          if (element.textContent && element.textContent.length > 3 && index % 3 === 0) {
-            element.textContent = `🔥ERROR🔥 ${instruccion} [IMG:${imagenesAdjuntas.length}]`;
-          }
-        });
-        
-        throw new Error(`TEXT_CORRUPTION_FORCED: ${instruccion}`);
-      }
-    },
-    {
-      id: 'layout-destroyer-error',
-      nombre: '🎨 Destruir Layout',
-      descripcion: 'Destruye completamente el layout de la página',
-      icon: Network,
-      color: 'text-purple-600',
-      instruccionDefault: 'El layout de la página se ha roto y necesita ser reparado.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_LAYOUT_DESTROYER_ERROR:', {
-          error: 'Page layout completely destroyed',
-          component: 'GeneraErrores -> Page Layout',
-          instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length,
-          timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - Tab Genera Errores',
-          detalles: 'Layout destruido para forzar detección'
-        });
-        
-        // Destruir completamente el layout
+        // Destruir completamente la aplicación
         const body = document.body;
-        const errorOverlay = document.createElement('div');
-        errorOverlay.innerHTML = `
+        body.innerHTML = `
           <div style="
             position: fixed; 
             top: 0; 
             left: 0; 
             width: 100vw; 
             height: 100vh; 
-            background: linear-gradient(45deg, red, orange, yellow); 
+            background: #ff0000; 
             z-index: 999999; 
             display: flex; 
+            flex-direction: column;
             align-items: center; 
             justify-content: center; 
-            font-size: 24px; 
+            font-family: Arial, sans-serif;
             color: white; 
-            text-align: center;
-            font-weight: bold;
           ">
-            <div>
-              🚨 LAYOUT DESTRUIDO 🚨<br/>
-              Instrucción: ${instruccion}<br/>
-              Imágenes: ${imagenesAdjuntas.length}<br/>
-              <small>Lovable debería mostrar "Try to Fix"</small>
+            <h1 style="font-size: 48px; margin-bottom: 20px;">🚨 APLICACIÓN CRASHEADA 🚨</h1>
+            <div style="font-size: 24px; text-align: center; max-width: 800px; line-height: 1.5;">
+              <p><strong>INSTRUCCIÓN PARA LOVABLE AI:</strong></p>
+              <p style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; margin: 20px 0;">
+                ${instruccion}
+              </p>
+              <p><strong>Imágenes adjuntas:</strong> ${imagenesAdjuntas.length}</p>
+              <p><strong>Ubicación:</strong> /gestion → Tab "Genera Errores"</p>
+              <p style="font-size: 18px; margin-top: 30px;">
+                ⚠️ Esta aplicación está completamente rota y necesita ser reparada por Lovable AI
+              </p>
+              <p style="font-size: 16px; margin-top: 20px; opacity: 0.8;">
+                El botón "Try to Fix" debería aparecer automáticamente
+              </p>
             </div>
           </div>
         `;
-        body.appendChild(errorOverlay);
         
-        throw new Error(`LAYOUT_DESTROYED: ${instruccion} - Images: ${imagenesAdjuntas.length}`);
+        // Romper JavaScript también
+        setTimeout(() => {
+          throw new Error(`CRITICAL_APP_CRASH: ${instruccion} | Images: ${imagenesAdjuntas.length} | LOVABLE MUST SHOW TRY TO FIX NOW`);
+        }, 500);
+      }
+    },
+    {
+      id: 'ui-destroyer-error',
+      nombre: '🎨 DESTRUIR INTERFAZ USUARIOS',
+      descripcion: 'Destruye específicamente la interfaz de usuarios',
+      icon: Zap,
+      color: 'text-orange-500',
+      instruccionDefault: 'La interfaz de gestión de usuarios se ha corrompido y necesita ser restaurada.',
+      accion: (instruccion: string) => {
+        console.error('LOVABLE_UI_DESTROYER_ERROR:', {
+          error: 'USER INTERFACE COMPLETELY DESTROYED',
+          component: 'GeneraErrores -> GestionUsuarios UI DESTROYED',
+          instruccion_para_ai: instruccion,
+          imagenes_adjuntas: imagenesAdjuntas.length,
+          timestamp: new Date().toISOString(),
+          ubicacion: '/gestion - UI DESTRUCTION',
+          detalles: 'INTERFAZ DE USUARIOS DESTRUIDA - REQUIERE REPARACIÓN INMEDIATA'
+        });
+        
+        // Atacar específicamente elementos de la interfaz
+        const allElements = document.querySelectorAll('*');
+        allElements.forEach((element, index) => {
+          if (index % 2 === 0) {
+            (element as HTMLElement).style.transform = 'rotate(180deg) scale(0.1)';
+            (element as HTMLElement).style.opacity = '0.1';
+          }
+          if (index % 3 === 0) {
+            element.textContent = `💥ERROR: ${instruccion}💥`;
+          }
+        });
+        
+        // Crear overlay destructivo
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = `
+          <div style="
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            background: linear-gradient(45deg, #ff0000, #ff6600); 
+            z-index: 999999; 
+            padding: 40px;
+            border-radius: 20px;
+            color: white;
+            font-size: 20px;
+            text-align: center;
+            box-shadow: 0 0 50px rgba(255,0,0,0.5);
+            border: 5px solid #fff;
+          ">
+            <h2>🚨 INTERFAZ DESTRUIDA 🚨</h2>
+            <p><strong>Instrucción:</strong> ${instruccion}</p>
+            <p><strong>Imágenes:</strong> ${imagenesAdjuntas.length}</p>
+            <p style="font-size: 16px; margin-top: 20px;">
+              Lovable AI debe mostrar "Try to Fix" AHORA
+            </p>
+          </div>
+        `;
+        document.body.appendChild(errorDiv);
+        
+        throw new Error(`UI_COMPLETELY_DESTROYED: ${instruccion} - FORCE_TRY_TO_FIX_NOW`);
+      }
+    },
+    {
+      id: 'react-killer-error',
+      nombre: '⚛️ MATAR REACT COMPLETAMENTE',
+      descripcion: 'Mata React y rompe toda la reactividad',
+      icon: Network,
+      color: 'text-purple-600',
+      instruccionDefault: 'React se ha crasheado y la aplicación no responde.',
+      accion: (instruccion: string) => {
+        console.error('LOVABLE_REACT_KILLER_ERROR:', {
+          error: 'REACT FRAMEWORK KILLED - TOTAL BREAKDOWN',
+          component: 'GeneraErrores -> REACT DESTROYED',
+          instruccion_para_ai: instruccion,
+          imagenes_adjuntas: imagenesAdjuntas.length,
+          timestamp: new Date().toISOString(),
+          ubicacion: '/gestion - REACT KILLED',
+          detalles: 'REACT COMPLETAMENTE ROTO - APLICACIÓN INOPERATIVA'
+        });
+        
+        // Matar React de forma agresiva
+        const reactRoot = document.getElementById('root');
+        if (reactRoot) {
+          reactRoot.innerHTML = `
+            <div style="
+              width: 100vw; 
+              height: 100vh; 
+              background: linear-gradient(45deg, #000, #ff0000, #000); 
+              display: flex; 
+              flex-direction: column; 
+              align-items: center; 
+              justify-content: center; 
+              color: white; 
+              font-family: monospace;
+              animation: blink 0.5s infinite;
+            ">
+              <style>
+                @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.1; } }
+                body { overflow: hidden !important; }
+              </style>
+              <h1 style="font-size: 60px; margin-bottom: 30px;">💀 REACT MUERTO 💀</h1>
+              <div style="font-size: 24px; text-align: center; background: rgba(0,0,0,0.8); padding: 30px; border-radius: 15px; max-width: 90%;">
+                <p><strong>🤖 MENSAJE PARA LOVABLE AI:</strong></p>
+                <p style="color: #ffff00; font-size: 28px; margin: 20px 0;">${instruccion}</p>
+                <p><strong>📷 Imágenes:</strong> ${imagenesAdjuntas.length}</p>
+                <p><strong>📍 Ubicación:</strong> /gestion</p>
+                <p style="margin-top: 30px; font-size: 20px; color: #ff6666;">
+                  ⚠️ REACT FRAMEWORK COMPLETAMENTE DESTRUIDO ⚠️
+                </p>
+                <p style="font-size: 18px; color: #66ff66;">
+                  🔧 LOVABLE DEBE MOSTRAR "TRY TO FIX" INMEDIATAMENTE
+                </p>
+              </div>
+            </div>
+          `;
+        }
+        
+        // Error crítico que debe crashear todo
+        setTimeout(() => {
+          window.location.href = 'javascript:void(0)';
+          throw new Error(`REACT_FRAMEWORK_KILLED: ${instruccion} | Images: ${imagenesAdjuntas.length} | CRITICAL_ERROR_FORCE_FIX`);
+        }, 100);
       }
     }
   ];
@@ -153,22 +226,22 @@ const GeneraErrores: React.FC = () => {
   const ejecutarErrorRapido = (error: typeof erroresRapidos[0]) => {
     const instruccionPersonalizada = instruccionesPersonalizadas[error.id] || error.instruccionDefault;
     
-    console.info('🚨 EJECUTANDO ERROR REAL FORZADO:', {
+    console.info('🚨 EJECUTANDO ERROR CRÍTICO FORZADO:', {
       pagina: '/gestion',
       componente: 'GeneraErrores',
       error_tipo: error.nombre,
       instruccion: instruccionPersonalizada,
       imagenes: imagenesAdjuntas.length,
       timestamp: new Date().toISOString(),
-      mensaje: 'Este error DEBE romper la página y activar Try to Fix'
+      mensaje: 'ERROR CRÍTICO - DEBE ACTIVAR TRY TO FIX INMEDIATAMENTE'
     });
 
     setErrorActivo(error.id);
     
-    // Pequeño delay para asegurar que el estado se actualice antes del error
+    // Ejecutar inmediatamente el error crítico
     setTimeout(() => {
       error.accion(instruccionPersonalizada);
-    }, 100);
+    }, 200);
   };
 
   const actualizarInstruccion = (errorId: string, nuevaInstruccion: string) => {
@@ -191,9 +264,9 @@ const GeneraErrores: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">🚨 Genera Errores REALES Forzados</h2>
-        <p className="text-gray-600 mb-6">
-          Estos botones van a ROMPER VISUALMENTE la página actual para forzar que Lovable muestre "Try to Fix" inmediatamente.
+        <h2 className="text-2xl font-bold mb-4">💀 GENERA ERRORES CRÍTICOS FORZADOS</h2>
+        <p className="text-red-600 mb-6 font-bold">
+          ⚠️ ESTOS BOTONES VAN A CRASHEAR COMPLETAMENTE LA APLICACIÓN PARA FORZAR "TRY TO FIX"
         </p>
       </div>
 
@@ -251,9 +324,9 @@ const GeneraErrores: React.FC = () => {
           <AlertDescription className="text-red-800">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <strong>🚨 ERROR FORZADO EJECUTADO:</strong> {erroresRapidos.find(e => e.id === errorActivo)?.nombre}
+                <strong>💀 ERROR CRÍTICO EJECUTADO:</strong> {erroresRapidos.find(e => e.id === errorActivo)?.nombre}
                 <br />
-                <span className="text-sm">Si ves este mensaje sin que la página se haya roto, algo falló.</span>
+                <span className="text-sm">Si puedes leer esto, el error no fue lo suficientemente fuerte.</span>
               </div>
               <Button 
                 onClick={() => window.location.reload()}
@@ -272,16 +345,16 @@ const GeneraErrores: React.FC = () => {
         {erroresRapidos.map((error) => {
           const IconComponent = error.icon;
           return (
-            <Card key={error.id} className="hover:shadow-md transition-shadow border-l-4 border-l-red-500">
+            <Card key={error.id} className="hover:shadow-md transition-shadow border-l-4 border-l-red-500 bg-red-50">
               <CardHeader className="pb-3">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <IconComponent className={`h-5 w-5 ${error.color}`} />
                   {error.nombre}
-                  <span className="text-sm bg-red-100 text-red-700 px-2 py-1 rounded">FORZADO</span>
+                  <span className="text-sm bg-red-600 text-white px-2 py-1 rounded">CRÍTICO</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <p className="text-gray-600 text-sm">{error.descripcion}</p>
+                <p className="text-gray-600 text-sm font-bold">{error.descripcion}</p>
                 
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
@@ -306,15 +379,16 @@ const GeneraErrores: React.FC = () => {
                 <div className="flex gap-2">
                   <Button 
                     onClick={() => ejecutarErrorRapido(error)}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold"
                     variant="destructive"
                   >
                     <Play className="h-4 w-4 mr-2" />
-                    💥 FORZAR ERROR AHORA
+                    💀 CRASHEAR AHORA
                   </Button>
                 </div>
                 
-                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
+                <div className="text-xs text-gray-500 bg-red-100 p-2 rounded border border-red-300">
+                  <strong>⚠️ ADVERTENCIA:</strong> Este error va a ROMPER completamente la aplicación<br/>
                   <strong>Ubicación:</strong> /gestion → Tab "Genera Errores"<br/>
                   <strong>Imágenes adjuntas:</strong> {imagenesAdjuntas.length}<br/>
                   <strong>Instrucción actual:</strong> {instruccionesPersonalizadas[error.id] || error.instruccionDefault}
