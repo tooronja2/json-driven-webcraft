@@ -106,7 +106,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   const servicio = contenido?.find(s => s.id === servicioId);
   const duracionMinutos = parseInt(servicio?.detalles?.duracion?.replace('min', '') || '30');
 
-  // Cargar eventos desde Google Sheets
+  // Cargar eventos desde Google Sheets - COMPATIBLE CON NUEVO SCRIPT
   const cargarEventos = useCallback(async () => {
     try {
       console.log('🔄 Cargando eventos desde Google Sheets...');
@@ -127,11 +127,11 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       const data = await response.json();
       
       if (data.success) {
-        console.log('📅 Eventos RAW recibidos:', data.eventos);
+        console.log('📅 Eventos RAW recibidos del nuevo script:', data.eventos);
         
         // Procesar eventos para normalizar formato de fecha
         const eventosProcesados = data.eventos.map((evento: any) => {
-          console.log('🔍 Procesando evento original:', evento);
+          console.log('🔍 Procesando evento original del nuevo script:', evento);
           
           // Normalizar fecha - puede venir como Date object o string
           let fechaNormalizada = evento.Fecha;
@@ -141,9 +141,20 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
             fechaNormalizada = evento.Fecha.split('T')[0];
           }
 
+          // Mapear campos del nuevo script a formato esperado
           const eventoNormalizado = {
-            ...evento,
-            Fecha: fechaNormalizada
+            ID_Evento: evento.ID_Evento,
+            Titulo_Evento: evento.Titulo_Evento,
+            Nombre_Cliente: evento.Nombre_Cliente,
+            Email_Cliente: evento.Email_Cliente,
+            Fecha: fechaNormalizada,
+            "Hora Inicio": evento.Hora_Inicio || evento["Hora Inicio"], // Nuevo script usa Hora_Inicio
+            "Hora Fin": evento.Hora_Fin || evento["Hora Fin"], // Nuevo script usa Hora_Fin
+            Descripcion: evento.Descripcion,
+            Estado: evento.Estado,
+            "Valor del turno": evento["Valor del turno"] || 0,
+            "Servicios incluidos": evento["Servicios incluidos"] || evento.Titulo_Evento,
+            Responsable: evento.Responsable
           };
           
           console.log('✅ Evento normalizado:', eventoNormalizado);
@@ -212,7 +223,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     // 2. Filtrar eventos ocupados para esta fecha y responsable
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
     const eventosRelevantes = eventos.filter(evento => {
-      const esConfirmado = evento.Estado === 'Confirmado';
+      const esConfirmado = evento.Estado === 'Confirmado' || evento.Estado === 'Reservado'; // Incluir ambos estados
       const esDelResponsable = evento.Responsable === responsable;
       const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
       
@@ -263,42 +274,36 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     fechaFin.setHours(horas, minutos + duracionMinutos);
     const horaFin = `${fechaFin.getHours().toString().padStart(2, '0')}:${fechaFin.getMinutes().toString().padStart(2, '0')}`;
 
+    // FORMATO ACTUALIZADO PARA EL NUEVO SCRIPT
     const reservaData = {
       ID_Evento: `evento_${Date.now()}`,
       Titulo_Evento: servicio?.nombre || '',
       Nombre_Cliente: datosCliente.nombre,
       Email_Cliente: datosCliente.email,
       Fecha: fechaSeleccionada.toISOString().split('T')[0],
-      Hora_Inicio: horaSeleccionada,
-      Hora_Fin: horaFin,
+      Hora_Inicio: horaSeleccionada, // Nuevo script usa Hora_Inicio sin espacios
+      Hora_Fin: horaFin, // Nuevo script usa Hora_Fin sin espacios
       Descripcion: `${servicio?.nombre} - Tel: ${datosCliente.telefono || 'No proporcionado'}`,
-      Estado: 'Confirmado',
+      Estado: 'Reservado', // El nuevo script crea con estado "Reservado"
       "Valor del turno": servicio?.precio_oferta || servicio?.precio || 0,
       "Servicios incluidos": servicio?.nombre || '',
       Responsable: responsable
     };
 
     try {
-      const datos = {
-        action: "crearReserva",
-        apiKey: API_SECRET_KEY,
-        data: JSON.stringify(reservaData)
-      };
-
-      const formData = new URLSearchParams();
-      for (const key in datos) {
-        formData.append(key, datos[key]);
-      }
-
-      console.log('🚀 Enviando nueva reserva');
+      console.log('🚀 Enviando nueva reserva al nuevo script');
       console.log('📦 Datos de reserva:', reservaData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: formData
+        body: JSON.stringify({
+          action: "crearReserva",
+          apiKey: API_SECRET_KEY,
+          data: JSON.stringify(reservaData)
+        })
       });
 
       if (!response.ok) {

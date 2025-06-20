@@ -126,26 +126,27 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
       const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
 
+      // FORMATO ACTUALIZADO PARA EL NUEVO SCRIPT
       const turnoData = {
-        action: 'createEvento',
-        id: generarId(),
-        titulo: 'Atención directa en local',
-        nombre: 'Atención directa en local',
-        email: 'atencion@barberiaestilo.com',
-        fecha: fechaISO,
-        horaInicio: formData.hora,
-        horaFin: calcularHoraFin(formData.hora, formData.servicio),
-        descripcion: `Turno sin reserva - ${formData.servicio}`,
-        servicio: formData.servicio,
-        valor: servicioSeleccionado?.precio || 0,
-        responsable: formData.responsable,
-        estado: 'Completado',
-        origen: 'manual',
-        origen_panel: true,
-        apiKey: API_SECRET_KEY
+        action: 'crearReserva',
+        apiKey: API_SECRET_KEY,
+        data: JSON.stringify({
+          ID_Evento: generarId(),
+          Titulo_Evento: 'Atención directa en local',
+          Nombre_Cliente: 'Atención directa en local',
+          Email_Cliente: 'atencion@barberiaestilo.com',
+          Fecha: fechaISO,
+          Hora_Inicio: formData.hora, // El nuevo script usa estos nombres
+          Hora_Fin: calcularHoraFin(formData.hora, formData.servicio),
+          Descripcion: `Turno sin reserva - ${formData.servicio}`,
+          Estado: 'Completado', // Los turnos manuales se marcan como completados
+          "Valor del turno": servicioSeleccionado?.precio || 0,
+          "Servicios incluidos": formData.servicio,
+          Responsable: formData.responsable
+        })
       };
 
-      console.log('Enviando turno sin reserva:', turnoData);
+      console.log('🔄 Enviando turno sin reserva al nuevo script:', turnoData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
@@ -156,7 +157,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       });
 
       const result = await response.json();
-      console.log('Respuesta del servidor:', result);
+      console.log('✅ Respuesta del nuevo script:', result);
 
       if (result.success) {
         setMensajeExito('Turno agregado exitosamente');
@@ -185,7 +186,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
         });
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error:', error);
       const errorMessage = 'Error de conexión. Inténtalo nuevamente.';
       setError(errorMessage);
       toast({

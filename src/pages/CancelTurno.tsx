@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -24,14 +25,24 @@ const CancelTurno = () => {
 
   const cargarDatosTurno = async () => {
     try {
+      console.log('🔄 Cargando datos del turno desde nuevo script:', eventId);
       const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getTurno&apiKey=${API_SECRET_KEY}&id=${eventId}`);
       const data = await response.json();
+      console.log('📄 Datos del turno recibidos:', data);
+      
       if (data.success) {
-        setTurnoData(data.turno);
+        // Mapear campos del nuevo script
+        const turnoNormalizado = {
+          ...data.turno,
+          "Hora Inicio": data.turno.Hora_Inicio || data.turno["Hora Inicio"],
+          "Hora Fin": data.turno.Hora_Fin || data.turno["Hora Fin"]
+        };
+        setTurnoData(turnoNormalizado);
       } else {
         setMensaje('Turno no encontrado o ya cancelado');
       }
     } catch (error) {
+      console.error('❌ Error cargando turno:', error);
       setMensaje('Error al cargar datos del turno');
     }
   };
@@ -42,20 +53,23 @@ const CancelTurno = () => {
     setCargando(true);
     
     try {
-      const formData = new URLSearchParams();
-      formData.append('action', 'cancelarTurno');
-      formData.append('apiKey', API_SECRET_KEY);
-      formData.append('eventId', eventId);
-
+      console.log('🔄 Cancelando turno con nuevo script:', eventId);
+      
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          'Content-Type': 'application/json',
         },
-        body: formData
+        body: JSON.stringify({
+          action: 'cancelarTurno',
+          eventId: eventId,
+          id: eventId, // Enviar ambos por compatibilidad
+          apiKey: API_SECRET_KEY
+        })
       });
 
       const result = await response.json();
+      console.log('✅ Resultado cancelación:', result);
       
       if (result.success) {
         setMensaje('✅ Turno cancelado exitosamente. Te enviamos un email de confirmación.');
@@ -63,6 +77,7 @@ const CancelTurno = () => {
         setMensaje('❌ Error al cancelar el turno: ' + result.error);
       }
     } catch (error) {
+      console.error('❌ Error cancelando turno:', error);
       setMensaje('❌ Error al procesar la cancelación');
     } finally {
       setCargando(false);
