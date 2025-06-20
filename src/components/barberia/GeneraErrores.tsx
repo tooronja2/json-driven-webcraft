@@ -13,7 +13,7 @@ const GeneraErrores: React.FC = () => {
   const [forceError, setForceError] = useState(false);
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
-  const [mostrarAppsScript, setMostrarAppsScript] = useState(true); // Mostrar por defecto
+  const [mostrarAppsScript, setMostrarAppsScript] = useState(false);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -90,8 +90,24 @@ const GeneraErrores: React.FC = () => {
 
   // Componente de estadísticas que mantiene el error PERSISTENTE
   const renderEstadisticasAdmin = () => {
-    // DESACTIVAR ERROR TEMPORALMENTE PARA MOSTRAR APPS SCRIPT
-    return null; // No generar error cuando se muestra el Apps Script
+    // TEMPORALMENTE DESHABILITADO PARA MOSTRAR EL APPS SCRIPT
+    if (mostrarAppsScript) {
+      return null; // No generar error cuando se muestra el Apps Script
+    }
+
+    // MANTENER EL ERROR ACTIVO - No resetear automáticamente
+    if (errorEstadisticas && forceError && solicitudesEnviadas.length > 0) {
+      console.log('🔧 MÚLTIPLES SOLICITUDES ACTIVAS:', solicitudesEnviadas.length);
+      console.log('🔧 SOLICITUDES ENVIADAS:', solicitudesEnviadas);
+      console.log('🔧 IMÁGENES ADJUNTAS:', imagenesAdjuntas.length);
+      console.log('🔧 ESTADO: Sistema en modo error persistente para múltiples solicitudes');
+      
+      // Crear un error que contenga TODAS las solicitudes
+      const mensajeCompleto = `MÚLTIPLES SOLICITUDES: ${solicitudesEnviadas.join(' | ')} | Images: ${imagenesAdjuntas.length}`;
+      throw new Error(`CONTROLLED_ERROR: ${mensajeCompleto}`);
+    }
+
+    return null;
   };
 
   const eliminarImagen = (index: number) => {
@@ -414,7 +430,6 @@ function enviarRecordatorios() {
       { htmlBody: html }
     );
   }
-}
   `.trim();
 
   return (
