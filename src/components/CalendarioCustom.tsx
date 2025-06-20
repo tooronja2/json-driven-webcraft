@@ -24,8 +24,8 @@ interface CalendarioCustomProps {
   onReservaConfirmada: () => void;
 }
 
-// REEMPLAZA ESTA URL CON LA URL DE TU GOOGLE APPS SCRIPT
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/TU_SCRIPT_ID_AQUI/exec';
+// URL del Google Apps Script desplegado
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxeAT6sRADmr1ZUGfWTPCqZcowZbjyYvPC2h6aNkK9NEF-lHbmGTAkVkdzKNr-Vlu8l/exec';
 
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
