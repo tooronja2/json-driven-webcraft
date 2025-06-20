@@ -3,14 +3,15 @@
   "name": "Barbería Estilo - Gestión",
   "short_name": "Barbería Gestión",
   "description": "Sistema de gestión interno PWA para empleados de Barbería Estilo",
-  "start_url": "/gestion",
+  "start_url": "/gestion?v=3",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#1f2937",
   "orientation": "portrait-primary",
   "scope": "/",
-  "id": "/gestion",
+  "id": "/gestion-v3",
   "prefer_related_applications": false,
+  "version": "3.0.0",
   "icons": [
     {
       "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",
@@ -48,19 +49,7 @@
       "name": "Ver Turnos",
       "short_name": "Turnos",
       "description": "Ver turnos del día",
-      "url": "/gestion?tab=turnos",
-      "icons": [
-        {
-          "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",
-          "sizes": "96x96"
-        }
-      ]
-    },
-    {
-      "name": "Agregar Turno",
-      "short_name": "Agregar",
-      "description": "Agregar nuevo turno",
-      "url": "/gestion?action=add",
+      "url": "/gestion?tab=turnos&v=3",
       "icons": [
         {
           "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",

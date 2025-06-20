@@ -26,11 +26,16 @@
     <link rel="apple-touch-startup-image" href="/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png">
     
     <!-- Meta Tags para SEO -->
-    <meta name="description" content="Barbería Estilo - Sistema de gestión interno PWA para empleados" />
+    <meta name="description" content="Barbería Estilo - Sistema de gestión interno PWA para empleados v3.0" />
     <meta name="keywords" content="barbería, gestión, turnos, PWA, empleados" />
     
     <!-- Prevent zoom on iOS -->
     <meta name="format-detection" content="telephone=no" />
+    
+    <!-- Cache busting -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
   </head>
   <body>
     <div id="root"></div>
@@ -40,20 +45,30 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
+          navigator.serviceWorker.register('/sw.js?v=3')
             .then((registration) => {
-              console.log('✅ SW registered successfully:', registration);
+              console.log('✅ SW registered successfully v3:', registration);
               
-              // Check for updates
+              // Forzar actualización inmediata si hay una nueva versión
               registration.addEventListener('updatefound', () => {
                 console.log('🔄 SW update found');
                 const newWorker = registration.installing;
                 newWorker.addEventListener('statechange', () => {
-                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-                    console.log('🆕 New SW installed, ready to activate');
-                    // Optionally notify user about update
+                  if (newWorker.state === 'installed') {
+                    if (navigator.serviceWorker.controller) {
+                      console.log('🆕 New SW installed, activating immediately');
+                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+                      window.location.reload();
+                    } else {
+                      console.log('✅ SW installed for first time');
+                    }
                   }
                 });
+              });
+
+              // Revisar actualizaciones cada vez que la app gana foco
+              window.addEventListener('focus', () => {
+                registration.update();
               });
             })
             .catch((error) => {
@@ -65,12 +80,11 @@
           window.addEventListener('beforeinstallprompt', (e) => {
             console.log('💾 PWA install prompt available');
             deferredPrompt = e;
-            // You can show a custom install button here
           });
           
           // Handle successful PWA installation
           window.addEventListener('appinstalled', (e) => {
-            console.log('✅ PWA installed successfully');
+            console.log('✅ PWA v3 installed successfully');
             deferredPrompt = null;
           });
         });

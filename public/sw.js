@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'barberia-estilo-v2';
+const CACHE_NAME = 'barberia-estilo-v3'; // Incrementado para forzar actualización
 const urlsToCache = [
   '/gestion',
   '/static/js/bundle.js',
@@ -10,24 +10,24 @@ const urlsToCache = [
 
 // Install event
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing...');
+  console.log('Service Worker installing v3...');
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
-        console.log('Opened cache');
+        console.log('Opened cache v3');
         return cache.addAll(urlsToCache);
       })
       .catch((error) => {
         console.error('Failed to cache resources:', error);
       })
   );
-  // Immediately activate the new service worker
+  // Forzar activación inmediata del nuevo service worker
   self.skipWaiting();
 });
 
 // Activate event
 self.addEventListener('activate', (event) => {
-  console.log('Service Worker activating...');
+  console.log('Service Worker activating v3...');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
@@ -40,11 +40,11 @@ self.addEventListener('activate', (event) => {
       );
     })
   );
-  // Immediately take control of all pages
+  // Tomar control inmediato de todas las páginas
   self.clients.claim();
 });
 
-// Fetch event
+// Fetch event - Estrategia Network First para HTML, Cache First para assets
 self.addEventListener('fetch', (event) => {
   // NO interceptar requests a Google Apps Script para evitar CORS
   if (event.request.url.includes('script.google.com')) {
@@ -56,27 +56,45 @@ self.addEventListener('fetch', (event) => {
     return;
   }
   
+  // Para navegación (HTML), usar Network First
+  if (event.request.mode === 'navigate') {
+    event.respondWith(
+      fetch(event.request)
+        .then((response) => {
+          console.log('Fetched navigation from network:', event.request.url);
+          // Cachear la nueva respuesta
+          const responseToCache = response.clone();
+          caches.open(CACHE_NAME)
+            .then((cache) => {
+              cache.put(event.request, responseToCache);
+            });
+          return response;
+        })
+        .catch(() => {
+          console.log('Network failed, serving from cache:', event.request.url);
+          return caches.match(event.request);
+        })
+    );
+    return;
+  }
+  
+  // Para assets, usar Cache First
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
-        // Cache hit - return response
         if (response) {
           console.log('Serving from cache:', event.request.url);
           return response;
         }
         
-        // Cache miss - fetch from network
         console.log('Fetching from network:', event.request.url);
         return fetch(event.request)
           .then((response) => {
-            // Check if we received a valid response
             if (!response || response.status !== 200 || response.type !== 'basic') {
               return response;
             }
 
-            // Clone the response for caching
             const responseToCache = response.clone();
-
             caches.open(CACHE_NAME)
               .then((cache) => {
                 cache.put(event.request, responseToCache);
@@ -87,7 +105,6 @@ self.addEventListener('fetch', (event) => {
       })
       .catch((error) => {
         console.error('Fetch failed:', error);
-        // You could return a fallback page here
       })
   );
 });
@@ -137,7 +154,7 @@ self.addEventListener('notificationclick', (event) => {
   }
 });
 
-// Message handling for manual updates
+// Message handling para forzar actualizaciones
 self.addEventListener('message', (event) => {
   if (event.data && event.data.type === 'SKIP_WAITING') {
     self.skipWaiting();
