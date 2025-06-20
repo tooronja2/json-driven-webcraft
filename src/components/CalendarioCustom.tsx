@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -236,55 +235,65 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     return false; // Para días futuros, ninguna hora ha pasado
   };
 
-  // Función mejorada para verificar si un horario se superpone con un turno existente
-  const verificarSuperposicion = (horaInicio: string, duracionNueva: number, eventoExistente: EventoReserva): boolean => {
-    const horaInicioExistente = extraerHora(eventoExistente["Hora Inicio"]);
-    if (!horaInicioExistente) return false;
+  // 🔧 NUEVA FUNCIÓN CORREGIDA: Verificar si un slot específico está ocupado
+  const verificarSlotOcupado = (horaInicio: string, duracionNueva: number, eventosOcupados: EventoReserva[]): boolean => {
+    const inicioNuevoMinutos = horaAMinutos(horaInicio);
+    const finNuevoMinutos = inicioNuevoMinutos + duracionNueva;
 
-    // Obtener duración del servicio existente
-    const duracionExistente = obtenerDuracionServicio(eventoExistente.Titulo_Evento, contenido || []);
-    
-    // Convertir a minutos desde medianoche
-    const inicioNuevo = horaAMinutos(horaInicio);
-    const finNuevo = inicioNuevo + duracionNueva;
-    const inicioExistente = horaAMinutos(horaInicioExistente);
-    const finExistente = inicioExistente + duracionExistente;
+    console.log(`🔍 Verificando slot ${horaInicio} (${duracionNueva}min) -> ${minutosAHora(finNuevoMinutos)}`);
 
-    // Verificar superposición: hay superposición si el inicio de uno es antes del fin del otro
-    const haySuperposicion = inicioNuevo < finExistente && finNuevo > inicioExistente;
-    
-    if (haySuperposicion) {
-      console.log(`❌ SUPERPOSICIÓN detectada:`, {
-        nuevoTurno: `${horaInicio} (${duracionNueva}min) -> ${minutosAHora(finNuevo)}`,
-        turnoExistente: `${horaInicioExistente} (${duracionExistente}min) -> ${minutosAHora(finExistente)}`,
-        servicio: eventoExistente.Titulo_Evento
-      });
+    for (const evento of eventosOcupados) {
+      const horaInicioExistente = extraerHora(evento["Hora Inicio"]);
+      if (!horaInicioExistente) continue;
+
+      // Obtener duración del servicio existente
+      const duracionExistente = obtenerDuracionServicio(evento.Titulo_Evento, contenido || []);
+      
+      const inicioExistenteMinutos = horaAMinutos(horaInicioExistente);
+      const finExistenteMinutos = inicioExistenteMinutos + duracionExistente;
+
+      // Verificar superposición
+      const haySuperposicion = inicioNuevoMinutos < finExistenteMinutos && finNuevoMinutos > inicioExistenteMinutos;
+      
+      if (haySuperposicion) {
+        console.log(`❌ SUPERPOSICIÓN detectada con turno existente:`, {
+          turnoExistente: `${horaInicioExistente} -> ${minutosAHora(finExistenteMinutos)} (${evento.Titulo_Evento})`,
+          nuevoSlot: `${horaInicio} -> ${minutosAHora(finNuevoMinutos)}`
+        });
+        return true;
+      }
     }
 
-    return haySuperposicion;
+    console.log(`✅ Slot ${horaInicio} está libre`);
+    return false;
   };
 
-  // Filtrado de horarios mejorado con consideración de duración real de servicios
+  // 🔧 LÓGICA CORREGIDA: Filtrado de horarios UNIFICADO
   useEffect(() => {
     if (!fechaSeleccionada) {
       setHorasDisponibles([]);
       return;
     }
 
-    console.log('🔍 === INICIO FILTRADO MEJORADO DE HORARIOS ===');
+    console.log('🔍 === INICIO CÁLCULO DE DISPONIBILIDAD UNIFICADO ===');
+    console.log(`📅 Fecha: ${fechaSeleccionada.toISOString().split('T')[0]}`);
+    console.log(`👤 Responsable: ${responsable}`);
+    console.log(`⏱️ Servicio: ${servicio?.nombre} (${duracionMinutos}min)`);
     
-    // 1. Obtener horarios laborales del especialista para esta fecha
-    const horariosLaborales = obtenerHorariosDisponibles(responsable, fechaSeleccionada, duracionMinutos);
+    // 1. Obtener rango de horarios laborales del barbero
+    const horariosLaboralesCompletos = obtenerHorariosDisponibles(responsable, fechaSeleccionada, 15); // Usar 15min como slot base
     
-    if (horariosLaborales.length === 0) {
+    if (horariosLaboralesCompletos.length === 0) {
       console.log('❌ No hay horarios laborales configurados');
       setHorasDisponibles([]);
       return;
     }
 
+    console.log('⏰ Horarios laborales base (slots de 15min):', horariosLaboralesCompletos);
+
     // 2. Filtrar eventos ocupados para esta fecha y responsable
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
-    const eventosRelevantes = eventos.filter(evento => {
+    const eventosOcupados = eventos.filter(evento => {
       const esConfirmado = evento.Estado === 'Confirmado';
       const esDelResponsable = evento.Responsable === responsable;
       const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
@@ -292,36 +301,31 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       return esConfirmado && esDelResponsable && esMismaFecha;
     });
 
-    console.log('✅ Eventos ocupados relevantes:', eventosRelevantes);
+    console.log('📋 Turnos ocupados en esta fecha:', eventosOcupados);
 
-    // 3. Filtrar horarios laborales considerando superposición con turnos existentes
-    const disponibles = horariosLaborales.filter(hora => {
-      // Verificar si ya pasó la hora (solo para el día actual)
-      const yaPaso = yaEsHoraPasada(hora, fechaSeleccionada);
-      if (yaPaso) {
-        console.log(`⏰ Hora ${hora} ya pasó`);
-        return false;
+    // 3. Generar slots cada 15 minutos dentro del rango laboral y verificar disponibilidad
+    const slotsDisponibles = [];
+    
+    for (const slot of horariosLaboralesCompletos) {
+      // Verificar si ya pasó la hora (solo para hoy)
+      if (yaEsHoraPasada(slot, fechaSeleccionada)) {
+        console.log(`⏰ Slot ${slot} ya pasó`);
+        continue;
       }
 
-      // Verificar superposición con eventos existentes
-      const tieneSuperposicion = eventosRelevantes.some(evento => 
-        verificarSuperposicion(hora, duracionMinutos, evento)
-      );
-
-      if (tieneSuperposicion) {
-        console.log(`❌ Hora ${hora} tiene superposición con turnos existentes`);
-        return false;
+      // Verificar si este slot + duración del servicio se superpone con algún turno ocupado
+      const estaOcupado = verificarSlotOcupado(slot, duracionMinutos, eventosOcupados);
+      
+      if (!estaOcupado) {
+        slotsDisponibles.push(slot);
       }
-
-      console.log(`✅ Hora ${hora} disponible`);
-      return true;
-    });
+    }
     
-    console.log('✅ === HORARIOS FINALES DISPONIBLES ===:', disponibles);
-    console.log('🔍 === FIN FILTRADO MEJORADO ===');
+    console.log('✅ === SLOTS FINALES DISPONIBLES ===:', slotsDisponibles);
+    console.log('🔍 === FIN CÁLCULO DE DISPONIBILIDAD ===');
     
-    setHorasDisponibles(disponibles);
-  }, [fechaSeleccionada, eventos, responsable, duracionMinutos, obtenerHorariosDisponibles, contenido]);
+    setHorasDisponibles(slotsDisponibles);
+  }, [fechaSeleccionada, eventos, responsable, duracionMinutos, obtenerHorariosDisponibles, contenido, servicio?.nombre]);
 
   useEffect(() => {
     cargarEventos();
