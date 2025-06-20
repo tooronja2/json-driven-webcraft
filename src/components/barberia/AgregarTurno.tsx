@@ -126,33 +126,38 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
       const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
 
+      // Datos adaptados al nuevo formato del Google Apps Script
       const turnoData = {
-        action: 'createEvento',
-        id: generarId(),
-        titulo: 'Atención directa en local',
-        nombre: 'Atención directa en local',
-        email: 'atencion@barberiaestilo.com',
-        fecha: fechaISO,
-        horaInicio: formData.hora,
-        horaFin: calcularHoraFin(formData.hora, formData.servicio),
-        descripcion: `Turno sin reserva - ${formData.servicio}`,
-        servicio: formData.servicio,
-        valor: servicioSeleccionado?.precio || 0,
-        responsable: formData.responsable,
-        estado: 'Completado',
-        origen: 'manual',
-        origen_panel: true,
-        apiKey: API_SECRET_KEY
+        action: 'crearReserva',
+        apiKey: API_SECRET_KEY,
+        data: JSON.stringify({
+          ID_Evento: generarId(),
+          Titulo_Evento: 'Atención directa en local',
+          Nombre_Cliente: 'Atención directa en local',
+          Email_Cliente: 'atencion@barberiaestilo.com',
+          Fecha: fechaISO,
+          Hora_Inicio: formData.hora,
+          Hora_Fin: calcularHoraFin(formData.hora, formData.servicio),
+          Descripcion: `Turno sin reserva - ${formData.servicio}`,
+          'Valor del turno': servicioSeleccionado?.precio || 0,
+          'Servicios incluidos': formData.servicio,
+          Responsable: formData.responsable
+        })
       };
 
       console.log('Enviando turno sin reserva:', turnoData);
 
+      const formDataToSend = new URLSearchParams();
+      Object.entries(turnoData).forEach(([key, value]) => {
+        formDataToSend.append(key, value.toString());
+      });
+
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(turnoData)
+        body: formDataToSend
       });
 
       const result = await response.json();
@@ -168,7 +173,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
         
         toast({
           title: "Turno agregado",
-          description: "El turno se agregó correctamente como completado.",
+          description: "El turno se agregó correctamente como reservado.",
         });
         
         setTimeout(() => {
