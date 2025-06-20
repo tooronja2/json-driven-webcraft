@@ -13,7 +13,7 @@ interface AgregarTurnoProps {
 }
 
 // URL ACTUALIZADA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp2anjrxl3maBSUwqw6DbdW5K2wGM7nBLORzxdGwX8bXVkgmkZrVyb8Sy8QNjaBM-P/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylrQ6YaI9vPFZH9XhQjdKGFJCgJvHtQqBZABYkm3BSU14yXbMsdpKEf_Fmjl937k8J/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 // Usar los mismos servicios que están en servicios.json
@@ -74,10 +74,11 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
     const horaActual = ahora.getHours();
     const minutoActual = ahora.getMinutes();
     
+    // Solo filtrar si la fecha seleccionada es hoy
     const esHoy = fechaSeleccionada.toDateString() === ahora.toDateString();
     
     if (!esHoy) {
-      return horarios;
+      return horarios; // Si no es hoy, mostrar todos los horarios
     }
     
     return horarios.filter(horario => {
@@ -99,6 +100,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       
       setHorariosDisponibles(horariosFiltrados);
       
+      // Si el horario seleccionado ya no está disponible, limpiarlo
       if (formData.hora && !horariosFiltrados.includes(formData.hora)) {
         setFormData(prev => ({ ...prev, hora: '' }));
       }
@@ -124,33 +126,38 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
       const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
 
+      // Datos adaptados al nuevo formato del Google Apps Script
       const turnoData = {
-        action: 'createEvento',
-        id: generarId(),
-        titulo: 'Atención directa en local',
-        nombre: 'Atención directa en local',
-        email: 'atencion@barberiaestilo.com',
-        fecha: fechaISO,
-        horaInicio: formData.hora,
-        horaFin: calcularHoraFin(formData.hora, formData.servicio),
-        descripcion: `Turno sin reserva - ${formData.servicio}`,
-        servicio: formData.servicio,
-        valor: servicioSeleccionado?.precio || 0,
-        responsable: formData.responsable,
-        estado: 'Completado',
-        origen: 'manual',
-        origen_panel: true,
-        apiKey: API_SECRET_KEY
+        action: 'crearReserva',
+        apiKey: API_SECRET_KEY,
+        data: JSON.stringify({
+          ID_Evento: generarId(),
+          Titulo_Evento: 'Atención directa en local',
+          Nombre_Cliente: 'Atención directa en local',
+          Email_Cliente: 'atencion@barberiaestilo.com',
+          Fecha: fechaISO,
+          Hora_Inicio: formData.hora,
+          Hora_Fin: calcularHoraFin(formData.hora, formData.servicio),
+          Descripcion: `Turno sin reserva - ${formData.servicio}`,
+          'Valor del turno': servicioSeleccionado?.precio || 0,
+          'Servicios incluidos': formData.servicio,
+          Responsable: formData.responsable
+        })
       };
 
       console.log('Enviando turno sin reserva:', turnoData);
 
+      const formDataToSend = new URLSearchParams();
+      Object.entries(turnoData).forEach(([key, value]) => {
+        formDataToSend.append(key, value.toString());
+      });
+
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(turnoData)
+        body: formDataToSend
       });
 
       const result = await response.json();
@@ -166,7 +173,7 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
         
         toast({
           title: "Turno agregado",
-          description: "El turno se agregó correctamente como completado.",
+          description: "El turno se agregó correctamente como reservado.",
         });
         
         setTimeout(() => {

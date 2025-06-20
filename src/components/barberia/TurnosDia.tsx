@@ -30,7 +30,7 @@ interface TurnosDiaProps {
 }
 
 // URL ACTUALIZADA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp2anjrxl3maBSUwqw6DbdW5K2wGM7nBLORzxdGwX8bXVkgmkZrVyb8Sy8QNjaBM-P/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbylrQ6YaI9vPFZH9XhQjdKGFJCgJvHtQqBZABYkm3BSU14yXbMsdpKEf_Fmjl937k8J/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
@@ -100,22 +100,24 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           let fechaEvento, horaInicio, horaFin;
           
           try {
+            // Manejar fechas del nuevo formato
             if (typeof evento.Fecha === 'string' && evento.Fecha.includes('T')) {
               fechaEvento = new Date(evento.Fecha);
             } else {
               fechaEvento = new Date(evento.Fecha);
             }
 
-            if (typeof evento['Hora Inicio'] === 'string' && evento['Hora Inicio'].includes('T')) {
-              horaInicio = new Date(evento['Hora Inicio']);
+            // Manejar horas del nuevo formato
+            if (typeof evento.Hora_Inicio === 'string' && evento.Hora_Inicio.includes('T')) {
+              horaInicio = new Date(evento.Hora_Inicio);
             } else {
-              horaInicio = new Date(evento['Hora Inicio']);
+              horaInicio = new Date(evento.Hora_Inicio);
             }
 
-            if (typeof evento['Hora Fin'] === 'string' && evento['Hora Fin'].includes('T')) {
-              horaFin = new Date(evento['Hora Fin']);
+            if (typeof evento.Hora_Fin === 'string' && evento.Hora_Fin.includes('T')) {
+              horaFin = new Date(evento.Hora_Fin);
             } else {
-              horaFin = new Date(evento['Hora Fin']);
+              horaFin = new Date(evento.Hora_Fin);
             }
           } catch (e) {
             console.error('Error parsing dates for event:', evento, e);
@@ -123,8 +125,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             horaInicio = new Date();
             horaFin = new Date();
           }
-          
-          let estadoMapeado = evento.Estado;
           
           return {
             id: evento.ID_Evento,
@@ -136,7 +136,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             servicio: evento.Titulo_Evento || evento['Servicios incluidos'],
             valor: evento['Valor del turno'] || 0,
             responsable: evento.Responsable,
-            estado: estadoMapeado,
+            estado: evento.Estado,
             origen: evento.Estado === 'Completado' && evento.Nombre_Cliente === 'Atención directa en local' ? 'manual' : 'reserva',
             descripcion: evento.Descripcion
           };
@@ -189,20 +189,17 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       console.log('🔄 Cancelando turno:', turnoId);
       
-      const requestBodyJSON = {
-        action: 'cancelarTurno',
-        id: turnoId,
-        apiKey: API_SECRET_KEY
-      };
-
-      console.log('📤 Request body JSON:', requestBodyJSON);
+      const formData = new URLSearchParams();
+      formData.append('action', 'cancelarTurno');
+      formData.append('apiKey', API_SECRET_KEY);
+      formData.append('eventId', turnoId);
 
       const response = await realizarFetchConReintentos(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(requestBodyJSON)
+        body: formData
       });
 
       const result = await response.json();
