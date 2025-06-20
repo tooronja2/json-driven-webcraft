@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,7 +13,7 @@ interface AgregarTurnoProps {
 }
 
 // URL ACTUALIZADA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbxp2anjrxl3maBSUwqw6DbdW5K2wGM7nBLORzxdGwX8bXVkgmkZrVyb8Sy8QNjaBM-P/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 // Usar los mismos servicios que están en servicios.json
@@ -76,11 +74,10 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
     const horaActual = ahora.getHours();
     const minutoActual = ahora.getMinutes();
     
-    // Solo filtrar si la fecha seleccionada es hoy
     const esHoy = fechaSeleccionada.toDateString() === ahora.toDateString();
     
     if (!esHoy) {
-      return horarios; // Si no es hoy, mostrar todos los horarios
+      return horarios;
     }
     
     return horarios.filter(horario => {
@@ -102,7 +99,6 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       
       setHorariosDisponibles(horariosFiltrados);
       
-      // Si el horario seleccionado ya no está disponible, limpiarlo
       if (formData.hora && !horariosFiltrados.includes(formData.hora)) {
         setFormData(prev => ({ ...prev, hora: '' }));
       }
