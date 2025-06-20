@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,7 +14,6 @@ const GeneraErrores: React.FC = () => {
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
   const [mostrarAppsScript, setMostrarAppsScript] = useState(false);
-  const [sistemaBloqueado, setSistemaBloqueado] = useState(true); // BLOQUEAR SISTEMA POR DEFECTO
   const pasteAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
 
@@ -46,7 +44,7 @@ const GeneraErrores: React.FC = () => {
 
   // Función que aplica cambio con error controlado - PERMITE MÚLTIPLES SOLICITUDES
   const aplicarCambioConError = () => {
-    if (!mensajeErrorPersonalizado.trim() || sistemaBloqueado) return;
+    if (!mensajeErrorPersonalizado.trim()) return;
 
     setAplicandoCambio(true);
     
@@ -64,6 +62,9 @@ const GeneraErrores: React.FC = () => {
       description: `Solicitud #${solicitudesEnviadas.length + 1} enviada. Usa 'Try to Fix' para procesar.`,
       variant: "default",
     });
+
+    // NO resetear el mensaje para permitir modificaciones rápidas
+    // setMensajeErrorPersonalizado('');
   };
 
   // Función que resetea COMPLETAMENTE el sistema
@@ -74,20 +75,10 @@ const GeneraErrores: React.FC = () => {
     setMensajeErrorPersonalizado('');
     setImagenesAdjuntas([]);
     setMostrarAppsScript(false);
-    setSistemaBloqueado(true); // MANTENER BLOQUEADO
     
     toast({
       title: "Sistema reseteado",
       description: "Todas las solicitudes y errores han sido limpiados",
-    });
-  };
-
-  // Función para desbloquear temporalmente el sistema
-  const desbloquearSistema = () => {
-    setSistemaBloqueado(false);
-    toast({
-      title: "Sistema desbloqueado",
-      description: "Ahora puedes enviar solicitudes de error",
     });
   };
 
@@ -99,17 +90,12 @@ const GeneraErrores: React.FC = () => {
 
   // Componente de estadísticas que mantiene el error PERSISTENTE
   const renderEstadisticasAdmin = () => {
-    // SISTEMA BLOQUEADO - NO GENERAR ERRORES
-    if (sistemaBloqueado) {
-      return null;
-    }
-
     // TEMPORALMENTE DESHABILITADO PARA MOSTRAR EL APPS SCRIPT
     if (mostrarAppsScript) {
       return null; // No generar error cuando se muestra el Apps Script
     }
 
-    // MANTENER EL ERROR ACTIVO SOLO SI ESTÁ DESBLOQUEADO - No resetear automáticamente
+    // MANTENER EL ERROR ACTIVO - No resetear automáticamente
     if (errorEstadisticas && forceError && solicitudesEnviadas.length > 0) {
       console.log('🔧 MÚLTIPLES SOLICITUDES ACTIVAS:', solicitudesEnviadas.length);
       console.log('🔧 SOLICITUDES ENVIADAS:', solicitudesEnviadas);
@@ -449,17 +435,11 @@ function enviarRecordatorios() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">🔧 SISTEMA DE ERRORES BLOQUEADO</h2>
-        <Alert className="border-red-500 bg-red-50">
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-red-700 font-bold">
-            ⛔ SISTEMA BLOQUEADO: No se generarán errores controlados para evitar interferir con la depuración real.
-          </AlertDescription>
-        </Alert>
+        <h2 className="text-2xl font-bold mb-4">🔧 GENERA MÚLTIPLES SOLICITUDES</h2>
+        <p className="text-blue-600 mb-6 font-bold">
+          ✅ MODO MÚLTIPLE: Envía varias solicitudes seguidas sin resetear
+        </p>
       </div>
-
-      {/* Renderizar estadísticas que NO pueden fallar */}
-      {renderEstadisticasAdmin()}
 
       {/* Mostrar Apps Script completo */}
       {mostrarAppsScript && (
@@ -500,20 +480,95 @@ function enviarRecordatorios() {
         </Card>
       )}
 
-      <Card className="border-l-4 border-l-red-500 bg-red-50">
+      {/* Área de paste para imágenes */}
+      <Card className="border-dashed border-2 border-blue-300 bg-blue-50">
+        <CardContent className="p-6">
+          <div 
+            ref={pasteAreaRef}
+            className="text-center space-y-4"
+          >
+            <div className="flex items-center justify-center gap-2 text-blue-600">
+              <Image className="h-6 w-6" />
+              <span className="font-medium">Área de Imágenes para Lovable AI</span>
+            </div>
+            <p className="text-sm text-gray-600">
+              Presiona <kbd className="bg-gray-200 px-2 py-1 rounded text-xs">Ctrl + V</kbd> en cualquier lugar para pegar imágenes del portapapeles
+            </p>
+            
+            {imagenesAdjuntas.length > 0 && (
+              <div className="space-y-3">
+                <p className="text-sm font-medium text-blue-700">
+                  {imagenesAdjuntas.length} imagen(es) lista(s) para enviar a Lovable AI:
+                </p>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {imagenesAdjuntas.map((imagen, index) => (
+                    <div key={index} className="relative bg-white rounded border p-2">
+                      <img 
+                        src={imagen.preview} 
+                        alt={`Imagen ${index + 1}`}
+                        className="w-full h-20 object-cover rounded"
+                      />
+                      <Button
+                        onClick={() => eliminarImagen(index)}
+                        variant="ghost"
+                        size="sm"
+                        className="absolute -top-2 -right-2 h-6 w-6 p-0 bg-red-500 text-white rounded-full hover:bg-red-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                      <p className="text-xs text-gray-500 mt-1 truncate">
+                        {(imagen.file.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Renderizar estadísticas que pueden fallar */}
+      {renderEstadisticasAdmin()}
+
+      <Card className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500 bg-blue-50">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg text-red-700">
-            <Bug className="h-5 w-5" />
-            🚫 SISTEMA BLOQUEADO PARA DEPURACIÓN
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Bug className="h-5 w-5 text-blue-600" />
+            🔧 SOLICITUDES MÚLTIPLES
+            <span className="text-sm bg-blue-600 text-white px-2 py-1 rounded">PERSISTENTE</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-red-700 text-sm font-bold">
-            El generador de errores está bloqueado para no interferir con la depuración del problema real del API key.
+          <p className="text-gray-600 text-sm font-bold">
+            Envía múltiples solicitudes sin resetear. El sistema mantiene el error activo.
           </p>
           
           <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Edit3 className="h-4 w-4 text-gray-500" />
+              <label className="text-sm font-medium">Nueva solicitud:</label>
+            </div>
             <div className="flex gap-2">
+              <Textarea
+                placeholder="Describe qué quieres que implemente Lovable..."
+                value={mensajeErrorPersonalizado}
+                onChange={(e) => setMensajeErrorPersonalizado(e.target.value)}
+                className="flex-1 px-3 py-2 border rounded-md text-sm"
+                disabled={aplicandoCambio}
+                rows={3}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                onClick={aplicarCambioConError}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+                disabled={aplicandoCambio}
+              >
+                <Zap className="h-3 w-3 mr-1" />
+                {aplicandoCambio ? 'Enviando...' : 'Enviar Solicitud'}
+              </Button>
               <Button
                 onClick={() => setMostrarAppsScript(!mostrarAppsScript)}
                 size="sm"
@@ -523,12 +578,11 @@ function enviarRecordatorios() {
                 {mostrarAppsScript ? 'Ocultar' : 'Ver Apps Script'}
               </Button>
               <Button
-                onClick={desbloquearSistema}
+                onClick={limpiarMensaje}
                 size="sm"
-                className="bg-yellow-600 hover:bg-yellow-700"
-                disabled={!sistemaBloqueado}
+                variant="outline"
               >
-                🔓 Desbloquear (Solo para Testing)
+                Limpiar
               </Button>
               <Button
                 onClick={resetearSistema}
@@ -539,67 +593,50 @@ function enviarRecordatorios() {
               </Button>
             </div>
             
-            {/* Solo mostrar si está desbloqueado */}
-            {!sistemaBloqueado && (
-              <>
-                <div className="flex items-center gap-2">
-                  <Edit3 className="h-4 w-4 text-gray-500" />
-                  <label className="text-sm font-medium">Nueva solicitud:</label>
+            {/* Mostrar solicitudes enviadas */}
+            {solicitudesEnviadas.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-100 rounded border border-blue-300">
+                <p className="text-sm font-semibold text-blue-800 mb-2">
+                  📋 Solicitudes enviadas ({solicitudesEnviadas.length}):
+                </p>
+                <div className="space-y-1">
+                  {solicitudesEnviadas.map((solicitud, index) => (
+                    <div key={index} className="text-xs text-blue-700 bg-blue-50 p-2 rounded">
+                      <strong>#{index + 1}:</strong> {solicitud}
+                    </div>
+                  ))}
                 </div>
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Describe qué quieres que implemente Lovable..."
-                    value={mensajeErrorPersonalizado}
-                    onChange={(e) => setMensajeErrorPersonalizado(e.target.value)}
-                    className="flex-1 px-3 py-2 border rounded-md text-sm"
-                    disabled={aplicandoCambio}
-                    rows={3}
-                  />
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    onClick={aplicarCambioConError}
-                    size="sm"
-                    className="bg-blue-600 hover:bg-blue-700"
-                    disabled={aplicandoCambio}
-                  >
-                    <Zap className="h-3 w-3 mr-1" />
-                    {aplicandoCambio ? 'Enviando...' : 'Enviar Solicitud'}
-                  </Button>
-                  <Button
-                    onClick={limpiarMensaje}
-                    size="sm"
-                    variant="outline"
-                  >
-                    Limpiar
-                  </Button>
-                </div>
-              </>
+                {errorEstadisticas && forceError && (
+                  <div className="text-green-600 text-sm font-semibold mt-2">
+                    ✅ Error activo - Usa "Try to Fix" para procesar todas las solicitudes
+                  </div>
+                )}
+              </div>
             )}
           </div>
           
-          <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded border">
-            <strong>🔒 ESTADO:</strong> {sistemaBloqueado ? 'BLOQUEADO' : 'DESBLOQUEADO'}<br/>
-            <strong>Solicitudes enviadas:</strong> {solicitudesEnviadas.length}<br/>
+          <div className="text-xs text-gray-500 bg-blue-100 p-2 rounded border border-blue-300">
+            <strong>✅ MODO MÚLTIPLE:</strong> Las solicitudes se acumulan sin resetear<br/>
+            <strong>Mensaje actual:</strong> {mensajeErrorPersonalizado || 'Vacío'}<br/>
             <strong>Imágenes:</strong> {imagenesAdjuntas.length}<br/>
-            <strong>Propósito:</strong> Evitar interferir con depuración del API key
+            <strong>Total solicitudes:</strong> {solicitudesEnviadas.length}
           </div>
         </CardContent>
       </Card>
 
-      <Card className="bg-blue-50 border-blue-300">
+      <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg text-blue-800">📋 Próximos pasos para resolver el problema real</CardTitle>
+          <CardTitle className="text-lg">🎯 Estado del Sistema Múltiple</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div className="text-blue-700">
-            <p className="font-semibold mb-2">El error controlado ha sido eliminado. Ahora puedes:</p>
-            <ol className="list-decimal list-inside space-y-1">
-              <li>Ir a la pestaña "Turnos del Día" para ver si carga correctamente</li>
-              <li>Verificar en las herramientas de desarrollador (F12 → Network) las llamadas al API</li>
-              <li>Revisar si las hojas de Google Sheets tienen los nombres correctos: "Turnos", "Horarios_Especialistas", "Dias_Libres"</li>
-              <li>Confirmar que el API_SECRET_KEY es idéntico en el Apps Script y en la aplicación</li>
-            </ol>
+          <div><strong>Página actual:</strong> /gestion</div>
+          <div><strong>Componente:</strong> GeneraErrores (Modo Múltiple)</div>
+          <div><strong>Solicitudes enviadas:</strong> {solicitudesEnviadas.length}</div>
+          <div><strong>Imágenes listas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
+          <div><strong>Mensaje actual:</strong> {mensajeErrorPersonalizado ? 'Configurado' : 'Vacío'}</div>
+          <div><strong>Estado:</strong> {errorEstadisticas && forceError ? 'Error Activo (Persistente)' : 'Listo'}</div>
+          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
+            ✅ <strong>SISTEMA MÚLTIPLE:</strong> Permite enviar varias solicitudes sin resetear automáticamente.
           </div>
         </CardContent>
       </Card>
