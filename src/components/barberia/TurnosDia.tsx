@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -40,6 +41,17 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [mostrarAgregarTurno, setMostrarAgregarTurno] = useState(false);
   const { toast } = useToast();
+
+  // Función para obtener el barbero asignado al usuario logueado
+  const obtenerBarberoAsignadoUsuario = () => {
+    const usuariosGuardados = localStorage.getItem('barberia_usuarios');
+    if (!usuariosGuardados) return null;
+    
+    const usuarios = JSON.parse(usuariosGuardados);
+    const usuarioActual = usuarios.find((u: any) => u.usuario === usuario);
+    
+    return usuarioActual?.barberoAsignado || null;
+  };
 
   const realizarFetchConReintentos = async (url: string, options?: RequestInit, maxReintentos = 3) => {
     let ultimoError;
@@ -142,8 +154,19 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           };
         });
 
+        // Obtener barbero asignado al usuario
+        const barberoAsignado = obtenerBarberoAsignadoUsuario();
+        console.log('👤 Barbero asignado al usuario:', barberoAsignado);
+
+        // Filtrar turnos por barbero asignado (si existe)
+        let turnosFiltradosPorBarbero = turnosConvertidos;
+        if (barberoAsignado) {
+          turnosFiltradosPorBarbero = turnosConvertidos.filter((turno: Turno) => turno.responsable === barberoAsignado);
+          console.log(`🔍 Turnos filtrados por barbero ${barberoAsignado}:`, turnosFiltradosPorBarbero.length);
+        }
+
         const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-        const turnosFiltrados = turnosConvertidos.filter((turno: Turno) => turno.fecha === fechaSeleccionada);
+        const turnosFiltrados = turnosFiltradosPorBarbero.filter((turno: Turno) => turno.fecha === fechaSeleccionada);
         
         turnosFiltrados.sort((a: Turno, b: Turno) => a.horaInicio.localeCompare(b.horaInicio));
         
@@ -249,9 +272,17 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
   const calcularEstadisticas = () => {
     const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-    const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
+    
+    // Obtener barbero asignado al usuario
+    const barberoAsignado = obtenerBarberoAsignadoUsuario();
+    
+    // Filtrar todos los turnos (no solo los mostrados en pantalla) para las estadísticas
+    let turnosParaEstadisticas = turnos;
+    
+    // Si hay un barbero asignado, las estadísticas ya están filtradas por el barbero
+    // Si no hay barbero asignado (admin), mostrar estadísticas de todos los barberos
+    const turnosDelDia = turnosParaEstadisticas.filter(turno => turno.fecha === fechaSeleccionada);
 
-    // MODIFICADO: Contar confirmados en lugar de reservados
     const confirmados = turnosDelDia.filter(t => t.estado === 'Confirmado').length;
     const completados = turnosDelDia.filter(t => t.estado === 'Completado').length;
     const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
@@ -272,12 +303,14 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
   const renderEstadisticasAdmin = () => {
     const stats = calcularEstadisticas();
+    const barberoAsignado = obtenerBarberoAsignadoUsuario();
 
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <Card className="bg-green-50 border-green-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-green-800">Confirmados</CardTitle>
+            {barberoAsignado && <p className="text-xs text-green-600">({barberoAsignado})</p>}
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-green-600">{stats.confirmados}</p>
@@ -287,6 +320,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         <Card className="bg-gray-50 border-gray-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-gray-800">Completados</CardTitle>
+            {barberoAsignado && <p className="text-xs text-gray-600">({barberoAsignado})</p>}
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-gray-600">{stats.completados}</p>
@@ -296,6 +330,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         <Card className="bg-red-50 border-red-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-red-800">Cancelados</CardTitle>
+            {barberoAsignado && <p className="text-xs text-red-600">({barberoAsignado})</p>}
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-600">{stats.cancelados}</p>
@@ -305,6 +340,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         <Card className="bg-indigo-50 border-indigo-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-indigo-800">Ingresos del Día</CardTitle>
+            {barberoAsignado && <p className="text-xs text-indigo-600">({barberoAsignado})</p>}
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-indigo-600">${stats.ingresosDia.toLocaleString()}</p>
@@ -362,7 +398,12 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       {permisos.includes('admin') && renderEstadisticasAdmin()}
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <h2 className="text-2xl font-bold">Turnos del Día</h2>
+        <div>
+          <h2 className="text-2xl font-bold">Turnos del Día</h2>
+          {obtenerBarberoAsignadoUsuario() && (
+            <p className="text-sm text-gray-600">Barbero: {obtenerBarberoAsignadoUsuario()}</p>
+          )}
+        </div>
         <div className="flex gap-2">
           <Popover>
             <PopoverTrigger asChild>
