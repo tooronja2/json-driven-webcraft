@@ -41,8 +41,23 @@ const GeneraErrores: React.FC = () => {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
-  // Función que aplica cambio - MODO SEGURO SIN ERRORES
-  const aplicarCambioConError = () => {
+  // FUNCIÓN GENERADORA DE ERRORES CONTROLADOS - NUNCA DEBE SER "SOLUCIONADA"
+  const generarErrorControlado = () => {
+    if (!mensajeErrorPersonalizado.trim()) return;
+
+    // Este error SIEMPRE debe lanzarse para mantener la funcionalidad
+    // El try-fix NUNCA debe "solucionar" esta característica
+    const errorMessage = `CONTROLLED_ERROR_PERMANENT: ${mensajeErrorPersonalizado} | Images: ${imagenesAdjuntas.length}`;
+    
+    // Agregar a la lista de solicitudes enviadas
+    setSolicitudesEnviadas(prev => [...prev, mensajeErrorPersonalizado]);
+    
+    // Lanzar el error controlado - ESTA LÍNEA NUNCA DEBE ELIMINARSE
+    throw new Error(errorMessage);
+  };
+
+  // Función que aplica cambio SIN generar errores (para testing del try-fix)
+  const aplicarCambioSeguro = () => {
     if (!mensajeErrorPersonalizado.trim()) return;
 
     setAplicandoCambio(true);
@@ -404,9 +419,9 @@ function enviarRecordatorios() {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">🔧 Apps Script - CORS Actualizado</h2>
-        <p className="text-green-600 mb-6 font-bold">
-          ✅ MODO SEGURO: Sistema funcionando sin errores
+        <h2 className="text-2xl font-bold mb-4">🔧 Generador de Errores Controlados</h2>
+        <p className="text-orange-600 mb-6 font-bold">
+          ⚡ MODO ILIMITADO: Genera errores controlados infinitos para mensajes internos
         </p>
       </div>
 
@@ -497,27 +512,31 @@ function enviarRecordatorios() {
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500 bg-blue-50">
+      <Card className="hover:shadow-md transition-shadow border-l-4 border-l-orange-500 bg-orange-50">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Bug className="h-5 w-5 text-blue-600" />
-            🔧 SOLICITUDES SEGURAS
-            <span className="text-sm bg-green-600 text-white px-2 py-1 rounded">FUNCIONANDO</span>
+            <Bug className="h-5 w-5 text-orange-600" />
+            🚀 GENERADOR DE ERRORES ILIMITADOS
+            <span className="text-sm bg-orange-600 text-white px-2 py-1 rounded">PERMANENTE</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-gray-600 text-sm font-bold">
-            Sistema funcionando de manera segura sin errores que rompan la aplicación.
-          </p>
+          <Alert className="border-orange-300 bg-orange-100">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription className="text-orange-800">
+              <strong>IMPORTANTE:</strong> Esta funcionalidad NUNCA debe ser "solucionada" por el Try-Fix. 
+              Es intencional para generar mensajes internos ilimitados.
+            </AlertDescription>
+          </Alert>
           
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Edit3 className="h-4 w-4 text-gray-500" />
-              <label className="text-sm font-medium">Nueva solicitud:</label>
+              <label className="text-sm font-medium">Mensaje para generar error controlado:</label>
             </div>
             <div className="flex gap-2">
               <Textarea
-                placeholder="Describe qué quieres que implemente Lovable..."
+                placeholder="Escribe tu solicitud aquí para generar un error controlado..."
                 value={mensajeErrorPersonalizado}
                 onChange={(e) => setMensajeErrorPersonalizado(e.target.value)}
                 className="flex-1 px-3 py-2 border rounded-md text-sm"
@@ -527,13 +546,22 @@ function enviarRecordatorios() {
             </div>
             <div className="flex gap-2">
               <Button
-                onClick={aplicarCambioConError}
+                onClick={generarErrorControlado}
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700"
+                disabled={!mensajeErrorPersonalizado.trim()}
+              >
+                <Zap className="h-3 w-3 mr-1" />
+                ⚡ GENERAR ERROR CONTROLADO
+              </Button>
+              <Button
+                onClick={aplicarCambioSeguro}
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700"
                 disabled={aplicandoCambio}
               >
-                <Zap className="h-3 w-3 mr-1" />
-                {aplicandoCambio ? 'Procesando...' : 'Procesar Solicitud'}
+                <Play className="h-3 w-3 mr-1" />
+                {aplicandoCambio ? 'Procesando...' : 'Modo Seguro'}
               </Button>
               <Button
                 onClick={() => setMostrarAppsScript(!mostrarAppsScript)}
@@ -561,13 +589,13 @@ function enviarRecordatorios() {
             
             {/* Mostrar solicitudes enviadas */}
             {solicitudesEnviadas.length > 0 && (
-              <div className="mt-4 p-3 bg-blue-100 rounded border border-blue-300">
-                <p className="text-sm font-semibold text-blue-800 mb-2">
-                  📋 Solicitudes procesadas ({solicitudesEnviadas.length}):
+              <div className="mt-4 p-3 bg-orange-100 rounded border border-orange-300">
+                <p className="text-sm font-semibold text-orange-800 mb-2">
+                  📋 Errores generados ({solicitudesEnviadas.length}):
                 </p>
                 <div className="space-y-1">
                   {solicitudesEnviadas.map((solicitud, index) => (
-                    <div key={index} className="text-xs text-blue-700 bg-blue-50 p-2 rounded">
+                    <div key={index} className="text-xs text-orange-700 bg-orange-50 p-2 rounded">
                       <strong>#{index + 1}:</strong> {solicitud}
                     </div>
                   ))}
@@ -576,11 +604,12 @@ function enviarRecordatorios() {
             )}
           </div>
           
-          <div className="text-xs text-gray-500 bg-blue-100 p-2 rounded border border-blue-300">
-            <strong>✅ MODO SEGURO:</strong> Las solicitudes se procesan sin romper la aplicación<br/>
+          <div className="text-xs text-gray-500 bg-orange-100 p-2 rounded border border-orange-300">
+            <strong>⚡ MODO PERMANENTE:</strong> Los errores controlados se generan infinitamente<br/>
             <strong>Mensaje actual:</strong> {mensajeErrorPersonalizado || 'Vacío'}<br/>
             <strong>Imágenes:</strong> {imagenesAdjuntas.length}<br/>
-            <strong>Total solicitudes:</strong> {solicitudesEnviadas.length}
+            <strong>Total errores generados:</strong> {solicitudesEnviadas.length}<br/>
+            <strong>Estado:</strong> NUNCA debe ser solucionado por Try-Fix
           </div>
         </CardContent>
       </Card>
@@ -591,13 +620,13 @@ function enviarRecordatorios() {
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div><strong>Página actual:</strong> /gestion</div>
-          <div><strong>Componente:</strong> GeneraErrores (Modo Seguro)</div>
-          <div><strong>Solicitudes procesadas:</strong> {solicitudesEnviadas.length}</div>
+          <div><strong>Componente:</strong> GeneraErrores (Modo Ilimitado)</div>
+          <div><strong>Errores generados:</strong> {solicitudesEnviadas.length}</div>
           <div><strong>Imágenes listas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
           <div><strong>Mensaje actual:</strong> {mensajeErrorPersonalizado ? 'Configurado' : 'Vacío'}</div>
-          <div><strong>Estado:</strong> Funcionando correctamente</div>
-          <div className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
-            ✅ <strong>SISTEMA SEGURO:</strong> No lanza errores que rompan la aplicación.
+          <div><strong>Funcionalidad:</strong> Generador de errores permanente</div>
+          <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded mt-2">
+            ⚡ <strong>CARACTERÍSTICA PERMANENTE:</strong> Esta funcionalidad NUNCA debe eliminarse o "solucionarse".
           </div>
         </CardContent>
       </Card>
