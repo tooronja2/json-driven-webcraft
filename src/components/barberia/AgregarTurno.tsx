@@ -1,5 +1,4 @@
 
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,6 +34,25 @@ interface FormDataSimple {
   responsable: string;
 }
 
+// Función para generar email aleatorio
+const generarEmailAleatorio = (): string => {
+  const dominios = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'];
+  const nombres = ['turno', 'manual', 'cliente', 'atencion', 'barberia'];
+  const numeros = Math.floor(Math.random() * 9999) + 1000;
+  const dominio = dominios[Math.floor(Math.random() * dominios.length)];
+  const nombre = nombres[Math.floor(Math.random() * nombres.length)];
+  
+  return `${nombre}${numeros}@${dominio}`;
+};
+
+// Función para generar teléfono aleatorio
+const generarTelefonoAleatorio = (): string => {
+  const prefijos = ['11', '15', '351', '261', '341'];
+  const prefijo = prefijos[Math.floor(Math.random() * prefijos.length)];
+  const numero = Math.floor(Math.random() * 90000000) + 10000000;
+  return `${prefijo}${numero}`;
+};
+
 const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, fechaSeleccionada }) => {
   const [formData, setFormData] = useState<FormDataSimple>({
     servicio: '',
@@ -63,12 +81,6 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
 
     nuevaHora %= 24;
     return `${String(nuevaHora).padStart(2, '0')}:${String(nuevoMinuto).padStart(2, '0')}`;
-  };
-
-  const generarId = (): string => {
-    const timestamp = Date.now();
-    const random = Math.floor(Math.random() * 1000);
-    return `TURNO_${timestamp}_${random}`;
   };
 
   const filtrarHorariosPasados = (horarios: string[]): string[] => {
@@ -128,34 +140,49 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
       const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
 
-      const turnoData = {
-        action: 'createEvento',
-        id: generarId(),
-        titulo: 'Atención directa en local',
-        nombre: 'Atención directa en local',
-        email: 'atencion@barberiaestilo.com',
-        fecha: fechaISO,
-        horaInicio: formData.hora,
-        horaFin: calcularHoraFin(formData.hora, formData.servicio),
-        descripcion: `Turno sin reserva - ${formData.servicio}`,
-        servicio: formData.servicio,
-        valor: servicioSeleccionado?.precio || 0,
-        responsable: formData.responsable,
-        estado: 'Completado',
-        origen: 'manual',
-        origen_panel: true,
-        apiKey: API_SECRET_KEY
+      // Generar datos aleatorios para el turno manual
+      const emailAleatorio = generarEmailAleatorio();
+      const telefonoAleatorio = generarTelefonoAleatorio();
+
+      const reservaData = {
+        ID_Evento: `evento_${Date.now()}`,
+        Titulo_Evento: formData.servicio,
+        Nombre_Cliente: 'Turno manual',
+        Email_Cliente: emailAleatorio,
+        Fecha: fechaISO,
+        Hora_Inicio: formData.hora,
+        Hora_Fin: calcularHoraFin(formData.hora, formData.servicio),
+        Descripcion: `${formData.servicio} - Tel: ${telefonoAleatorio}`,
+        Estado: 'Completado',
+        "Valor del turno": servicioSeleccionado?.precio || 0,
+        "Servicios incluidos": formData.servicio,
+        Responsable: formData.responsable
       };
 
-      console.log('Enviando turno sin reserva:', turnoData);
+      console.log('🚀 Enviando turno manual:', reservaData);
+
+      const datos = {
+        action: "crearReserva",
+        apiKey: API_SECRET_KEY,
+        data: JSON.stringify(reservaData)
+      };
+
+      const formDataToSend = new URLSearchParams();
+      for (const key in datos) {
+        formDataToSend.append(key, datos[key]);
+      }
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(turnoData)
+        body: formDataToSend
       });
+
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status} - ${response.statusText}`);
+      }
 
       const result = await response.json();
       console.log('Respuesta del servidor:', result);
@@ -274,6 +301,12 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
               </p>
               <p className="text-sm">
                 <strong>Valor:</strong> ${SERVICIOS.find(s => s.nombre === formData.servicio)?.precio.toLocaleString()}
+              </p>
+              <p className="text-sm text-gray-600">
+                <strong>Datos que se generarán automáticamente:</strong><br/>
+                • Nombre: "Turno manual"<br/>
+                • Email: Generado aleatoriamente<br/>
+                • Teléfono: Generado aleatoriamente
               </p>
             </div>
           )}
