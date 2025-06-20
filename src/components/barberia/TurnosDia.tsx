@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -32,7 +30,7 @@ interface TurnosDiaProps {
 }
 
 // URL ACTUALIZADA de Google Apps Script
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwKOsd8hZqnvXfe46JaM59rPPXCKLEoMLrRzzdFcQvF-NhiM_eZQxSsnh-B1aUTjQiu/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
 const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
@@ -191,20 +189,17 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       console.log('🔄 Cancelando turno:', turnoId);
       
-      const requestBodyJSON = {
-        action: 'cancelarTurno',
-        id: turnoId,
-        apiKey: API_SECRET_KEY
-      };
-
-      console.log('📤 Request body JSON:', requestBodyJSON);
-
+      // Usar la misma estructura que la página de cancelación por email
       const response = await realizarFetchConReintentos(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBodyJSON)
+        body: JSON.stringify({
+          action: 'cancelarTurno',
+          eventId: turnoId,
+          apiKey: API_SECRET_KEY
+        })
       });
 
       const result = await response.json();
