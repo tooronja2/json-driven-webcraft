@@ -2,19 +2,19 @@ import { useState, useEffect, useCallback } from 'react';
 
 interface HorarioEspecialista {
   Responsable: string;
-  Dia_Semana: string; // "Lunes", "Martes", etc.
-  Hora_Inicio: string | number; // "09:00" o 9
-  Hora_Fin: string | number; // "13:00" o 13
+  Dia_Semana: string;
+  Hora_Inicio: string | number;
+  Hora_Fin: string | number;
   Activo: boolean;
-  Tipo: string; // "normal"
+  Tipo: string;
 }
 
 interface DiaLibre {
   Responsable: string;
-  Dia: string; // "17/06/2025"
+  Dia: string;
 }
 
-const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
+const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyzsEzOPLN3LUfLtkbWyvQ_mVzxhsdcK3qtFOBR6j73KeGPoTW7eZffINeH5T-uTJ6l/exec';
 
 // Función para normalizar hora a formato "HH:MM"
 const normalizarHora = (hora: string | number): string => {

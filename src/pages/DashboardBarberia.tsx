@@ -6,6 +6,7 @@ import { LogOut, Plus, Users } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import TurnosDia from '@/components/barberia/TurnosDia';
 import EstadisticasBarberia from '@/components/barberia/EstadisticasBarberia';
+import GeneraErrores from '@/components/barberia/GeneraErrores';
 import AgregarTurno from '@/components/barberia/AgregarTurno';
 import GestionUsuarios from '@/components/barberia/GestionUsuarios';
 
@@ -68,9 +69,10 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, per
       {/* Contenido principal */}
       <div className="max-w-4xl mx-auto p-4">
         <Tabs defaultValue="turnos" className="w-full">
-          <TabsList className={`grid w-full ${esAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
+          <TabsList className={`grid w-full ${esAdmin ? 'grid-cols-3' : 'grid-cols-1'}`}>
             <TabsTrigger value="turnos">Turnos del Día</TabsTrigger>
             {esAdmin && <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>}
+            {esAdmin && <TabsTrigger value="errores">Genera Errores</TabsTrigger>}
           </TabsList>
           
           <TabsContent value="turnos">
@@ -80,6 +82,12 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, per
           {esAdmin && (
             <TabsContent value="estadisticas">
               <EstadisticasBarberia />
+            </TabsContent>
+          )}
+
+          {esAdmin && (
+            <TabsContent value="errores">
+              <GeneraErrores />
             </TabsContent>
           )}
         </Tabs>
