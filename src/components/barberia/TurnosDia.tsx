@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -290,14 +291,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     }
   };
 
-  const confirmarTurno = async (turnoId: string) => {
-    await actualizarEstadoTurno(turnoId, 'Confirmado');
-  };
-
-  const marcarClienteAusente = async (turnoId: string) => {
-    await actualizarEstadoTurno(turnoId, 'Cliente Ausente');
-  };
-
   const calcularEstadisticas = () => {
     const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
@@ -495,7 +488,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 </div>
                 
                 <div className="flex gap-2 md:flex-col lg:flex-row">
-                  {/* SOLO mostrar botones para turnos "Confirmado" */}
+                  {/* MOSTRAR BOTONES SOLO PARA TURNOS "Confirmado" */}
                   {turno.estado === 'Confirmado' && (
                     <>
                       <Button
