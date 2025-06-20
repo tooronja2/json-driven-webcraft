@@ -9,7 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 const GeneraErrores: React.FC = () => {
   const [aplicandoCambio, setAplicandoCambio] = useState(false);
   const [errorEstadisticas, setErrorEstadisticas] = useState(false);
-  const [ultimaSolicitudPersonalizada, setUltimaSolicitudPersonalizada] = useState('');
+  const [solicitudesEnviadas, setSolicitudesEnviadas] = useState<string[]>([]);
   const [forceError, setForceError] = useState(false);
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
@@ -41,12 +41,14 @@ const GeneraErrores: React.FC = () => {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
-  // Función que aplica cambio con error controlado
+  // Función que aplica cambio con error controlado - PERMITE MÚLTIPLES SOLICITUDES
   const aplicarCambioConError = () => {
     if (!mensajeErrorPersonalizado.trim()) return;
 
     setAplicandoCambio(true);
-    setUltimaSolicitudPersonalizada(mensajeErrorPersonalizado);
+    
+    // Agregar a la lista de solicitudes enviadas (NO resetear las anteriores)
+    setSolicitudesEnviadas(prev => [...prev, mensajeErrorPersonalizado]);
     
     // Activar error en estadísticas (componente aislado)
     setErrorEstadisticas(true);
@@ -55,42 +57,47 @@ const GeneraErrores: React.FC = () => {
     
     // Mostrar feedback
     toast({
-      title: "Error controlado generado",
-      description: "El error se ha aplicado. Usa 'Try to Fix' para implementar la solicitud.",
-      variant: "destructive",
+      title: "Solicitud enviada",
+      description: `Solicitud #${solicitudesEnviadas.length + 1} enviada. Usa 'Try to Fix' para procesar.`,
+      variant: "default",
     });
+
+    // NO resetear el mensaje para permitir modificaciones rápidas
+    // setMensajeErrorPersonalizado('');
   };
 
-  // Función que resetea el error (para poder volver a generarlo)
-  const resetearError = () => {
+  // Función que resetea COMPLETAMENTE el sistema
+  const resetearSistema = () => {
     setErrorEstadisticas(false);
-    setForceError(false); // Resetear el forzado de error
-    setUltimaSolicitudPersonalizada('');
+    setForceError(false);
+    setSolicitudesEnviadas([]);
     setMensajeErrorPersonalizado('');
-    setImagenesAdjuntas([]); // Limpiar imágenes también
+    setImagenesAdjuntas([]);
     
     toast({
-      title: "Error reseteado",
-      description: "Puedes generar un nuevo error controlado",
+      title: "Sistema reseteado",
+      description: "Todas las solicitudes y errores han sido limpiados",
     });
   };
 
-  // Componente de estadísticas que falla cuando hay error - CORREGIDO COMPLETAMENTE
+  // Función para limpiar solo el mensaje actual
+  const limpiarMensaje = () => {
+    setMensajeErrorPersonalizado('');
+    setImagenesAdjuntas([]);
+  };
+
+  // Componente de estadísticas que mantiene el error PERSISTENTE
   const renderEstadisticasAdmin = () => {
-    // NO GENERAR ERROR - Solo resetear el estado
-    if (errorEstadisticas && forceError && ultimaSolicitudPersonalizada) {
-      console.log('🔧 SOLICITUD PROCESADA:', ultimaSolicitudPersonalizada);
+    // MANTENER EL ERROR ACTIVO - No resetear automáticamente
+    if (errorEstadisticas && forceError && solicitudesEnviadas.length > 0) {
+      console.log('🔧 MÚLTIPLES SOLICITUDES ACTIVAS:', solicitudesEnviadas.length);
+      console.log('🔧 SOLICITUDES ENVIADAS:', solicitudesEnviadas);
       console.log('🔧 IMÁGENES ADJUNTAS:', imagenesAdjuntas.length);
-      console.log('🔧 ESTADO: Solicitud completada - reseteando error controlado');
+      console.log('🔧 ESTADO: Sistema en modo error persistente para múltiples solicitudes');
       
-      // Reset del error automáticamente después de ser procesado
-      setTimeout(() => {
-        setErrorEstadisticas(false);
-        setForceError(false);
-        setUltimaSolicitudPersonalizada('');
-        setMensajeErrorPersonalizado('');
-        setImagenesAdjuntas([]);
-      }, 1000);
+      // Crear un error que contenga TODAS las solicitudes
+      const mensajeCompleto = `MÚLTIPLES SOLICITUDES: ${solicitudesEnviadas.join(' | ')} | Images: ${imagenesAdjuntas.length}`;
+      throw new Error(`CONTROLLED_ERROR: ${mensajeCompleto}`);
     }
 
     return null;
@@ -103,9 +110,9 @@ const GeneraErrores: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">🔧 GENERA ERROR CONTROLADO REAL</h2>
-        <p className="text-green-600 mb-6 font-bold">
-          ✅ SISTEMA ACTUALIZADO: Ya no rompe la aplicación, solo procesa las solicitudes
+        <h2 className="text-2xl font-bold mb-4">🔧 GENERA MÚLTIPLES SOLICITUDES</h2>
+        <p className="text-blue-600 mb-6 font-bold">
+          ✅ MODO MÚLTIPLE: Envía varias solicitudes seguidas sin resetear
         </p>
       </div>
 
@@ -160,23 +167,23 @@ const GeneraErrores: React.FC = () => {
       {/* Renderizar estadísticas que pueden fallar */}
       {renderEstadisticasAdmin()}
 
-      <Card className="hover:shadow-md transition-shadow border-l-4 border-l-green-500 bg-green-50">
+      <Card className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500 bg-blue-50">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Bug className="h-5 w-5 text-green-600" />
-            🔧 SOLICITUD PERSONALIZADA
-            <span className="text-sm bg-green-600 text-white px-2 py-1 rounded">MEJORADO</span>
+            <Bug className="h-5 w-5 text-blue-600" />
+            🔧 SOLICITUDES MÚLTIPLES
+            <span className="text-sm bg-blue-600 text-white px-2 py-1 rounded">PERSISTENTE</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-gray-600 text-sm font-bold">
-            Envía una solicitud personalizada a Lovable AI con tu mensaje y imágenes
+            Envía múltiples solicitudes sin resetear. El sistema mantiene el error activo.
           </p>
           
           <div className="space-y-2">
             <div className="flex items-center gap-2">
               <Edit3 className="h-4 w-4 text-gray-500" />
-              <label className="text-sm font-medium">Mensaje personalizado para el log:</label>
+              <label className="text-sm font-medium">Nueva solicitud:</label>
             </div>
             <div className="flex gap-2">
               <Textarea
@@ -192,53 +199,72 @@ const GeneraErrores: React.FC = () => {
               <Button
                 onClick={aplicarCambioConError}
                 size="sm"
-                className="bg-green-600 hover:bg-green-700"
+                className="bg-blue-600 hover:bg-blue-700"
                 disabled={aplicandoCambio}
               >
                 <Zap className="h-3 w-3 mr-1" />
-                {aplicandoCambio ? 'Aplicando...' : 'Enviar Solicitud'}
+                {aplicandoCambio ? 'Enviando...' : 'Enviar Solicitud'}
               </Button>
               <Button
-                onClick={resetearError}
+                onClick={limpiarMensaje}
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
+                variant="outline"
               >
-                Resetear
+                Limpiar
+              </Button>
+              <Button
+                onClick={resetearSistema}
+                size="sm"
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Reset Total
               </Button>
             </div>
-            {errorEstadisticas && forceError && (
-              <div className="text-green-600 text-sm font-semibold">
-                ✅ Solicitud procesada: {ultimaSolicitudPersonalizada}
-              </div>
-            )}
-            {ultimaSolicitudPersonalizada && !forceError && (
-              <div className="text-green-600 text-sm font-semibold">
-                ✅ Última solicitud completada: {ultimaSolicitudPersonalizada}
+            
+            {/* Mostrar solicitudes enviadas */}
+            {solicitudesEnviadas.length > 0 && (
+              <div className="mt-4 p-3 bg-blue-100 rounded border border-blue-300">
+                <p className="text-sm font-semibold text-blue-800 mb-2">
+                  📋 Solicitudes enviadas ({solicitudesEnviadas.length}):
+                </p>
+                <div className="space-y-1">
+                  {solicitudesEnviadas.map((solicitud, index) => (
+                    <div key={index} className="text-xs text-blue-700 bg-blue-50 p-2 rounded">
+                      <strong>#{index + 1}:</strong> {solicitud}
+                    </div>
+                  ))}
+                </div>
+                {errorEstadisticas && forceError && (
+                  <div className="text-green-600 text-sm font-semibold mt-2">
+                    ✅ Error activo - Usa "Try to Fix" para procesar todas las solicitudes
+                  </div>
+                )}
               </div>
             )}
           </div>
           
-          <div className="text-xs text-gray-500 bg-green-100 p-2 rounded border border-green-300">
-            <strong>✅ SISTEMA MEJORADO:</strong> Ahora procesa solicitudes sin romper la aplicación<br/>
-            <strong>Mensaje actual:</strong> {mensajeErrorPersonalizado || 'Pendiente'}<br/>
-            <strong>Imágenes:</strong> {imagenesAdjuntas.length}
+          <div className="text-xs text-gray-500 bg-blue-100 p-2 rounded border border-blue-300">
+            <strong>✅ MODO MÚLTIPLE:</strong> Las solicitudes se acumulan sin resetear<br/>
+            <strong>Mensaje actual:</strong> {mensajeErrorPersonalizado || 'Vacío'}<br/>
+            <strong>Imágenes:</strong> {imagenesAdjuntas.length}<br/>
+            <strong>Total solicitudes:</strong> {solicitudesEnviadas.length}
           </div>
         </CardContent>
       </Card>
 
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg">🎯 Estado del Procesador de Solicitudes</CardTitle>
+          <CardTitle className="text-lg">🎯 Estado del Sistema Múltiple</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div><strong>Página actual:</strong> /gestion</div>
-          <div><strong>Componente:</strong> GeneraErrores (Tab activo)</div>
+          <div><strong>Componente:</strong> GeneraErrores (Modo Múltiple)</div>
+          <div><strong>Solicitudes enviadas:</strong> {solicitudesEnviadas.length}</div>
           <div><strong>Imágenes listas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
-          <div><strong>Mensaje personalizado:</strong> {mensajeErrorPersonalizado ? 'Configurado' : 'Pendiente'}</div>
-          <div><strong>Estado:</strong> {errorEstadisticas && forceError ? 'Procesando' : 'Listo'}</div>
-          <div><strong>Estado Lovable:</strong> Sistema optimizado para mejor manejo de solicitudes</div>
-          <div className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
-            ✅ <strong>SISTEMA CORREGIDO:</strong> Ya no genera errores que rompan la aplicación.
+          <div><strong>Mensaje actual:</strong> {mensajeErrorPersonalizado ? 'Configurado' : 'Vacío'}</div>
+          <div><strong>Estado:</strong> {errorEstadisticas && forceError ? 'Error Activo (Persistente)' : 'Listo'}</div>
+          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
+            ✅ <strong>SISTEMA MÚLTIPLE:</strong> Permite enviar varias solicitudes sin resetear automáticamente.
           </div>
         </CardContent>
       </Card>
