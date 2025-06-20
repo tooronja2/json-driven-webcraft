@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,18 +8,39 @@ import { AlertTriangle, Bug, Zap, Database, Network, Clock, Upload, X, Edit3, Im
 
 const GeneraErrores: React.FC = () => {
   const [errorActivo, setErrorActivo] = useState<string | null>(null);
-  const [cargando, setCargando] = useState(false);
   const [instruccionesPersonalizadas, setInstruccionesPersonalizadas] = useState<{[key: string]: string}>({});
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
 
   const erroresEstructurales = [
     {
-      id: 'destroy-react-root',
-      nombre: '💀 DESTRUIR ROOT DE REACT',
-      descripcion: 'Rompe el root container de React',
+      id: 'custom-request-error',
+      nombre: '🔧 ERROR PERSONALIZADO REAL',
+      descripcion: 'Genera error real con mensaje personalizado que Lovable puede detectar',
       icon: Bug,
       color: 'text-red-600',
+      instruccionDefault: 'Error personalizado que necesita ser solucionado por Lovable AI.',
+      accion: (instruccion: string) => {
+        console.error('🔧 ERROR CONTROLADO REGENERABLE: Forzado intencionalmente');
+        console.error('🔧 SOLICITUD PERSONALIZADA:', instruccion);
+        console.error('🔧 IMÁGENES ADJUNTAS:', imagenesAdjuntas.length);
+        console.error('🔧 ACCIÓN REQUERIDA: Implementar funcionalidad solicitada');
+        
+        // Generar error real que rompe la ejecución
+        const errorObj: any = null;
+        const causarError = errorObj.configuracion.adminSettings || (() => {
+          throw new Error(`CUSTOM_REQUEST_ERROR: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
+        })();
+        
+        return causarError;
+      }
+    },
+    {
+      id: 'destroy-react-root',
+      nombre: '💀 DESTRUIR ROOT DE REACT',
+      descripcion: 'Rompe el root container de React completamente',
+      icon: Zap,
+      color: 'text-orange-600',
       instruccionDefault: 'El contenedor root de React ha sido destruido y necesita ser restaurado.',
       accion: (instruccion: string) => {
         console.error('LOVABLE_CRITICAL_ERROR:', {
@@ -52,9 +74,9 @@ const GeneraErrores: React.FC = () => {
     {
       id: 'break-tabs-component',
       nombre: '🔥 ROMPER COMPONENTE TABS',
-      descripcion: 'Destruye el componente Tabs principal',
-      icon: Zap,
-      color: 'text-orange-600',
+      descripcion: 'Destruye el componente Tabs principal de la interfaz',
+      icon: Network,
+      color: 'text-purple-600',
       instruccionDefault: 'El componente Tabs se ha corrompido y necesita ser reparado.',
       accion: (instruccion: string) => {
         console.error('LOVABLE_CRITICAL_ERROR:', {
@@ -89,68 +111,9 @@ const GeneraErrores: React.FC = () => {
       }
     },
     {
-      id: 'corrupt-dashboard-state',
-      nombre: '⚡ CORROMPER ESTADO DASHBOARD',
-      descripcion: 'Corrompe el estado del Dashboard principal',
-      icon: Network,
-      color: 'text-purple-600',
-      instruccionDefault: 'El estado del Dashboard se ha corrompido y necesita ser reinicializado.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_CRITICAL_ERROR:', {
-          error: 'DASHBOARD_STATE_CORRUPTED',
-          message: instruccion,
-          images: imagenesAdjuntas.length,
-          location: '/gestion',
-          timestamp: new Date().toISOString(),
-          details: 'Dashboard state completely corrupted - React state broken'
-        });
-        
-        // Corromper el localStorage
-        localStorage.setItem('barberia_usuario', 'CORRUPTED_DATA_ERROR');
-        localStorage.setItem('barberia_rol', 'CORRUPTED_DATA_ERROR');
-        localStorage.setItem('barberia_permisos', 'INVALID_JSON_ERROR');
-        
-        // Forzar re-render con datos corruptos
-        window.dispatchEvent(new Event('storage'));
-        
-        // Romper el DOM del dashboard
-        const dashboard = document.querySelector('.min-h-screen');
-        if (dashboard) {
-          (dashboard as HTMLElement).style.display = 'none';
-        }
-        
-        // Crear overlay de error
-        const errorDiv = document.createElement('div');
-        errorDiv.innerHTML = `
-          <div style="
-            position: fixed; 
-            top: 0; 
-            left: 0; 
-            width: 100vw; 
-            height: 100vh; 
-            background: #7c3aed; 
-            color: white; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center;
-            z-index: 9999;
-          ">
-            <h1 style="font-size: 48px;">⚡ DASHBOARD STATE CORRUPTED</h1>
-            <p style="font-size: 24px; margin: 20px 0;"><strong>Mensaje:</strong> ${instruccion}</p>
-            <p style="font-size: 18px;"><strong>Imágenes:</strong> ${imagenesAdjuntas.length}</p>
-            <p style="font-size: 16px;">El estado de React del Dashboard ha sido corrompido</p>
-          </div>
-        `;
-        document.body.appendChild(errorDiv);
-        
-        throw new Error(`DASHBOARD_STATE_CORRUPTED: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
-      }
-    },
-    {
       id: 'jsx-syntax-break',
       nombre: '🚨 ROMPER SINTAXIS JSX',
-      descripcion: 'Genera error de sintaxis JSX crítico',
+      descripcion: 'Genera error de sintaxis JSX crítico que impide renderizado',
       icon: Database,
       color: 'text-red-500',
       instruccionDefault: 'Error de sintaxis JSX detectado que impide el renderizado.',
@@ -231,21 +194,8 @@ const GeneraErrores: React.FC = () => {
     }, 500);
   };
 
-  const actualizarInstruccion = (errorId: string, nuevaInstruccion: string) => {
-    setInstruccionesPersonalizadas(prev => ({
-      ...prev,
-      [errorId]: nuevaInstruccion
-    }));
-  };
-
   const eliminarImagen = (index: number) => {
     setImagenesAdjuntas(prev => prev.filter((_, i) => i !== index));
-  };
-
-  const limpiarTodo = () => {
-    setErrorActivo(null);
-    setImagenesAdjuntas([]);
-    setInstruccionesPersonalizadas({});
   };
 
   return (
