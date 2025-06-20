@@ -12,188 +12,175 @@ const GeneraErrores: React.FC = () => {
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
 
-  const erroresRapidos = [
+  const erroresEstructurales = [
     {
-      id: 'crash-app-error',
-      nombre: '💥 CRASHEAR APLICACIÓN COMPLETA',
-      descripcion: 'Rompe TODA la aplicación para forzar Try to Fix',
+      id: 'destroy-react-root',
+      nombre: '💀 DESTRUIR ROOT DE REACT',
+      descripcion: 'Rompe el root container de React',
       icon: Bug,
-      color: 'text-red-500',
-      instruccionDefault: 'La aplicación se ha crasheado y necesita ser reparada.',
+      color: 'text-red-600',
+      instruccionDefault: 'El contenedor root de React ha sido destruido y necesita ser restaurado.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_FORCE_CRASH_ERROR:', {
-          error: 'APPLICATION COMPLETELY CRASHED - FORCE TRY TO FIX',
-          component: 'GeneraErrores -> FULL APP CRASH',
-          instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length,
+        console.error('LOVABLE_CRITICAL_ERROR:', {
+          error: 'REACT_ROOT_DESTROYED',
+          message: instruccion,
+          images: imagenesAdjuntas.length,
+          location: '/gestion',
           timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - CRASH FORZADO',
-          detalles: 'ERROR CRÍTICO - APLICACIÓN INACCESIBLE'
+          details: 'React root container completely destroyed - APPLICATION BROKEN'
         });
         
-        // Destruir completamente la aplicación
-        const body = document.body;
-        body.innerHTML = `
+        // Destruir el root de React
+        const root = document.getElementById('root');
+        if (root) {
+          root.remove();
+        }
+        
+        // Crear mensaje de error visible
+        document.body.innerHTML = `
+          <div style="background: #dc2626; color: white; padding: 20px; font-family: Arial;">
+            <h1>🚨 REACT ROOT DESTROYED 🚨</h1>
+            <p><strong>Mensaje:</strong> ${instruccion}</p>
+            <p><strong>Imágenes:</strong> ${imagenesAdjuntas.length}</p>
+            <p><strong>Error:</strong> React root container eliminado</p>
+          </div>
+        `;
+        
+        throw new Error(`REACT_ROOT_DESTROYED: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
+      }
+    },
+    {
+      id: 'break-tabs-component',
+      nombre: '🔥 ROMPER COMPONENTE TABS',
+      descripcion: 'Destruye el componente Tabs principal',
+      icon: Zap,
+      color: 'text-orange-600',
+      instruccionDefault: 'El componente Tabs se ha corrompido y necesita ser reparado.',
+      accion: (instruccion: string) => {
+        console.error('LOVABLE_CRITICAL_ERROR:', {
+          error: 'TABS_COMPONENT_BROKEN',
+          message: instruccion,
+          images: imagenesAdjuntas.length,
+          location: '/gestion',
+          timestamp: new Date().toISOString(),
+          details: 'Main Tabs component crashed - UI broken'
+        });
+        
+        // Romper todos los elementos con rol="tablist"
+        const tabElements = document.querySelectorAll('[role="tablist"], [role="tab"], [role="tabpanel"]');
+        tabElements.forEach(tab => {
+          tab.remove();
+        });
+        
+        // Crear error estructural
+        const mainContent = document.querySelector('.max-w-4xl');
+        if (mainContent) {
+          mainContent.innerHTML = `
+            <div style="background: #ef4444; color: white; padding: 40px; text-align: center;">
+              <h2>💥 TABS COMPONENT DESTROYED</h2>
+              <p><strong>Instrucción:</strong> ${instruccion}</p>
+              <p><strong>Imágenes:</strong> ${imagenesAdjuntas.length}</p>
+              <p>El componente principal de pestañas ha sido eliminado</p>
+            </div>
+          `;
+        }
+        
+        throw new Error(`TABS_COMPONENT_DESTROYED: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
+      }
+    },
+    {
+      id: 'corrupt-dashboard-state',
+      nombre: '⚡ CORROMPER ESTADO DASHBOARD',
+      descripcion: 'Corrompe el estado del Dashboard principal',
+      icon: Network,
+      color: 'text-purple-600',
+      instruccionDefault: 'El estado del Dashboard se ha corrompido y necesita ser reinicializado.',
+      accion: (instruccion: string) => {
+        console.error('LOVABLE_CRITICAL_ERROR:', {
+          error: 'DASHBOARD_STATE_CORRUPTED',
+          message: instruccion,
+          images: imagenesAdjuntas.length,
+          location: '/gestion',
+          timestamp: new Date().toISOString(),
+          details: 'Dashboard state completely corrupted - React state broken'
+        });
+        
+        // Corromper el localStorage
+        localStorage.setItem('barberia_usuario', 'CORRUPTED_DATA_ERROR');
+        localStorage.setItem('barberia_rol', 'CORRUPTED_DATA_ERROR');
+        localStorage.setItem('barberia_permisos', 'INVALID_JSON_ERROR');
+        
+        // Forzar re-render con datos corruptos
+        window.dispatchEvent(new Event('storage'));
+        
+        // Romper el DOM del dashboard
+        const dashboard = document.querySelector('.min-h-screen');
+        if (dashboard) {
+          (dashboard as HTMLElement).style.display = 'none';
+        }
+        
+        // Crear overlay de error
+        const errorDiv = document.createElement('div');
+        errorDiv.innerHTML = `
           <div style="
             position: fixed; 
             top: 0; 
             left: 0; 
             width: 100vw; 
             height: 100vh; 
-            background: #ff0000; 
-            z-index: 999999; 
-            display: flex; 
-            flex-direction: column;
-            align-items: center; 
-            justify-content: center; 
-            font-family: Arial, sans-serif;
+            background: #7c3aed; 
             color: white; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center;
+            z-index: 9999;
           ">
-            <h1 style="font-size: 48px; margin-bottom: 20px;">🚨 APLICACIÓN CRASHEADA 🚨</h1>
-            <div style="font-size: 24px; text-align: center; max-width: 800px; line-height: 1.5;">
-              <p><strong>INSTRUCCIÓN PARA LOVABLE AI:</strong></p>
-              <p style="background: rgba(255,255,255,0.2); padding: 20px; border-radius: 10px; margin: 20px 0;">
-                ${instruccion}
-              </p>
-              <p><strong>Imágenes adjuntas:</strong> ${imagenesAdjuntas.length}</p>
-              <p><strong>Ubicación:</strong> /gestion → Tab "Genera Errores"</p>
-              <p style="font-size: 18px; margin-top: 30px;">
-                ⚠️ Esta aplicación está completamente rota y necesita ser reparada por Lovable AI
-              </p>
-              <p style="font-size: 16px; margin-top: 20px; opacity: 0.8;">
-                El botón "Try to Fix" debería aparecer automáticamente
-              </p>
-            </div>
-          </div>
-        `;
-        
-        // Romper JavaScript también
-        setTimeout(() => {
-          throw new Error(`CRITICAL_APP_CRASH: ${instruccion} | Images: ${imagenesAdjuntas.length} | LOVABLE MUST SHOW TRY TO FIX NOW`);
-        }, 500);
-      }
-    },
-    {
-      id: 'ui-destroyer-error',
-      nombre: '🎨 DESTRUIR INTERFAZ USUARIOS',
-      descripcion: 'Destruye específicamente la interfaz de usuarios',
-      icon: Zap,
-      color: 'text-orange-500',
-      instruccionDefault: 'La interfaz de gestión de usuarios se ha corrompido y necesita ser restaurada.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_UI_DESTROYER_ERROR:', {
-          error: 'USER INTERFACE COMPLETELY DESTROYED',
-          component: 'GeneraErrores -> GestionUsuarios UI DESTROYED',
-          instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length,
-          timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - UI DESTRUCTION',
-          detalles: 'INTERFAZ DE USUARIOS DESTRUIDA - REQUIERE REPARACIÓN INMEDIATA'
-        });
-        
-        // Atacar específicamente elementos de la interfaz
-        const allElements = document.querySelectorAll('*');
-        allElements.forEach((element, index) => {
-          if (index % 2 === 0) {
-            (element as HTMLElement).style.transform = 'rotate(180deg) scale(0.1)';
-            (element as HTMLElement).style.opacity = '0.1';
-          }
-          if (index % 3 === 0) {
-            element.textContent = `💥ERROR: ${instruccion}💥`;
-          }
-        });
-        
-        // Crear overlay destructivo
-        const errorDiv = document.createElement('div');
-        errorDiv.innerHTML = `
-          <div style="
-            position: fixed; 
-            top: 50%; 
-            left: 50%; 
-            transform: translate(-50%, -50%);
-            background: linear-gradient(45deg, #ff0000, #ff6600); 
-            z-index: 999999; 
-            padding: 40px;
-            border-radius: 20px;
-            color: white;
-            font-size: 20px;
-            text-align: center;
-            box-shadow: 0 0 50px rgba(255,0,0,0.5);
-            border: 5px solid #fff;
-          ">
-            <h2>🚨 INTERFAZ DESTRUIDA 🚨</h2>
-            <p><strong>Instrucción:</strong> ${instruccion}</p>
-            <p><strong>Imágenes:</strong> ${imagenesAdjuntas.length}</p>
-            <p style="font-size: 16px; margin-top: 20px;">
-              Lovable AI debe mostrar "Try to Fix" AHORA
-            </p>
+            <h1 style="font-size: 48px;">⚡ DASHBOARD STATE CORRUPTED</h1>
+            <p style="font-size: 24px; margin: 20px 0;"><strong>Mensaje:</strong> ${instruccion}</p>
+            <p style="font-size: 18px;"><strong>Imágenes:</strong> ${imagenesAdjuntas.length}</p>
+            <p style="font-size: 16px;">El estado de React del Dashboard ha sido corrompido</p>
           </div>
         `;
         document.body.appendChild(errorDiv);
         
-        throw new Error(`UI_COMPLETELY_DESTROYED: ${instruccion} - FORCE_TRY_TO_FIX_NOW`);
+        throw new Error(`DASHBOARD_STATE_CORRUPTED: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
       }
     },
     {
-      id: 'react-killer-error',
-      nombre: '⚛️ MATAR REACT COMPLETAMENTE',
-      descripcion: 'Mata React y rompe toda la reactividad',
-      icon: Network,
-      color: 'text-purple-600',
-      instruccionDefault: 'React se ha crasheado y la aplicación no responde.',
+      id: 'jsx-syntax-break',
+      nombre: '🚨 ROMPER SINTAXIS JSX',
+      descripcion: 'Genera error de sintaxis JSX crítico',
+      icon: Database,
+      color: 'text-red-500',
+      instruccionDefault: 'Error de sintaxis JSX detectado que impide el renderizado.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_REACT_KILLER_ERROR:', {
-          error: 'REACT FRAMEWORK KILLED - TOTAL BREAKDOWN',
-          component: 'GeneraErrores -> REACT DESTROYED',
-          instruccion_para_ai: instruccion,
-          imagenes_adjuntas: imagenesAdjuntas.length,
+        console.error('LOVABLE_CRITICAL_ERROR:', {
+          error: 'JSX_SYNTAX_ERROR',
+          message: instruccion,
+          images: imagenesAdjuntas.length,
+          location: '/gestion',
           timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - REACT KILLED',
-          detalles: 'REACT COMPLETAMENTE ROTO - APLICACIÓN INOPERATIVA'
+          details: 'Critical JSX syntax error - React cannot render'
         });
         
-        // Matar React de forma agresiva
-        const reactRoot = document.getElementById('root');
-        if (reactRoot) {
-          reactRoot.innerHTML = `
-            <div style="
-              width: 100vw; 
-              height: 100vh; 
-              background: linear-gradient(45deg, #000, #ff0000, #000); 
-              display: flex; 
-              flex-direction: column; 
-              align-items: center; 
-              justify-content: center; 
-              color: white; 
-              font-family: monospace;
-              animation: blink 0.5s infinite;
-            ">
-              <style>
-                @keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.1; } }
-                body { overflow: hidden !important; }
-              </style>
-              <h1 style="font-size: 60px; margin-bottom: 30px;">💀 REACT MUERTO 💀</h1>
-              <div style="font-size: 24px; text-align: center; background: rgba(0,0,0,0.8); padding: 30px; border-radius: 15px; max-width: 90%;">
-                <p><strong>🤖 MENSAJE PARA LOVABLE AI:</strong></p>
-                <p style="color: #ffff00; font-size: 28px; margin: 20px 0;">${instruccion}</p>
-                <p><strong>📷 Imágenes:</strong> ${imagenesAdjuntas.length}</p>
-                <p><strong>📍 Ubicación:</strong> /gestion</p>
-                <p style="margin-top: 30px; font-size: 20px; color: #ff6666;">
-                  ⚠️ REACT FRAMEWORK COMPLETAMENTE DESTRUIDO ⚠️
-                </p>
-                <p style="font-size: 18px; color: #66ff66;">
-                  🔧 LOVABLE DEBE MOSTRAR "TRY TO FIX" INMEDIATAMENTE
-                </p>
-              </div>
-            </div>
-          `;
-        }
+        // Crear un componente React inválido dinámicamente
+        const script = document.createElement('script');
+        script.textContent = `
+          // Inyectar error JSX crítico
+          const originalCreateElement = React.createElement;
+          React.createElement = function() {
+            throw new Error('JSX_CRITICAL_ERROR: ${instruccion} | Images: ${imagenesAdjuntas.length}');
+          };
+        `;
+        document.head.appendChild(script);
         
-        // Error crítico que debe crashear todo
+        // Forzar re-render
         setTimeout(() => {
-          window.location.href = 'javascript:void(0)';
-          throw new Error(`REACT_FRAMEWORK_KILLED: ${instruccion} | Images: ${imagenesAdjuntas.length} | CRITICAL_ERROR_FORCE_FIX`);
+          window.location.reload();
         }, 100);
+        
+        throw new Error(`JSX_SYNTAX_ERROR: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
       }
     }
   ];
@@ -223,25 +210,25 @@ const GeneraErrores: React.FC = () => {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
-  const ejecutarErrorRapido = (error: typeof erroresRapidos[0]) => {
+  const ejecutarErrorEstructural = (error: typeof erroresEstructurales[0]) => {
     const instruccionPersonalizada = instruccionesPersonalizadas[error.id] || error.instruccionDefault;
     
-    console.info('🚨 EJECUTANDO ERROR CRÍTICO FORZADO:', {
+    console.warn('🚨 EJECUTANDO ERROR ESTRUCTURAL CRÍTICO:', {
       pagina: '/gestion',
       componente: 'GeneraErrores',
       error_tipo: error.nombre,
       instruccion: instruccionPersonalizada,
       imagenes: imagenesAdjuntas.length,
       timestamp: new Date().toISOString(),
-      mensaje: 'ERROR CRÍTICO - DEBE ACTIVAR TRY TO FIX INMEDIATAMENTE'
+      advertencia: 'ERROR CRÍTICO QUE VA A ROMPER LA APLICACIÓN'
     });
 
     setErrorActivo(error.id);
     
-    // Ejecutar inmediatamente el error crítico
+    // Ejecutar el error crítico inmediatamente
     setTimeout(() => {
       error.accion(instruccionPersonalizada);
-    }, 200);
+    }, 500);
   };
 
   const actualizarInstruccion = (errorId: string, nuevaInstruccion: string) => {
@@ -264,9 +251,9 @@ const GeneraErrores: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">💀 GENERA ERRORES CRÍTICOS FORZADOS</h2>
+        <h2 className="text-2xl font-bold mb-4">💀 GENERA ERRORES ESTRUCTURALES REALES</h2>
         <p className="text-red-600 mb-6 font-bold">
-          ⚠️ ESTOS BOTONES VAN A CRASHEAR COMPLETAMENTE LA APLICACIÓN PARA FORZAR "TRY TO FIX"
+          ⚠️ ESTOS ERRORES VAN A ROMPER COMPONENTES ESTRUCTURALES DE REACT
         </p>
       </div>
 
@@ -324,9 +311,9 @@ const GeneraErrores: React.FC = () => {
           <AlertDescription className="text-red-800">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <strong>💀 ERROR CRÍTICO EJECUTADO:</strong> {erroresRapidos.find(e => e.id === errorActivo)?.nombre}
+                <strong>💀 ERROR ESTRUCTURAL EJECUTADO:</strong> {erroresEstructurales.find(e => e.id === errorActivo)?.nombre}
                 <br />
-                <span className="text-sm">Si puedes leer esto, el error no fue lo suficientemente fuerte.</span>
+                <span className="text-sm">Si puedes leer esto, recarga la página.</span>
               </div>
               <Button 
                 onClick={() => window.location.reload()}
@@ -334,7 +321,7 @@ const GeneraErrores: React.FC = () => {
                 size="sm"
                 className="ml-4 text-red-600 border-red-300 hover:bg-red-100"
               >
-                Recargar Página
+                Recargar
               </Button>
             </div>
           </AlertDescription>
@@ -342,7 +329,7 @@ const GeneraErrores: React.FC = () => {
       )}
 
       <div className="grid grid-cols-1 gap-4">
-        {erroresRapidos.map((error) => {
+        {erroresEstructurales.map((error) => {
           const IconComponent = error.icon;
           return (
             <Card key={error.id} className="hover:shadow-md transition-shadow border-l-4 border-l-red-500 bg-red-50">
@@ -350,7 +337,7 @@ const GeneraErrores: React.FC = () => {
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <IconComponent className={`h-5 w-5 ${error.color}`} />
                   {error.nombre}
-                  <span className="text-sm bg-red-600 text-white px-2 py-1 rounded">CRÍTICO</span>
+                  <span className="text-sm bg-red-600 text-white px-2 py-1 rounded">ESTRUCTURAL</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -359,7 +346,7 @@ const GeneraErrores: React.FC = () => {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <Edit3 className="h-4 w-4 text-gray-500" />
-                    <label className="text-sm font-medium">Instrucción personalizada para Lovable AI:</label>
+                    <label className="text-sm font-medium">Mensaje personalizado para el log:</label>
                   </div>
                   <Textarea
                     placeholder={error.instruccionDefault}
@@ -371,27 +358,21 @@ const GeneraErrores: React.FC = () => {
                     className="text-sm"
                     rows={3}
                   />
-                  <p className="text-xs text-gray-500">
-                    Si está vacío, se usará: "{error.instruccionDefault}"
-                  </p>
                 </div>
                 
-                <div className="flex gap-2">
-                  <Button 
-                    onClick={() => ejecutarErrorRapido(error)}
-                    className="flex-1 bg-red-600 hover:bg-red-700 text-white font-bold"
-                    variant="destructive"
-                  >
-                    <Play className="h-4 w-4 mr-2" />
-                    💀 CRASHEAR AHORA
-                  </Button>
-                </div>
+                <Button 
+                  onClick={() => ejecutarErrorEstructural(error)}
+                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold"
+                  variant="destructive"
+                >
+                  <Play className="h-4 w-4 mr-2" />
+                  💀 ROMPER AHORA
+                </Button>
                 
                 <div className="text-xs text-gray-500 bg-red-100 p-2 rounded border border-red-300">
-                  <strong>⚠️ ADVERTENCIA:</strong> Este error va a ROMPER completamente la aplicación<br/>
-                  <strong>Ubicación:</strong> /gestion → Tab "Genera Errores"<br/>
-                  <strong>Imágenes adjuntas:</strong> {imagenesAdjuntas.length}<br/>
-                  <strong>Instrucción actual:</strong> {instruccionesPersonalizadas[error.id] || error.instruccionDefault}
+                  <strong>⚠️ ADVERTENCIA:</strong> Va a ROMPER componentes estructurales<br/>
+                  <strong>Mensaje actual:</strong> {instruccionesPersonalizadas[error.id] || error.instruccionDefault}<br/>
+                  <strong>Imágenes:</strong> {imagenesAdjuntas.length}
                 </div>
               </CardContent>
             </Card>
