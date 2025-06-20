@@ -7,7 +7,7 @@ import { Toaster } from '@/components/ui/toaster';
 import TurnosDia from '@/components/barberia/TurnosDia';
 import EstadisticasBarberia from '@/components/barberia/EstadisticasBarberia';
 import GeneraErrores from '@/components/barberia/GeneraErrores';
-import AgregarTurno from '@/components/barberia/AgregarTurno';
+import AgregarTurnoMejorado from '@/components/barberia/AgregarTurnoMejorado';
 import GestionUsuarios from '@/components/barberia/GestionUsuarios';
 
 interface DashboardBarberiaProps {
@@ -95,9 +95,12 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, per
 
       {/* Modales */}
       {mostrarAgregarTurno && (
-        <AgregarTurno 
+        <AgregarTurnoMejorado 
           onClose={() => setMostrarAgregarTurno(false)}
-          onTurnoAgregado={() => setMostrarAgregarTurno(false)}
+          onTurnoAgregado={() => {
+            setMostrarAgregarTurno(false);
+            // El componente TurnosDia se actualizará automáticamente
+          }}
         />
       )}
 
