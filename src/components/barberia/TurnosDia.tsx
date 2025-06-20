@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -189,9 +188,11 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       console.log('🔄 Cancelando turno:', turnoId);
       
+      // USAR LA MISMA ESTRUCTURA QUE EN EL APPS SCRIPT
       const requestBodyJSON = {
         action: 'cancelarTurno',
-        id: turnoId,
+        eventId: turnoId, // Apps Script usa 'eventId' en algunos casos
+        id: turnoId, // También enviar 'id' por compatibilidad
         apiKey: API_SECRET_KEY
       };
 
