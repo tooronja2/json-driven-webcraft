@@ -1,8 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
-import CalendarioCustom from '@/components/CalendarioCustom';
 
 interface AgregarTurnoProps {
   onClose: () => void;
@@ -27,8 +26,6 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
     telefono: '00000000000'
   });
   const [cargando, setCargando] = useState(false);
-  // Nuevo estado para forzar recarga del calendario
-  const [reloadCalendar, setReloadCalendar] = useState(0);
 
   const servicios = [
     { id: 'corte-barba', nombre: 'Corte de barba', duracion: 15, precio: 6500 },
@@ -105,16 +102,9 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       
       if (result.success) {
         console.log('✅ Turno manual creado exitosamente');
-        
-        // FORZAR RECARGA INMEDIATA del calendario
-        setReloadCalendar(Date.now());
-        
-        // Pequeña pausa para asegurar que la recarga se procese
-        setTimeout(() => {
-          alert('¡Turno agregado exitosamente!');
-          onTurnoAgregado();
-          onClose();
-        }, 500);
+        alert('¡Turno agregado exitosamente!');
+        onTurnoAgregado();
+        onClose();
       } else {
         alert('Error al crear el turno: ' + (result.error || 'Error desconocido'));
       }
@@ -126,16 +116,9 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
     }
   };
 
-  const handleReservaConfirmada = () => {
-    console.log('✅ Reserva confirmada desde calendario');
-    // Forzar recarga del calendario después de crear reserva
-    setReloadCalendar(Date.now());
-    onTurnoAgregado();
-  };
-
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Agregar Turno Manual</h2>
           <Button onClick={onClose} variant="ghost" size="sm">
@@ -143,124 +126,101 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Formulario manual */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Crear turno manualmente</h3>
-            
-            <div>
-              <label className="block text-sm font-medium mb-1">Servicio</label>
-              <select
-                value={servicioSeleccionado}
-                onChange={(e) => setServicioSeleccionado(e.target.value)}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="">Seleccionar servicio</option>
-                {servicios.map(servicio => (
-                  <option key={servicio.id} value={servicio.id}>
-                    {servicio.nombre} ({servicio.duracion}min - ${servicio.precio})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Responsable</label>
-              <select
-                value={responsableSeleccionado}
-                onChange={(e) => setResponsableSeleccionado(e.target.value)}
-                className="w-full p-2 border rounded-md"
-              >
-                <option value="">Seleccionar responsable</option>
-                {responsables.map(responsable => (
-                  <option key={responsable} value={responsable}>
-                    {responsable}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Estado</label>
-              <select
-                value={estadoSeleccionado}
-                onChange={(e) => setEstadoSeleccionado(e.target.value)}
-                className="w-full p-2 border rounded-md"
-              >
-                {estados.map(estado => (
-                  <option key={estado} value={estado}>
-                    {estado}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Hora</label>
-              <input
-                type="time"
-                value={horaSeleccionada}
-                onChange={(e) => setHoraSeleccionada(e.target.value)}
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Nombre Cliente</label>
-              <input
-                type="text"
-                value={datosCliente.nombre}
-                onChange={(e) => setDatosCliente({...datosCliente, nombre: e.target.value})}
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Email Cliente</label>
-              <input
-                type="email"
-                value={datosCliente.email}
-                onChange={(e) => setDatosCliente({...datosCliente, email: e.target.value})}
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium mb-1">Teléfono</label>
-              <input
-                type="tel"
-                value={datosCliente.telefono}
-                onChange={(e) => setDatosCliente({...datosCliente, telefono: e.target.value})}
-                className="w-full p-2 border rounded-md"
-              />
-            </div>
-
-            <Button 
-              onClick={crearTurnoManual} 
-              disabled={cargando || !servicioSeleccionado || !responsableSeleccionado || !horaSeleccionada}
-              className="w-full"
-            >
-              {cargando ? 'Agregando...' : 'Agregar Turno Manual'}
-            </Button>
-          </div>
-
-          {/* Calendario con disponibilidad */}
+        <div className="space-y-4">
           <div>
-            <h3 className="font-semibold mb-4">O usar el calendario (recomendado)</h3>
-            {servicioSeleccionado && responsableSeleccionado && (
-              <CalendarioCustom
-                servicioId={servicioSeleccionado}
-                responsable={responsableSeleccionado}
-                onReservaConfirmada={handleReservaConfirmada}
-                forceReload={reloadCalendar}
-              />
-            )}
-            {(!servicioSeleccionado || !responsableSeleccionado) && (
-              <p className="text-gray-500">
-                Selecciona un servicio y responsable para ver la disponibilidad
-              </p>
-            )}
+            <label className="block text-sm font-medium mb-1">Servicio</label>
+            <select
+              value={servicioSeleccionado}
+              onChange={(e) => setServicioSeleccionado(e.target.value)}
+              className="w-full p-2 border rounded-md"
+            >
+              <option value="">Seleccionar servicio</option>
+              {servicios.map(servicio => (
+                <option key={servicio.id} value={servicio.id}>
+                  {servicio.nombre} ({servicio.duracion}min - ${servicio.precio})
+                </option>
+              ))}
+            </select>
           </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Responsable</label>
+            <select
+              value={responsableSeleccionado}
+              onChange={(e) => setResponsableSeleccionado(e.target.value)}
+              className="w-full p-2 border rounded-md"
+            >
+              <option value="">Seleccionar responsable</option>
+              {responsables.map(responsable => (
+                <option key={responsable} value={responsable}>
+                  {responsable}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Estado</label>
+            <select
+              value={estadoSeleccionado}
+              onChange={(e) => setEstadoSeleccionado(e.target.value)}
+              className="w-full p-2 border rounded-md"
+            >
+              {estados.map(estado => (
+                <option key={estado} value={estado}>
+                  {estado}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Hora</label>
+            <input
+              type="time"
+              value={horaSeleccionada}
+              onChange={(e) => setHoraSeleccionada(e.target.value)}
+              className="w-full p-2 border rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Nombre Cliente</label>
+            <input
+              type="text"
+              value={datosCliente.nombre}
+              onChange={(e) => setDatosCliente({...datosCliente, nombre: e.target.value})}
+              className="w-full p-2 border rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Email Cliente</label>
+            <input
+              type="email"
+              value={datosCliente.email}
+              onChange={(e) => setDatosCliente({...datosCliente, email: e.target.value})}
+              className="w-full p-2 border rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Teléfono</label>
+            <input
+              type="tel"
+              value={datosCliente.telefono}
+              onChange={(e) => setDatosCliente({...datosCliente, telefono: e.target.value})}
+              className="w-full p-2 border rounded-md"
+            />
+          </div>
+
+          <Button 
+            onClick={crearTurnoManual} 
+            disabled={cargando || !servicioSeleccionado || !responsableSeleccionado || !horaSeleccionada}
+            className="w-full"
+          >
+            {cargando ? 'Agregando...' : 'Agregar Turno Manual'}
+          </Button>
         </div>
       </div>
     </div>
