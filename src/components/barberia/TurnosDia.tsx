@@ -251,19 +251,19 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
 
-    // CORREGIDO: Solo contar reservados (no completados)
-    const reservados = turnosDelDia.filter(t => t.estado === 'Reservado').length;
+    // MODIFICADO: Contar confirmados en lugar de reservados
+    const confirmados = turnosDelDia.filter(t => t.estado === 'Confirmado').length;
     const completados = turnosDelDia.filter(t => t.estado === 'Completado').length;
     const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
 
-    // CORREGIDO: Los ingresos del día se calculan con turnos RESERVADOS y CONFIRMADOS
+    // Los ingresos del día se calculan con turnos CONFIRMADOS y RESERVADOS
     const totalIngresosDia = turnosDelDia
       .filter(t => t.estado === 'Reservado' || t.estado === 'Confirmado')
       .reduce((sum, t) => sum + (t.valor || 0), 0);
 
     return {
       totalTurnos: turnosDelDia.length,
-      reservados,
+      confirmados,
       completados,
       cancelados,
       ingresosDia: totalIngresosDia
@@ -275,12 +275,12 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
     return (
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <Card className="bg-blue-50 border-blue-200">
+        <Card className="bg-green-50 border-green-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-blue-800">Reservados</CardTitle>
+            <CardTitle className="text-sm text-green-800">Confirmados</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-blue-600">{stats.reservados}</p>
+            <p className="text-2xl font-bold text-green-600">{stats.confirmados}</p>
           </CardContent>
         </Card>
         

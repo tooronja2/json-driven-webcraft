@@ -2,11 +2,9 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { LogOut, Plus, Users } from 'lucide-react';
+import { LogOut, Users } from 'lucide-react';
 import { Toaster } from '@/components/ui/toaster';
 import TurnosDia from '@/components/barberia/TurnosDia';
-import EstadisticasBarberia from '@/components/barberia/EstadisticasBarberia';
-import GeneraErrores from '@/components/barberia/GeneraErrores';
 import AgregarTurno from '@/components/barberia/AgregarTurno';
 import GestionUsuarios from '@/components/barberia/GestionUsuarios';
 
@@ -40,14 +38,6 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, per
             <p className="text-sm text-gray-600">{usuario} - {rol}</p>
           </div>
           <div className="flex gap-2">
-            <Button
-              onClick={() => setMostrarAgregarTurno(true)}
-              size="sm"
-              className="bg-green-600 hover:bg-green-700"
-            >
-              <Plus className="h-4 w-4 mr-1" />
-              Turno
-            </Button>
             {esAdmin && (
               <Button
                 onClick={() => setMostrarGestionUsuarios(true)}
@@ -69,27 +59,13 @@ const DashboardBarberia: React.FC<DashboardBarberiaProps> = ({ usuario, rol, per
       {/* Contenido principal */}
       <div className="max-w-4xl mx-auto p-4">
         <Tabs defaultValue="turnos" className="w-full">
-          <TabsList className={`grid w-full ${esAdmin ? 'grid-cols-3' : 'grid-cols-1'}`}>
+          <TabsList className="grid w-full grid-cols-1">
             <TabsTrigger value="turnos">Turnos del Día</TabsTrigger>
-            {esAdmin && <TabsTrigger value="estadisticas">Estadísticas</TabsTrigger>}
-            {esAdmin && <TabsTrigger value="errores">Genera Errores</TabsTrigger>}
           </TabsList>
           
           <TabsContent value="turnos">
             <TurnosDia permisos={permisos} usuario={usuario} />
           </TabsContent>
-          
-          {esAdmin && (
-            <TabsContent value="estadisticas">
-              <EstadisticasBarberia />
-            </TabsContent>
-          )}
-
-          {esAdmin && (
-            <TabsContent value="errores">
-              <GeneraErrores />
-            </TabsContent>
-          )}
         </Tabs>
       </div>
 
