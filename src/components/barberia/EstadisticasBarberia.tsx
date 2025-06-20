@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { TrendingUp, DollarSign, Calendar, XCircle, BarChart, CheckCircle, Clock } from 'lucide-react';
@@ -36,7 +37,6 @@ const EstadisticasBarberia: React.FC = () => {
   const cargarTurnos = async () => {
     try {
       setCargando(true);
-      console.log('🔄 Cargando turnos para estadísticas del nuevo script...');
       const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`;
       
       const response = await fetch(url, {
@@ -52,27 +52,7 @@ const EstadisticasBarberia: React.FC = () => {
       const data = await response.json();
       
       if (data.success) {
-        console.log('📊 Eventos para estadísticas recibidos del nuevo script:', data.eventos);
-        
-        // Normalizar eventos del nuevo script
-        const eventosNormalizados = data.eventos.map((evento: any) => {
-          return {
-            ID_Evento: evento.ID_Evento,
-            Titulo_Evento: evento.Titulo_Evento,
-            Nombre_Cliente: evento.Nombre_Cliente,
-            Email_Cliente: evento.Email_Cliente,
-            Fecha: evento.Fecha,
-            "Hora Inicio": evento.Hora_Inicio || evento["Hora Inicio"],
-            "Hora Fin": evento.Hora_Fin || evento["Hora Fin"],
-            Descripcion: evento.Descripcion,
-            Estado: evento.Estado,
-            "Valor del turno": evento["Valor del turno"] || 0,
-            "Servicios incluidos": evento["Servicios incluidos"] || evento.Titulo_Evento,
-            Responsable: evento.Responsable,
-          };
-        });
-        
-        setTurnos(eventosNormalizados || []);
+        setTurnos(data.eventos || []);
       } else {
         console.error('Error del servidor:', data.error);
         setTurnos([]);

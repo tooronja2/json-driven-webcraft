@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -88,65 +87,56 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     setCargando(true);
     setError('');
     try {
-      console.log('🔄 Iniciando obtención de turnos del nuevo script...');
+      console.log('🔄 Iniciando obtención de turnos...');
       const response = await realizarFetchConReintentos(
         `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`
       );
       
       const data = await response.json();
-      console.log('📄 Datos recibidos del nuevo script:', data);
+      console.log('📄 Datos recibidos:', data);
 
       if (data.success) {
         const turnosConvertidos = data.eventos.map((evento: any) => {
-          console.log('🔍 Procesando evento del nuevo script:', evento);
-          
           let fechaEvento, horaInicio, horaFin;
           
           try {
-            // Normalizar fecha
             if (typeof evento.Fecha === 'string' && evento.Fecha.includes('T')) {
               fechaEvento = new Date(evento.Fecha);
             } else {
               fechaEvento = new Date(evento.Fecha);
             }
 
-            // Extraer horas - el nuevo script puede usar Hora_Inicio/Hora_Fin (sin espacios)
-            const horaInicioRaw = evento.Hora_Inicio || evento['Hora Inicio'];
-            const horaFinRaw = evento.Hora_Fin || evento['Hora Fin'];
-            
-            if (typeof horaInicioRaw === 'string' && horaInicioRaw.includes(':')) {
-              horaInicio = horaInicioRaw;
-            } else if (typeof horaInicioRaw === 'string' && horaInicioRaw.includes('T')) {
-              horaInicio = new Date(horaInicioRaw).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+            if (typeof evento['Hora Inicio'] === 'string' && evento['Hora Inicio'].includes('T')) {
+              horaInicio = new Date(evento['Hora Inicio']);
             } else {
-              horaInicio = new Date(horaInicioRaw).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+              horaInicio = new Date(evento['Hora Inicio']);
             }
 
-            if (typeof horaFinRaw === 'string' && horaFinRaw.includes(':')) {
-              horaFin = horaFinRaw;
-            } else if (typeof horaFinRaw === 'string' && horaFinRaw.includes('T')) {
-              horaFin = new Date(horaFinRaw).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+            if (typeof evento['Hora Fin'] === 'string' && evento['Hora Fin'].includes('T')) {
+              horaFin = new Date(evento['Hora Fin']);
             } else {
-              horaFin = new Date(horaFinRaw).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+              horaFin = new Date(evento['Hora Fin']);
             }
           } catch (e) {
             console.error('Error parsing dates for event:', evento, e);
             fechaEvento = new Date();
-            horaInicio = '00:00';
-            horaFin = '00:00';
+            horaInicio = new Date();
+            horaFin = new Date();
           }
+          
+          let estadoMapeado = evento.Estado;
           
           return {
             id: evento.ID_Evento,
             nombre: evento.Nombre_Cliente,
             email: evento.Email_Cliente,
             fecha: fechaEvento.toISOString().split('T')[0],
-            horaInicio: horaInicio,
-            horaFin: horaFin,
+            horaInicio: horaInicio.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
+            horaFin: horaFin.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
             servicio: evento.Titulo_Evento || evento['Servicios incluidos'],
             valor: evento['Valor del turno'] || 0,
             responsable: evento.Responsable,
-            estado: evento.Estado,
+            estado: estadoMapeado,
             origen: evento.Estado === 'Completado' && evento.Nombre_Cliente === 'Atención directa en local' ? 'manual' : 'reserva',
             descripcion: evento.Descripcion
           };
@@ -197,19 +187,22 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
   const cancelarTurno = async (turnoId: string) => {
     try {
-      console.log('🔄 Cancelando turno con nuevo script:', turnoId);
+      console.log('🔄 Cancelando turno:', turnoId);
       
+      const requestBodyJSON = {
+        action: 'cancelarTurno',
+        id: turnoId,
+        apiKey: API_SECRET_KEY
+      };
+
+      console.log('📤 Request body JSON:', requestBodyJSON);
+
       const response = await realizarFetchConReintentos(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          action: 'cancelarTurno',
-          eventId: turnoId,
-          id: turnoId, // Enviar ambos por compatibilidad
-          apiKey: API_SECRET_KEY
-        })
+        body: JSON.stringify(requestBodyJSON)
       });
 
       const result = await response.json();
