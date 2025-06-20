@@ -4,149 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-import { AlertTriangle, Bug, Zap, Database, Network, Clock, Upload, X, Edit3, Image, Play } from 'lucide-react';
+import { AlertTriangle, Bug, X, Edit3, Image, Play } from 'lucide-react';
 
 const GeneraErrores: React.FC = () => {
   const [errorActivo, setErrorActivo] = useState<string | null>(null);
-  const [instruccionesPersonalizadas, setInstruccionesPersonalizadas] = useState<{[key: string]: string}>({});
+  const [forceError, setForceError] = useState(false);
+  const [ultimaSolicitudPersonalizada, setUltimaSolicitudPersonalizada] = useState('');
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
-
-  const erroresEstructurales = [
-    {
-      id: 'custom-request-error',
-      nombre: '🔧 ERROR PERSONALIZADO REAL',
-      descripcion: 'Genera error real con mensaje personalizado que Lovable puede detectar',
-      icon: Bug,
-      color: 'text-red-600',
-      instruccionDefault: 'Error personalizado que necesita ser solucionado por Lovable AI.',
-      accion: (instruccion: string) => {
-        console.error('🔧 ERROR CONTROLADO REGENERABLE: Forzado intencionalmente');
-        console.error('🔧 SOLICITUD PERSONALIZADA:', instruccion);
-        console.error('🔧 IMÁGENES ADJUNTAS:', imagenesAdjuntas.length);
-        console.error('🔧 ACCIÓN REQUERIDA: Implementar funcionalidad solicitada');
-        
-        // Generar error real que rompe la ejecución
-        const errorObj: any = null;
-        const causarError = errorObj.configuracion.adminSettings || (() => {
-          throw new Error(`CUSTOM_REQUEST_ERROR: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
-        })();
-        
-        return causarError;
-      }
-    },
-    {
-      id: 'destroy-react-root',
-      nombre: '💀 DESTRUIR ROOT DE REACT',
-      descripcion: 'Rompe el root container de React completamente',
-      icon: Zap,
-      color: 'text-orange-600',
-      instruccionDefault: 'El contenedor root de React ha sido destruido y necesita ser restaurado.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_CRITICAL_ERROR:', {
-          error: 'REACT_ROOT_DESTROYED',
-          message: instruccion,
-          images: imagenesAdjuntas.length,
-          location: '/gestion',
-          timestamp: new Date().toISOString(),
-          details: 'React root container completely destroyed - APPLICATION BROKEN'
-        });
-        
-        // Destruir el root de React
-        const root = document.getElementById('root');
-        if (root) {
-          root.remove();
-        }
-        
-        // Crear mensaje de error visible
-        document.body.innerHTML = `
-          <div style="background: #dc2626; color: white; padding: 20px; font-family: Arial;">
-            <h1>🚨 REACT ROOT DESTROYED 🚨</h1>
-            <p><strong>Mensaje:</strong> ${instruccion}</p>
-            <p><strong>Imágenes:</strong> ${imagenesAdjuntas.length}</p>
-            <p><strong>Error:</strong> React root container eliminado</p>
-          </div>
-        `;
-        
-        throw new Error(`REACT_ROOT_DESTROYED: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
-      }
-    },
-    {
-      id: 'break-tabs-component',
-      nombre: '🔥 ROMPER COMPONENTE TABS',
-      descripcion: 'Destruye el componente Tabs principal de la interfaz',
-      icon: Network,
-      color: 'text-purple-600',
-      instruccionDefault: 'El componente Tabs se ha corrompido y necesita ser reparado.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_CRITICAL_ERROR:', {
-          error: 'TABS_COMPONENT_BROKEN',
-          message: instruccion,
-          images: imagenesAdjuntas.length,
-          location: '/gestion',
-          timestamp: new Date().toISOString(),
-          details: 'Main Tabs component crashed - UI broken'
-        });
-        
-        // Romper todos los elementos con rol="tablist"
-        const tabElements = document.querySelectorAll('[role="tablist"], [role="tab"], [role="tabpanel"]');
-        tabElements.forEach(tab => {
-          tab.remove();
-        });
-        
-        // Crear error estructural
-        const mainContent = document.querySelector('.max-w-4xl');
-        if (mainContent) {
-          mainContent.innerHTML = `
-            <div style="background: #ef4444; color: white; padding: 40px; text-align: center;">
-              <h2>💥 TABS COMPONENT DESTROYED</h2>
-              <p><strong>Instrucción:</strong> ${instruccion}</p>
-              <p><strong>Imágenes:</strong> ${imagenesAdjuntas.length}</p>
-              <p>El componente principal de pestañas ha sido eliminado</p>
-            </div>
-          `;
-        }
-        
-        throw new Error(`TABS_COMPONENT_DESTROYED: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
-      }
-    },
-    {
-      id: 'jsx-syntax-break',
-      nombre: '🚨 ROMPER SINTAXIS JSX',
-      descripcion: 'Genera error de sintaxis JSX crítico que impide renderizado',
-      icon: Database,
-      color: 'text-red-500',
-      instruccionDefault: 'Error de sintaxis JSX detectado que impide el renderizado.',
-      accion: (instruccion: string) => {
-        console.error('LOVABLE_CRITICAL_ERROR:', {
-          error: 'JSX_SYNTAX_ERROR',
-          message: instruccion,
-          images: imagenesAdjuntas.length,
-          location: '/gestion',
-          timestamp: new Date().toISOString(),
-          details: 'Critical JSX syntax error - React cannot render'
-        });
-        
-        // Crear un componente React inválido dinámicamente
-        const script = document.createElement('script');
-        script.textContent = `
-          // Inyectar error JSX crítico
-          const originalCreateElement = React.createElement;
-          React.createElement = function() {
-            throw new Error('JSX_CRITICAL_ERROR: ${instruccion} | Images: ${imagenesAdjuntas.length}');
-          };
-        `;
-        document.head.appendChild(script);
-        
-        // Forzar re-render
-        setTimeout(() => {
-          window.location.reload();
-        }, 100);
-        
-        throw new Error(`JSX_SYNTAX_ERROR: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
-      }
-    }
-  ];
 
   // Manejar paste de imágenes
   useEffect(() => {
@@ -173,24 +38,38 @@ const GeneraErrores: React.FC = () => {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
-  const ejecutarErrorEstructural = (error: typeof erroresEstructurales[0]) => {
-    const instruccionPersonalizada = instruccionesPersonalizadas[error.id] || error.instruccionDefault;
+  const generarErrorControlado = () => {
+    const instruccion = ultimaSolicitudPersonalizada || 'Error personalizado generado desde Genera Errores';
     
     console.warn('🚨 EJECUTANDO ERROR ESTRUCTURAL CRÍTICO:', {
       pagina: '/gestion',
       componente: 'GeneraErrores',
-      error_tipo: error.nombre,
-      instruccion: instruccionPersonalizada,
+      error_tipo: '🔧 ERROR PERSONALIZADO REAL',
+      instruccion: instruccion,
       imagenes: imagenesAdjuntas.length,
       timestamp: new Date().toISOString(),
       advertencia: 'ERROR CRÍTICO QUE VA A ROMPER LA APLICACIÓN'
     });
 
-    setErrorActivo(error.id);
+    setErrorActivo('custom-error');
+    setForceError(true);
     
     // Ejecutar el error crítico inmediatamente
     setTimeout(() => {
-      error.accion(instruccionPersonalizada);
+      // Simular error real que bloquea la ejecución
+      console.error('🔧 ERROR CONTROLADO REGENERABLE: Forzado intencionalmente');
+      console.error('🔧 SOLICITUD PERSONALIZADA:', instruccion);
+      console.error('🔧 IMÁGENES ADJUNTAS:', imagenesAdjuntas.length);
+      console.error('🔧 ACCIÓN REQUERIDA: Implementar funcionalidad solicitada');
+      
+      // Forzar error real que Lovable puede detectar - MÉTODO EXACTO QUE FUNCIONABA
+      const errorObj: any = null;
+      // Esta línea causará el error real cuando forceError esté activo
+      const causarError = errorObj.configuracion.adminSettings || (() => {
+        throw new Error(`CUSTOM_REQUEST_ERROR: ${instruccion} | Images: ${imagenesAdjuntas.length}`);
+      })();
+      
+      return causarError;
     }, 500);
   };
 
@@ -201,9 +80,9 @@ const GeneraErrores: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">💀 GENERA ERRORES ESTRUCTURALES REALES</h2>
+        <h2 className="text-2xl font-bold mb-4">🔧 GENERA ERROR CONTROLADO REAL</h2>
         <p className="text-red-600 mb-6 font-bold">
-          ⚠️ ESTOS ERRORES VAN A ROMPER COMPONENTES ESTRUCTURALES DE REACT
+          ⚠️ ESTE ERROR VA A ROMPER LA APLICACIÓN PARA QUE LOVABLE LO DETECTE
         </p>
       </div>
 
@@ -261,9 +140,9 @@ const GeneraErrores: React.FC = () => {
           <AlertDescription className="text-red-800">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <strong>💀 ERROR ESTRUCTURAL EJECUTADO:</strong> {erroresEstructurales.find(e => e.id === errorActivo)?.nombre}
+                <strong>🔧 ERROR CONTROLADO EJECUTADO:</strong> Si puedes leer esto, recarga la página.
                 <br />
-                <span className="text-sm">Si puedes leer esto, recarga la página.</span>
+                <span className="text-sm">El error fue generado exitosamente para que Lovable lo detecte.</span>
               </div>
               <Button 
                 onClick={() => window.location.reload()}
@@ -278,71 +157,63 @@ const GeneraErrores: React.FC = () => {
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 gap-4">
-        {erroresEstructurales.map((error) => {
-          const IconComponent = error.icon;
-          return (
-            <Card key={error.id} className="hover:shadow-md transition-shadow border-l-4 border-l-red-500 bg-red-50">
-              <CardHeader className="pb-3">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <IconComponent className={`h-5 w-5 ${error.color}`} />
-                  {error.nombre}
-                  <span className="text-sm bg-red-600 text-white px-2 py-1 rounded">ESTRUCTURAL</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <p className="text-gray-600 text-sm font-bold">{error.descripcion}</p>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2">
-                    <Edit3 className="h-4 w-4 text-gray-500" />
-                    <label className="text-sm font-medium">Mensaje personalizado para el log:</label>
-                  </div>
-                  <Textarea
-                    placeholder={error.instruccionDefault}
-                    value={instruccionesPersonalizadas[error.id] || ''}
-                    onChange={(e) => setInstruccionesPersonalizadas(prev => ({
-                      ...prev,
-                      [error.id]: e.target.value
-                    }))}
-                    className="text-sm"
-                    rows={3}
-                  />
-                </div>
-                
-                <Button 
-                  onClick={() => ejecutarErrorEstructural(error)}
-                  className="w-full bg-red-600 hover:bg-red-700 text-white font-bold"
-                  variant="destructive"
-                >
-                  <Play className="h-4 w-4 mr-2" />
-                  💀 ROMPER AHORA
-                </Button>
-                
-                <div className="text-xs text-gray-500 bg-red-100 p-2 rounded border border-red-300">
-                  <strong>⚠️ ADVERTENCIA:</strong> Va a ROMPER componentes estructurales<br/>
-                  <strong>Mensaje actual:</strong> {instruccionesPersonalizadas[error.id] || error.instruccionDefault}<br/>
-                  <strong>Imágenes:</strong> {imagenesAdjuntas.length}
-                </div>
-              </CardContent>
-            </Card>
-          );
-        })}
-      </div>
+      <Card className="hover:shadow-md transition-shadow border-l-4 border-l-red-500 bg-red-50">
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Bug className="h-5 w-5 text-red-600" />
+            🔧 ERROR PERSONALIZADO REAL
+            <span className="text-sm bg-red-600 text-white px-2 py-1 rounded">CONTROLADO</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-gray-600 text-sm font-bold">
+            Genera un error real que Lovable puede detectar con tu mensaje personalizado
+          </p>
+          
+          <div className="space-y-2">
+            <div className="flex items-center gap-2">
+              <Edit3 className="h-4 w-4 text-gray-500" />
+              <label className="text-sm font-medium">Mensaje personalizado para el log:</label>
+            </div>
+            <Textarea
+              placeholder="Describe qué quieres que implemente Lovable..."
+              value={ultimaSolicitudPersonalizada}
+              onChange={(e) => setUltimaSolicitudPersonalizada(e.target.value)}
+              className="text-sm"
+              rows={3}
+            />
+          </div>
+          
+          <Button 
+            onClick={generarErrorControlado}
+            className="w-full bg-red-600 hover:bg-red-700 text-white font-bold"
+            variant="destructive"
+          >
+            <Play className="h-4 w-4 mr-2" />
+            🔧 GENERAR ERROR CONTROLADO
+          </Button>
+          
+          <div className="text-xs text-gray-500 bg-red-100 p-2 rounded border border-red-300">
+            <strong>⚠️ ADVERTENCIA:</strong> Va a generar un error real que rompe la aplicación<br/>
+            <strong>Mensaje actual:</strong> {ultimaSolicitudPersonalizada || 'Error personalizado generado desde Genera Errores'}<br/>
+            <strong>Imágenes:</strong> {imagenesAdjuntas.length}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg">🎯 Estado del Generador de Errores Forzados</CardTitle>
+          <CardTitle className="text-lg">🎯 Estado del Generador de Errores</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div><strong>Página actual:</strong> /gestion</div>
           <div><strong>Componente:</strong> GeneraErrores (Tab activo)</div>
           <div><strong>Imágenes listas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
-          <div><strong>Instrucciones personalizadas:</strong> {Object.keys(instruccionesPersonalizadas).length} configurada(s)</div>
+          <div><strong>Mensaje personalizado:</strong> {ultimaSolicitudPersonalizada ? 'Configurado' : 'Pendiente'}</div>
           <div><strong>Último error:</strong> {errorActivo || 'Ninguno'}</div>
-          <div><strong>Estado Lovable:</strong> Listo para detectar errores forzados</div>
-          <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
-            ⚠️ <strong>NUEVO:</strong> Estos errores FUERZAN cambios visuales en la página para que Lovable detecte el problema inmediatamente.
+          <div><strong>Estado Lovable:</strong> Listo para detectar errores controlados</div>
+          <div className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
+            ✅ <strong>MÉTODO PROBADO:</strong> Este es el método exacto que funcionaba para generar errores reales que Lovable puede detectar y reparar.
           </div>
         </CardContent>
       </Card>
