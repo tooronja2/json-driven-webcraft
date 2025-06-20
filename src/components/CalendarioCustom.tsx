@@ -268,30 +268,65 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     return false;
   };
 
-  // 🔧 LÓGICA CORREGIDA: Filtrado de horarios UNIFICADO
+  // 🔧 NUEVA FUNCIÓN: Generar slots basados en la duración del servicio actual
+  const generarSlotsParaServicio = (horaInicio: string, horaFin: string, duracionServicio: number): string[] => {
+    const slots = [];
+    const [inicioHoras, inicioMinutos] = horaInicio.split(':').map(Number);
+    const [finHoras, finMinutos] = horaFin.split(':').map(Number);
+    
+    const inicioTotalMinutos = inicioHoras * 60 + inicioMinutos;
+    const finTotalMinutos = finHoras * 60 + finMinutos;
+    
+    // Generar slots cada X minutos (donde X = duración del servicio)
+    for (let minutos = inicioTotalMinutos; minutos + duracionServicio <= finTotalMinutos; minutos += duracionServicio) {
+      const horas = Math.floor(minutos / 60);
+      const mins = minutos % 60;
+      const slot = `${horas.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+      slots.push(slot);
+    }
+    
+    console.log(`📋 Slots generados para servicio de ${duracionServicio}min: ${horaInicio}-${horaFin}:`, slots);
+    return slots;
+  };
+
+  // 🔧 LÓGICA CORREGIDA: Usar duración del servicio actual para generar slots
   useEffect(() => {
     if (!fechaSeleccionada) {
       setHorasDisponibles([]);
       return;
     }
 
-    console.log('🔍 === INICIO CÁLCULO DE DISPONIBILIDAD UNIFICADO ===');
+    console.log('🔍 === INICIO CÁLCULO DE DISPONIBILIDAD (SLOTS DINÁMICOS) ===');
     console.log(`📅 Fecha: ${fechaSeleccionada.toISOString().split('T')[0]}`);
     console.log(`👤 Responsable: ${responsable}`);
     console.log(`⏱️ Servicio: ${servicio?.nombre} (${duracionMinutos}min)`);
     
-    // 1. Obtener rango de horarios laborales del barbero
-    const horariosLaboralesCompletos = obtenerHorariosDisponibles(responsable, fechaSeleccionada, 15); // Usar 15min como slot base
+    // 1. Obtener rango de horarios laborales básico (para conocer inicio y fin)
+    const horariosLaboralesBase = obtenerHorariosDisponibles(responsable, fechaSeleccionada, 15);
     
-    if (horariosLaboralesCompletos.length === 0) {
+    if (horariosLaboralesBase.length === 0) {
       console.log('❌ No hay horarios laborales configurados');
       setHorasDisponibles([]);
       return;
     }
 
-    console.log('⏰ Horarios laborales base (slots de 15min):', horariosLaboralesCompletos);
+    // 2. Obtener hora de inicio y fin del día laboral
+    const horaInicioLaboral = horariosLaboralesBase[0];
+    const horaFinLaboral = horariosLaboralesBase[horariosLaboralesBase.length - 1];
+    
+    // Agregar la duración del último slot para obtener el fin real
+    const [ultimaHora, ultimoMinuto] = horaFinLaboral.split(':').map(Number);
+    const finRealMinutos = ultimaHora * 60 + ultimoMinuto + 15; // 15 min del último slot base
+    const finRealHoras = Math.floor(finRealMinutos / 60);
+    const finRealMins = finRealMinutos % 60;
+    const horaFinReal = `${finRealHoras.toString().padStart(2, '0')}:${finRealMins.toString().padStart(2, '0')}`;
 
-    // 2. Filtrar eventos ocupados para esta fecha y responsable
+    console.log(`⏰ Rango laboral: ${horaInicioLaboral} - ${horaFinReal}`);
+
+    // 3. Generar slots basados en la duración del servicio actual
+    const slotsBasadosEnServicio = generarSlotsParaServicio(horaInicioLaboral, horaFinReal, duracionMinutos);
+
+    // 4. Filtrar eventos ocupados para esta fecha y responsable
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
     const eventosOcupados = eventos.filter(evento => {
       const esConfirmado = evento.Estado === 'Confirmado';
@@ -303,17 +338,17 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     console.log('📋 Turnos ocupados en esta fecha:', eventosOcupados);
 
-    // 3. Generar slots cada 15 minutos dentro del rango laboral y verificar disponibilidad
+    // 5. Verificar disponibilidad de cada slot
     const slotsDisponibles = [];
     
-    for (const slot of horariosLaboralesCompletos) {
+    for (const slot of slotsBasadosEnServicio) {
       // Verificar si ya pasó la hora (solo para hoy)
       if (yaEsHoraPasada(slot, fechaSeleccionada)) {
         console.log(`⏰ Slot ${slot} ya pasó`);
         continue;
       }
 
-      // Verificar si este slot + duración del servicio se superpone con algún turno ocupado
+      // Verificar si este slot se superpone con algún turno ocupado
       const estaOcupado = verificarSlotOcupado(slot, duracionMinutos, eventosOcupados);
       
       if (!estaOcupado) {
