@@ -43,6 +43,7 @@ const CancelTurno = () => {
     setCargando(true);
     
     try {
+      // MODIFICADO: Usar FormData consistentemente
       const formData = new URLSearchParams();
       formData.append('action', 'cancelarTurno');
       formData.append('apiKey', API_SECRET_KEY);

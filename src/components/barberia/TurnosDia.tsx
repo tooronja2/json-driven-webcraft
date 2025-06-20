@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -191,20 +189,20 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     try {
       console.log('🔄 Cancelando turno:', turnoId);
       
-      const requestBodyJSON = {
-        action: 'cancelarTurno',
-        id: turnoId,
-        apiKey: API_SECRET_KEY
-      };
+      // MODIFICADO: Usar FormData en lugar de JSON para mejor compatibilidad con CORS
+      const formData = new URLSearchParams();
+      formData.append('action', 'cancelarTurno');
+      formData.append('apiKey', API_SECRET_KEY);
+      formData.append('eventId', turnoId);
 
-      console.log('📤 Request body JSON:', requestBodyJSON);
+      console.log('📤 Request body FormData:', formData.toString());
 
       const response = await realizarFetchConReintentos(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
+          'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: JSON.stringify(requestBodyJSON)
+        body: formData
       });
 
       const result = await response.json();

@@ -17,6 +17,11 @@ self.addEventListener('install', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // MODIFICADO: NO interceptar requests a Google Apps Script
+  if (event.request.url.includes('script.google.com')) {
+    return; // Dejar que el browser maneje estas requests directamente
+  }
+  
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
