@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { CheckCheck, ChevronsUpDown, UserRoundCheck, UserRoundX } from 'lucide-react';
@@ -45,19 +46,43 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [error, setError] = useState('');
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [mostrarAgregarTurno, setMostrarAgregarTurno] = useState(false);
-  const [customErrorMessage, setCustomErrorMessage] = useState('');
-  const [forceError, setForceError] = useState(false);
 
   const obtenerTurnos = async () => {
     setCargando(true);
     setError('');
     try {
-      const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
-      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?fecha=${fechaSeleccionada}&apiKey=${API_SECRET_KEY}`);
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`);
       const data = await response.json();
 
       if (data.success) {
-        setTurnos(data.turnos);
+        // Convertir los datos de Google Sheets al formato que esperamos
+        const turnosConvertidos = data.eventos.map((evento: any) => {
+          // Convertir las fechas de Google Sheets
+          const fechaEvento = new Date(evento.Fecha);
+          const horaInicio = new Date(evento['Hora Inicio']);
+          const horaFin = new Date(evento['Hora Fin']);
+          
+          return {
+            id: evento.ID_Evento,
+            nombre: evento.Nombre_Cliente,
+            email: evento.Email_Cliente,
+            fecha: fechaEvento.toISOString().split('T')[0], // formato YYYY-MM-DD
+            horaInicio: horaInicio.toTimeString().slice(0, 5), // formato HH:MM
+            horaFin: horaFin.toTimeString().slice(0, 5), // formato HH:MM
+            servicio: evento.Titulo_Evento || evento['Servicios incluidos'],
+            valor: evento['Valor del turno'] || 0,
+            responsable: evento.Responsable,
+            estado: evento.Estado,
+            origen: evento.Estado === 'Completado' && evento.Nombre_Cliente === 'Atención directa en local' ? 'manual' : 'reserva',
+            descripcion: evento.Descripcion
+          };
+        });
+
+        // Filtrar por la fecha seleccionada
+        const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
+        const turnosFiltrados = turnosConvertidos.filter((turno: Turno) => turno.fecha === fechaSeleccionada);
+        
+        setTurnos(turnosFiltrados);
       } else {
         setError(data.error || 'Error al cargar los turnos');
       }
@@ -134,7 +159,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   };
 
   const renderEstadisticasAdmin = () => {
-    // Remover el error simulado
     const stats = calcularEstadisticas();
 
     return (
