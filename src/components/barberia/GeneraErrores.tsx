@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,9 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const GeneraErrores: React.FC = () => {
   const [aplicandoCambio, setAplicandoCambio] = useState(false);
-  const [errorEstadisticas, setErrorEstadisticas] = useState(false);
   const [solicitudesEnviadas, setSolicitudesEnviadas] = useState<string[]>([]);
-  const [forceError, setForceError] = useState(false);
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
   const [mostrarAppsScript, setMostrarAppsScript] = useState(false);
@@ -42,35 +41,27 @@ const GeneraErrores: React.FC = () => {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
-  // Función que aplica cambio con error controlado - PERMITE MÚLTIPLES SOLICITUDES
+  // Función que aplica cambio - MODO SEGURO SIN ERRORES
   const aplicarCambioConError = () => {
     if (!mensajeErrorPersonalizado.trim()) return;
 
     setAplicandoCambio(true);
     
-    // Agregar a la lista de solicitudes enviadas (NO resetear las anteriores)
+    // Agregar a la lista de solicitudes enviadas
     setSolicitudesEnviadas(prev => [...prev, mensajeErrorPersonalizado]);
     
-    // Activar error en estadísticas (componente aislado)
-    setErrorEstadisticas(true);
-    setForceError(true); // Forzar error real
     setAplicandoCambio(false);
     
     // Mostrar feedback
     toast({
-      title: "Solicitud enviada",
-      description: `Solicitud #${solicitudesEnviadas.length + 1} enviada. Usa 'Try to Fix' para procesar.`,
+      title: "Solicitud procesada",
+      description: `Solicitud #${solicitudesEnviadas.length + 1} procesada de manera segura.`,
       variant: "default",
     });
-
-    // NO resetear el mensaje para permitir modificaciones rápidas
-    // setMensajeErrorPersonalizado('');
   };
 
   // Función que resetea COMPLETAMENTE el sistema
   const resetearSistema = () => {
-    setErrorEstadisticas(false);
-    setForceError(false);
     setSolicitudesEnviadas([]);
     setMensajeErrorPersonalizado('');
     setImagenesAdjuntas([]);
@@ -78,7 +69,7 @@ const GeneraErrores: React.FC = () => {
     
     toast({
       title: "Sistema reseteado",
-      description: "Todas las solicitudes y errores han sido limpiados",
+      description: "Todas las solicitudes han sido limpiadas",
     });
   };
 
@@ -86,28 +77,6 @@ const GeneraErrores: React.FC = () => {
   const limpiarMensaje = () => {
     setMensajeErrorPersonalizado('');
     setImagenesAdjuntas([]);
-  };
-
-  // Componente de estadísticas que mantiene el error PERSISTENTE
-  const renderEstadisticasAdmin = () => {
-    // TEMPORALMENTE DESHABILITADO PARA MOSTRAR EL APPS SCRIPT
-    if (mostrarAppsScript) {
-      return null; // No generar error cuando se muestra el Apps Script
-    }
-
-    // MANTENER EL ERROR ACTIVO - No resetear automáticamente
-    if (errorEstadisticas && forceError && solicitudesEnviadas.length > 0) {
-      console.log('🔧 MÚLTIPLES SOLICITUDES ACTIVAS:', solicitudesEnviadas.length);
-      console.log('🔧 SOLICITUDES ENVIADAS:', solicitudesEnviadas);
-      console.log('🔧 IMÁGENES ADJUNTAS:', imagenesAdjuntas.length);
-      console.log('🔧 ESTADO: Sistema en modo error persistente para múltiples solicitudes');
-      
-      // Crear un error que contenga TODAS las solicitudes
-      const mensajeCompleto = `MÚLTIPLES SOLICITUDES: ${solicitudesEnviadas.join(' | ')} | Images: ${imagenesAdjuntas.length}`;
-      throw new Error(`CONTROLLED_ERROR: ${mensajeCompleto}`);
-    }
-
-    return null;
   };
 
   const eliminarImagen = (index: number) => {
@@ -430,14 +399,14 @@ function enviarRecordatorios() {
       { htmlBody: html }
     );
   }
-  `.trim();
+}`.trim();
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">🔧 GENERA MÚLTIPLES SOLICITUDES</h2>
-        <p className="text-blue-600 mb-6 font-bold">
-          ✅ MODO MÚLTIPLE: Envía varias solicitudes seguidas sin resetear
+        <h2 className="text-2xl font-bold mb-4">🔧 Apps Script - CORS Actualizado</h2>
+        <p className="text-green-600 mb-6 font-bold">
+          ✅ MODO SEGURO: Sistema funcionando sin errores
         </p>
       </div>
 
@@ -528,20 +497,17 @@ function enviarRecordatorios() {
         </CardContent>
       </Card>
 
-      {/* Renderizar estadísticas que pueden fallar */}
-      {renderEstadisticasAdmin()}
-
       <Card className="hover:shadow-md transition-shadow border-l-4 border-l-blue-500 bg-blue-50">
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-lg">
             <Bug className="h-5 w-5 text-blue-600" />
-            🔧 SOLICITUDES MÚLTIPLES
-            <span className="text-sm bg-blue-600 text-white px-2 py-1 rounded">PERSISTENTE</span>
+            🔧 SOLICITUDES SEGURAS
+            <span className="text-sm bg-green-600 text-white px-2 py-1 rounded">FUNCIONANDO</span>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-gray-600 text-sm font-bold">
-            Envía múltiples solicitudes sin resetear. El sistema mantiene el error activo.
+            Sistema funcionando de manera segura sin errores que rompan la aplicación.
           </p>
           
           <div className="space-y-2">
@@ -567,7 +533,7 @@ function enviarRecordatorios() {
                 disabled={aplicandoCambio}
               >
                 <Zap className="h-3 w-3 mr-1" />
-                {aplicandoCambio ? 'Enviando...' : 'Enviar Solicitud'}
+                {aplicandoCambio ? 'Procesando...' : 'Procesar Solicitud'}
               </Button>
               <Button
                 onClick={() => setMostrarAppsScript(!mostrarAppsScript)}
@@ -589,7 +555,7 @@ function enviarRecordatorios() {
                 size="sm"
                 className="bg-red-600 hover:bg-red-700"
               >
-                Reset Total
+                Reset
               </Button>
             </div>
             
@@ -597,7 +563,7 @@ function enviarRecordatorios() {
             {solicitudesEnviadas.length > 0 && (
               <div className="mt-4 p-3 bg-blue-100 rounded border border-blue-300">
                 <p className="text-sm font-semibold text-blue-800 mb-2">
-                  📋 Solicitudes enviadas ({solicitudesEnviadas.length}):
+                  📋 Solicitudes procesadas ({solicitudesEnviadas.length}):
                 </p>
                 <div className="space-y-1">
                   {solicitudesEnviadas.map((solicitud, index) => (
@@ -606,17 +572,12 @@ function enviarRecordatorios() {
                     </div>
                   ))}
                 </div>
-                {errorEstadisticas && forceError && (
-                  <div className="text-green-600 text-sm font-semibold mt-2">
-                    ✅ Error activo - Usa "Try to Fix" para procesar todas las solicitudes
-                  </div>
-                )}
               </div>
             )}
           </div>
           
           <div className="text-xs text-gray-500 bg-blue-100 p-2 rounded border border-blue-300">
-            <strong>✅ MODO MÚLTIPLE:</strong> Las solicitudes se acumulan sin resetear<br/>
+            <strong>✅ MODO SEGURO:</strong> Las solicitudes se procesan sin romper la aplicación<br/>
             <strong>Mensaje actual:</strong> {mensajeErrorPersonalizado || 'Vacío'}<br/>
             <strong>Imágenes:</strong> {imagenesAdjuntas.length}<br/>
             <strong>Total solicitudes:</strong> {solicitudesEnviadas.length}
@@ -626,17 +587,17 @@ function enviarRecordatorios() {
 
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg">🎯 Estado del Sistema Múltiple</CardTitle>
+          <CardTitle className="text-lg">🎯 Estado del Sistema</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div><strong>Página actual:</strong> /gestion</div>
-          <div><strong>Componente:</strong> GeneraErrores (Modo Múltiple)</div>
-          <div><strong>Solicitudes enviadas:</strong> {solicitudesEnviadas.length}</div>
+          <div><strong>Componente:</strong> GeneraErrores (Modo Seguro)</div>
+          <div><strong>Solicitudes procesadas:</strong> {solicitudesEnviadas.length}</div>
           <div><strong>Imágenes listas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
           <div><strong>Mensaje actual:</strong> {mensajeErrorPersonalizado ? 'Configurado' : 'Vacío'}</div>
-          <div><strong>Estado:</strong> {errorEstadisticas && forceError ? 'Error Activo (Persistente)' : 'Listo'}</div>
-          <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded mt-2">
-            ✅ <strong>SISTEMA MÚLTIPLE:</strong> Permite enviar varias solicitudes sin resetear automáticamente.
+          <div><strong>Estado:</strong> Funcionando correctamente</div>
+          <div className="text-xs text-green-600 bg-green-50 p-2 rounded mt-2">
+            ✅ <strong>SISTEMA SEGURO:</strong> No lanza errores que rompan la aplicación.
           </div>
         </CardContent>
       </Card>
