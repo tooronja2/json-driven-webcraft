@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -228,7 +227,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     return false; // Para días futuros, ninguna hora ha pasado
   };
 
-  // Filtrado de horarios MEJORADO considerando duraciones reales y TODOS LOS ESTADOS
+  // Filtrado de horarios MEJORADO considerando duraciones reales y TODOS LOS ESTADOS ACTIVOS
   useEffect(() => {
     if (!fechaSeleccionada) {
       setHorasDisponibles([]);
@@ -251,18 +250,19 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     console.log('⏰ Horarios laborales base:', horariosLaborales);
 
-    // 2. Filtrar eventos ocupados para esta fecha y responsable (TODOS LOS ESTADOS ACTIVOS)
+    // 2. Filtrar eventos ocupados para esta fecha y responsable (TODOS LOS ESTADOS QUE OCUPAN HORARIO)
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
     const eventosRelevantes = eventos.filter(evento => {
-      // INCLUIR TODOS LOS ESTADOS EXCEPTO CANCELADO
-      const esEstadoActivo = evento.Estado !== 'Cancelado';
+      // INCLUIR TODOS LOS ESTADOS QUE OCUPAN HORARIO: Confirmado, Completado, En proceso, etc.
+      // SOLO EXCLUIR: Cancelado
+      const esEstadoQueOcupa = evento.Estado !== 'Cancelado';
       const esDelResponsable = evento.Responsable === responsable;
       const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
       
-      const esRelevante = esEstadoActivo && esDelResponsable && esMismaFecha;
+      const esRelevante = esEstadoQueOcupa && esDelResponsable && esMismaFecha;
       
       if (esRelevante) {
-        console.log('📍 Evento relevante encontrado:', {
+        console.log('📍 Evento que OCUPA horario encontrado:', {
           nombre: evento.Nombre_Cliente,
           estado: evento.Estado,
           fecha: evento.Fecha,
@@ -275,8 +275,8 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       return esRelevante;
     });
 
-    console.log('✅ Eventos ocupados relevantes:', eventosRelevantes.length);
-    console.log('📋 Detalle de eventos ocupados:', eventosRelevantes);
+    console.log('✅ Eventos que ocupan horario:', eventosRelevantes.length);
+    console.log('📋 Detalle de eventos que ocupan horario:', eventosRelevantes);
 
     // 3. NUEVA LÓGICA: Verificar solapamientos considerando duraciones reales
     const disponibles = horariosLaborales.filter(hora => {
@@ -300,7 +300,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         const solapamiento = verificarSolapamiento(hora, duracionMinutos, horaInicioExistente, horaFinExistente);
         
         if (solapamiento) {
-          console.log(`❌ CONFLICTO detectado: Nueva cita ${hora} (${duracionMinutos}min) vs Existente ${horaInicioExistente}-${horaFinExistente} (${evento.Nombre_Cliente})`);
+          console.log(`❌ CONFLICTO detectado: Nueva cita ${hora} (${duracionMinutos}min) vs Existente ${horaInicioExistente}-${horaFinExistente} (${evento.Nombre_Cliente} - ${evento.Estado})`);
         }
         
         return solapamiento;
@@ -312,7 +312,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       return disponible;
     });
     
-    console.log('✅ === HORARIOS FINALES DISPONIBLES (CON DURACIONES) ===:', disponibles);
+    console.log('✅ === HORARIOS FINALES DISPONIBLES (INCLUYENDO COMPLETADOS) ===:', disponibles);
     console.log('🔍 === FIN FILTRADO DE HORARIOS ===');
     
     setHorasDisponibles(disponibles);
