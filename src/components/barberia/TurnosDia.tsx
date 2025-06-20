@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/ui/calendar';
@@ -252,13 +251,14 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
 
+    // CORREGIDO: Solo contar reservados (no completados)
     const reservados = turnosDelDia.filter(t => t.estado === 'Reservado').length;
     const completados = turnosDelDia.filter(t => t.estado === 'Completado').length;
     const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
 
-    // Los ingresos del día se calculan solo con turnos RESERVADOS
+    // CORREGIDO: Los ingresos del día se calculan con turnos RESERVADOS y CONFIRMADOS
     const totalIngresosDia = turnosDelDia
-      .filter(t => t.estado === 'Reservado')
+      .filter(t => t.estado === 'Reservado' || t.estado === 'Confirmado')
       .reduce((sum, t) => sum + (t.valor || 0), 0);
 
     return {
@@ -284,12 +284,12 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           </CardContent>
         </Card>
         
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-gray-50 border-gray-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-green-800">Completados</CardTitle>
+            <CardTitle className="text-sm text-gray-800">Completados</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">{stats.completados}</p>
+            <p className="text-2xl font-bold text-gray-600">{stats.completados}</p>
           </CardContent>
         </Card>
         
@@ -381,13 +381,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
               />
             </PopoverContent>
           </Popover>
-          
-          <Button 
-            onClick={() => setMostrarAgregarTurno(true)}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            + Turno
-          </Button>
         </div>
       </div>
 

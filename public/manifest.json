@@ -2,13 +2,15 @@
 {
   "name": "Barbería Estilo - Gestión",
   "short_name": "Barbería Gestión",
-  "description": "Sistema de gestión para Barbería Estilo",
+  "description": "Sistema de gestión interno PWA para empleados de Barbería Estilo",
   "start_url": "/gestion",
   "display": "standalone",
   "background_color": "#f9fafb",
   "theme_color": "#1f2937",
-  "orientation": "portrait",
+  "orientation": "portrait-primary",
   "scope": "/",
+  "id": "/gestion",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",
@@ -21,10 +23,26 @@
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",
+      "sizes": "96x96",
+      "type": "image/png"
+    },
+    {
+      "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",
+      "sizes": "144x144",
+      "type": "image/png"
+    },
+    {
+      "src": "/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png",
+      "sizes": "256x256",
+      "type": "image/png"
     }
   ],
   "categories": ["business", "productivity"],
   "lang": "es",
+  "dir": "ltr",
   "shortcuts": [
     {
       "name": "Ver Turnos",

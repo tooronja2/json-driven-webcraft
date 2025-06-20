@@ -1,40 +1,81 @@
 
 <!doctype html>
-<html lang="en">
+<html lang="es">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     <title>Barbería Estilo</title>
     
     <!-- PWA Meta Tags -->
     <link rel="manifest" href="/manifest.json" />
     <meta name="theme-color" content="#1f2937" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Barbería Gestión" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    
+    <!-- Apple Touch Icons -->
     <link rel="apple-touch-icon" href="/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png" />
+    <link rel="apple-touch-icon" sizes="152x152" href="/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png" />
+    <link rel="apple-touch-icon" sizes="167x167" href="/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png" />
+    
+    <!-- Splash screens for iOS -->
+    <meta name="apple-mobile-web-app-title" content="Barbería Gestión">
+    <link rel="apple-touch-startup-image" href="/lovable-uploads/b7d8c7e7-9a7f-490f-a88f-8529bede7dea.png">
     
     <!-- Meta Tags para SEO -->
-    <meta name="description" content="Barbería Estilo - Servicios profesionales de corte y barba" />
-    <meta name="keywords" content="barbería, corte de pelo, barba, estilo, grooming" />
+    <meta name="description" content="Barbería Estilo - Sistema de gestión interno PWA para empleados" />
+    <meta name="keywords" content="barbería, gestión, turnos, PWA, empleados" />
+    
+    <!-- Prevent zoom on iOS -->
+    <meta name="format-detection" content="telephone=no" />
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
     
-    <!-- Service Worker Registration -->
+    <!-- Service Worker Registration Mejorado -->
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js')
             .then((registration) => {
-              console.log('SW registered: ', registration);
+              console.log('✅ SW registered successfully:', registration);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                console.log('🔄 SW update found');
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    console.log('🆕 New SW installed, ready to activate');
+                    // Optionally notify user about update
+                  }
+                });
+              });
             })
-            .catch((registrationError) => {
-              console.log('SW registration failed: ', registrationError);
+            .catch((error) => {
+              console.error('❌ SW registration failed:', error);
             });
+            
+          // Handle PWA install prompt
+          let deferredPrompt;
+          window.addEventListener('beforeinstallprompt', (e) => {
+            console.log('💾 PWA install prompt available');
+            deferredPrompt = e;
+            // You can show a custom install button here
+          });
+          
+          // Handle successful PWA installation
+          window.addEventListener('appinstalled', (e) => {
+            console.log('✅ PWA installed successfully');
+            deferredPrompt = null;
+          });
         });
+      } else {
+        console.warn('⚠️ Service Worker not supported');
       }
     </script>
   </body>
