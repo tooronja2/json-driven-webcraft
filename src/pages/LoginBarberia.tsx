@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -8,7 +9,7 @@ interface LoginBarberiaProps {
   onLogin: (usuario: string, rol: string, permisos: string[]) => void;
 }
 
-// Usuario admin principal (mantener como fallback)
+// Usuario admin principal (mantener como fallback de emergencia)
 const ADMIN_USER = {
   usuario: 'tomasradeljakadmin',
   password: 'tr4d3lJaK4Dm1N',
@@ -58,20 +59,16 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
     }
   };
 
-  const obtenerUsuarios = () => {
-    const usuariosGuardados = localStorage.getItem('barberia_usuarios');
-    return usuariosGuardados ? JSON.parse(usuariosGuardados) : [];
-  };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setCargando(true);
     setError('');
 
-    console.log('Intentando login con:', { usuario, password });
+    console.log('🔐 Intentando login con:', { usuario: usuario, password: '***' });
     
-    // 1. Verificar admin principal (fallback)
+    // 1. Verificar admin principal (fallback de emergencia)
     if (usuario === ADMIN_USER.usuario && password === ADMIN_USER.password) {
+      console.log('✅ Login exitoso como admin principal');
       localStorage.setItem('barberia_usuario', ADMIN_USER.nombre);
       localStorage.setItem('barberia_rol', ADMIN_USER.rol);
       localStorage.setItem('barberia_permisos', JSON.stringify(ADMIN_USER.permisos));
@@ -80,35 +77,20 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
       return;
     }
 
-    // 2. Validar en Google Sheets (método principal)
+    // 2. Validar en Google Sheets (método principal y único)
     const validacionGoogleSheets = await validarUsuarioEnGoogleSheets(usuario, password);
     
     if (validacionGoogleSheets.valido && validacionGoogleSheets.usuario) {
       const usuarioValidado = validacionGoogleSheets.usuario;
+      console.log('✅ Login exitoso desde Google Sheets:', usuarioValidado.nombre);
+      
       localStorage.setItem('barberia_usuario', usuarioValidado.nombre);
       localStorage.setItem('barberia_rol', usuarioValidado.rol);
       localStorage.setItem('barberia_permisos', JSON.stringify(usuarioValidado.permisos));
       localStorage.setItem('barberia_barbero_asignado', usuarioValidado.barberoAsignado || '');
       onLogin(usuarioValidado.nombre, usuarioValidado.rol, usuarioValidado.permisos);
-      setCargando(false);
-      return;
-    }
-
-    // 3. Fallback: verificar usuarios locales (solo para compatibilidad)
-    const usuarios = obtenerUsuarios();
-    console.log('Verificando usuarios locales como fallback...');
-    
-    const usuarioEncontrado = usuarios.find(
-      (u: any) => u.usuario === usuario && u.password === password
-    );
-
-    if (usuarioEncontrado) {
-      localStorage.setItem('barberia_usuario', usuarioEncontrado.nombre);
-      localStorage.setItem('barberia_rol', usuarioEncontrado.rol);
-      localStorage.setItem('barberia_permisos', JSON.stringify(usuarioEncontrado.permisos));
-      localStorage.setItem('barberia_barbero_asignado', usuarioEncontrado.barberoAsignado || '');
-      onLogin(usuarioEncontrado.nombre, usuarioEncontrado.rol, usuarioEncontrado.permisos);
     } else {
+      console.log('❌ Login fallido:', validacionGoogleSheets.error);
       setError(validacionGoogleSheets.error || 'Usuario o contraseña incorrectos');
     }
     
@@ -164,7 +146,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
           </form>
           
           <div className="mt-4 text-xs text-center text-gray-500">
-            Los usuarios se validan de forma segura desde Google Sheets
+            🔒 Autenticación segura vía Google Sheets
           </div>
         </CardContent>
       </Card>
