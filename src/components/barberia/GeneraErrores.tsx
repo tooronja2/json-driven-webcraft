@@ -15,111 +15,155 @@ const GeneraErrores: React.FC = () => {
 
   const erroresPosibles = [
     {
-      id: 'console-warning',
-      nombre: 'Warning de Consola',
-      descripcion: 'Genera un warning controlado en consola',
+      id: 'undefined-variable',
+      nombre: 'Variable Undefined',
+      descripcion: 'Genera error de variable no definida',
       icon: Bug,
-      color: 'text-orange-500',
-      instruccionDefault: 'Hay un warning en consola que necesita atención. Revisa el componente y optimiza el código para eliminar este warning.',
+      color: 'text-red-500',
+      instruccionDefault: 'Hay una variable que no está definida y está causando un error en el componente.',
       accion: (instruccion: string) => {
-        console.warn('LOVABLE_AI_WARNING:', {
-          error: 'React component optimization needed',
-          ubicacion: 'GeneraErrores.tsx:42',
-          descripcion: 'Warning de optimización detectado',
+        console.error('LOVABLE_AI_ERROR:', {
+          error: 'ReferenceError: variableNoDefinida is not defined',
+          ubicacion: 'GeneraErrores.tsx:32',
+          descripcion: 'Variable no definida',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
           timestamp: new Date().toISOString()
         });
+        
+        // Esto va a generar un error real
+        setTimeout(() => {
+          // @ts-ignore - Forzamos el error
+          console.log(variableNoDefinida.propiedad);
+        }, 100);
       }
     },
     {
-      id: 'prop-validation',
-      nombre: 'Error de Props',
-      descripcion: 'Simula error de validación de props',
+      id: 'jsx-error',
+      nombre: 'Error de JSX',
+      descripcion: 'Genera error de renderizado JSX',
       icon: AlertTriangle,
       color: 'text-yellow-600',
-      instruccionDefault: 'Las props del componente no están siendo validadas correctamente. Añade PropTypes o mejora las interfaces TypeScript.',
+      instruccionDefault: 'Hay un problema con el JSX que está causando que el componente no se renderice correctamente.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_AI_PROPS_ERROR:', {
-          error: 'Invalid prop type detected',
-          ubicacion: 'GeneraErrores.tsx:67',
-          descripcion: 'Error de validación de props',
+        console.error('LOVABLE_AI_JSX_ERROR:', {
+          error: 'Error: Cannot read properties of undefined',
+          ubicacion: 'GeneraErrores.tsx:52',
+          descripcion: 'Error de renderizado JSX',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
           timestamp: new Date().toISOString()
         });
+        
+        // Forzamos un error de renderizado
+        setTimeout(() => {
+          const elemento = document.createElement('div');
+          elemento.innerHTML = '<div><span>Unclosed tag';
+          document.body.appendChild(elemento);
+        }, 100);
       }
     },
     {
-      id: 'state-update',
-      nombre: 'State Update Warning',
-      descripcion: 'Warning sobre actualización de estado',
+      id: 'async-error',
+      nombre: 'Error Async/Promise',
+      descripcion: 'Genera error en operación asíncrona',
       icon: Zap,
       color: 'text-blue-600',
-      instruccionDefault: 'Se está intentando actualizar el estado después de que el componente se desmontó. Añade cleanup en useEffect.',
+      instruccionDefault: 'Hay una promesa que está siendo rechazada y no está siendo manejada correctamente.',
       accion: (instruccion: string) => {
-        console.warn('LOVABLE_AI_STATE_WARNING:', {
-          error: 'Cannot update state on unmounted component',
-          ubicacion: 'GeneraErrores.tsx:89',
-          descripcion: 'Warning de actualización de estado',
+        console.error('LOVABLE_AI_ASYNC_ERROR:', {
+          error: 'Unhandled Promise Rejection: Failed to fetch',
+          ubicacion: 'GeneraErrores.tsx:74',
+          descripcion: 'Error en operación asíncrona',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
           timestamp: new Date().toISOString()
         });
+        
+        // Generamos un error de promesa no manejada
+        setTimeout(() => {
+          new Promise((_, reject) => {
+            reject(new Error('Operación asíncrona falló'));
+          });
+        }, 100);
       }
     },
     {
-      id: 'accessibility',
-      nombre: 'Warning de Accesibilidad',
-      descripcion: 'Problema de accesibilidad detectado',
+      id: 'type-error',
+      nombre: 'TypeError',
+      descripcion: 'Genera error de tipo de dato',
       icon: Network,
       color: 'text-purple-600',
-      instruccionDefault: 'Faltan atributos de accesibilidad. Añade aria-labels, alt text y mejora la navegación por teclado.',
+      instruccionDefault: 'Se está intentando acceder a una propiedad de un valor null o undefined.',
       accion: (instruccion: string) => {
-        console.warn('LOVABLE_AI_A11Y_WARNING:', {
-          error: 'Accessibility issues detected',
-          ubicacion: 'GeneraErrores.tsx:125',
-          descripcion: 'Warning de accesibilidad',
+        console.error('LOVABLE_AI_TYPE_ERROR:', {
+          error: 'TypeError: Cannot read properties of null',
+          ubicacion: 'GeneraErrores.tsx:96',
+          descripcion: 'Error de tipo de dato',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
           timestamp: new Date().toISOString()
         });
+        
+        // Generamos un TypeError real
+        setTimeout(() => {
+          const objetoNulo = null;
+          // @ts-ignore - Forzamos el error
+          console.log(objetoNulo.propiedad.valor);
+        }, 100);
       }
     },
     {
-      id: 'performance',
-      nombre: 'Warning de Performance',
-      descripcion: 'Problema de rendimiento detectado',
+      id: 'syntax-error',
+      nombre: 'Error de Sintaxis',
+      descripcion: 'Simula error de sintaxis en runtime',
       icon: Clock,
       color: 'text-red-500',
-      instruccionDefault: 'El componente se está re-renderizando innecesariamente. Optimiza con React.memo o useMemo.',
+      instruccionDefault: 'Hay un error de sintaxis en el código JavaScript que está siendo evaluado dinámicamente.',
       accion: (instruccion: string) => {
-        console.warn('LOVABLE_AI_PERFORMANCE_WARNING:', {
-          error: 'Unnecessary re-renders detected',
-          ubicacion: 'GeneraErrores.tsx:151',
-          descripcion: 'Warning de performance',
+        console.error('LOVABLE_AI_SYNTAX_ERROR:', {
+          error: 'SyntaxError: Unexpected token',
+          ubicacion: 'GeneraErrores.tsx:118',
+          descripcion: 'Error de sintaxis',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
           timestamp: new Date().toISOString()
         });
+        
+        // Generamos un error de sintaxis
+        setTimeout(() => {
+          try {
+            eval('const x = {');
+          } catch (e) {
+            throw new Error('Error de sintaxis detectado: ' + e);
+          }
+        }, 100);
       }
     },
     {
-      id: 'css-issue',
-      nombre: 'Problema de CSS',
-      descripcion: 'Warning de estilos CSS',
+      id: 'network-error',
+      nombre: 'Error de Red',
+      descripcion: 'Genera error de conexión/fetch',
       icon: Database,
       color: 'text-gray-600',
-      instruccionDefault: 'Hay conflictos en los estilos CSS. Revisa las clases Tailwind y corrige los conflictos de especificidad.',
+      instruccionDefault: 'Hay un problema con una petición de red que está fallando y necesita ser manejada.',
       accion: (instruccion: string) => {
-        console.warn('LOVABLE_AI_CSS_WARNING:', {
-          error: 'CSS styling conflicts detected',
-          ubicacion: 'GeneraErrores.tsx:177',
-          descripcion: 'Warning de CSS',
+        console.error('LOVABLE_AI_NETWORK_ERROR:', {
+          error: 'NetworkError: Failed to fetch from invalid URL',
+          ubicacion: 'GeneraErrores.tsx:140',
+          descripcion: 'Error de red/fetch',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length > 0 ? `${imagenesAdjuntas.length} imagen(es) adjunta(s)` : 'ninguno',
           timestamp: new Date().toISOString()
         });
+        
+        // Generamos un error de red
+        setTimeout(() => {
+          fetch('https://url-que-no-existe-para-generar-error.invalid')
+            .catch(error => {
+              throw new Error('Error de conexión: ' + error.message);
+            });
+        }, 100);
       }
     }
   ];
@@ -159,13 +203,14 @@ const GeneraErrores: React.FC = () => {
     
     try {
       error.accion(instruccionPersonalizada);
-      console.info('ERROR_GENERADO_EXITOSAMENTE:', {
+      console.info('ERROR_REAL_GENERADO:', {
         tipo: error.nombre,
         instruccion_enviada: instruccionPersonalizada,
-        imagenes_count: imagenesAdjuntas.length
+        imagenes_count: imagenesAdjuntas.length,
+        nota: 'Este error debería activar el Try to Fix de Lovable AI automáticamente'
       });
     } catch (err) {
-      console.error('Error al generar warning:', err);
+      console.error('Error al generar error real:', err);
     }
     
     setCargando(false);
@@ -191,9 +236,9 @@ const GeneraErrores: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">Genera Errores Controlados - Testing Lovable AI</h2>
+        <h2 className="text-2xl font-bold mb-4">Genera Errores REALES - Activa "Try to Fix"</h2>
         <p className="text-gray-600 mb-6">
-          Genera warnings y errores controlados con instrucciones personalizadas para testing del sistema "Try to Fix" de Lovable AI.
+          Genera errores reales que rompen la aplicación para activar automáticamente el "Try to Fix" de Lovable AI.
         </p>
       </div>
 
@@ -246,20 +291,20 @@ const GeneraErrores: React.FC = () => {
       </Card>
 
       {errorActivo && (
-        <Alert className="border-orange-200 bg-orange-50">
-          <AlertTriangle className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-800">
+        <Alert className="border-red-200 bg-red-50">
+          <AlertTriangle className="h-4 w-4 text-red-600" />
+          <AlertDescription className="text-red-800">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <strong>Warning/Error generado:</strong> {erroresPosibles.find(e => e.id === errorActivo)?.nombre}
+                <strong>Error REAL generado:</strong> {erroresPosibles.find(e => e.id === errorActivo)?.nombre}
                 <br />
-                <span className="text-sm">Revisa la consola del navegador - Lovable AI debería detectar automáticamente el problema</span>
+                <span className="text-sm">Lovable AI debería mostrar automáticamente el botón "Try to Fix"</span>
               </div>
               <Button 
                 onClick={limpiarTodo}
                 variant="outline" 
                 size="sm"
-                className="ml-4 text-orange-600 border-orange-300 hover:bg-orange-100"
+                className="ml-4 text-red-600 border-red-300 hover:bg-red-100"
               >
                 Limpiar Todo
               </Button>
@@ -318,12 +363,12 @@ const GeneraErrores: React.FC = () => {
           <CardTitle className="text-lg">Estado del Sistema</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
-          <div><strong>Modo:</strong> Errores controlados y seguros</div>
+          <div><strong>Modo:</strong> Errores REALES que activan Try to Fix</div>
           <div><strong>Imágenes adjuntas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
           <div><strong>Instrucciones personalizadas:</strong> {Object.keys(instruccionesPersonalizadas).length} configurada(s)</div>
           <div><strong>Timestamp:</strong> {new Date().toLocaleString('es-AR')}</div>
-          <div><strong>Estado:</strong> {errorActivo ? `Warning ${errorActivo} enviado` : 'Listo para generar warnings'}</div>
-          <div><strong>Detección Lovable:</strong> Los warnings aparecen en consola y activan "Try to Fix"</div>
+          <div><strong>Estado:</strong> {errorActivo ? `Error ${errorActivo} generado` : 'Listo para generar errores reales'}</div>
+          <div><strong>Detección Lovable:</strong> Errores reales que activan "Try to Fix" automáticamente</div>
         </CardContent>
       </Card>
     </div>
