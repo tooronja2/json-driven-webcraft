@@ -78,7 +78,7 @@ interface BusinessContextType {
 
 const BusinessContext = createContext<BusinessContextType | undefined>(undefined);
 
-export const BusinessProvider = ({ children }: { children: ReactNode }) => {
+export const BusinessProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [config, setConfig] = useState<ConfigGeneral | null>(null);
   const [contenido, setContenido] = useState<ContenidoItem[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
