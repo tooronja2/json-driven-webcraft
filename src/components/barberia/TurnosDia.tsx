@@ -75,8 +75,11 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             horaFin = new Date();
           }
           
-          // Mapear estados: Confirmado desde la web -> Reservado
+          // NUEVA LÓGICA: Las reservas de la web deben aparecer como "Reservado"
+          // Solo las que se confirman desde el panel aparecen como "Confirmado"
           let estadoMapeado = evento.Estado;
+          
+          // Si viene "Confirmado" pero no es desde el panel, es una reserva web -> "Reservado"
           if (evento.Estado === 'Confirmado' && !evento.origen_panel) {
             estadoMapeado = 'Reservado';
           }
@@ -157,8 +160,8 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
 
     const reservados = turnosDelDia.filter(t => t.estado === 'Reservado').length;
-    const completadosConReserva = turnosDelDia.filter(t => t.estado === 'Completado' && t.origen === 'reserva').length;
-    const completadosSinReserva = turnosDelDia.filter(t => t.estado === 'Completado' && t.origen === 'manual').length;
+    const confirmados = turnosDelDia.filter(t => t.estado === 'Confirmado').length;
+    const completados = turnosDelDia.filter(t => t.estado === 'Completado').length;
     const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
 
     const totalIngresosDia = turnosDelDia
@@ -168,8 +171,8 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     return {
       totalTurnos: turnosDelDia.length,
       reservados,
-      completadosConReserva,
-      completadosSinReserva,
+      confirmados,
+      completados,
       cancelados,
       ingresosDia: totalIngresosDia
     };
@@ -182,46 +185,46 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
         <Card className="bg-blue-50 border-blue-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-blue-800">Turnos Reservados</CardTitle>
+            <CardTitle className="text-sm text-blue-800">Reservados</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-blue-600">{stats.reservados}</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-green-50 border-green-200">
+        <Card className="bg-yellow-50 border-yellow-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-green-800">Completados c/Reserva</CardTitle>
+            <CardTitle className="text-sm text-yellow-800">Confirmados</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-green-600">{stats.completadosConReserva}</p>
+            <p className="text-2xl font-bold text-yellow-600">{stats.confirmados}</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-purple-50 border-purple-200">
+        <Card className="bg-green-50 border-green-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-purple-800">Completados s/Reserva</CardTitle>
+            <CardTitle className="text-sm text-green-800">Completados</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-purple-600">{stats.completadosSinReserva}</p>
+            <p className="text-2xl font-bold text-green-600">{stats.completados}</p>
           </CardContent>
         </Card>
         
         <Card className="bg-red-50 border-red-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-red-800">Turnos Cancelados</CardTitle>
+            <CardTitle className="text-sm text-red-800">Cancelados</CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold text-red-600">{stats.cancelados}</p>
           </CardContent>
         </Card>
         
-        <Card className="bg-yellow-50 border-yellow-200">
+        <Card className="bg-purple-50 border-purple-200">
           <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-yellow-800">Total Turnos</CardTitle>
+            <CardTitle className="text-sm text-purple-800">Total Turnos</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-2xl font-bold text-yellow-600">{stats.totalTurnos}</p>
+            <p className="text-2xl font-bold text-purple-600">{stats.totalTurnos}</p>
           </CardContent>
         </Card>
         
@@ -242,12 +245,12 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     
     if (estado === 'Reservado') {
       return `${baseClasses} bg-blue-100 text-blue-800`;
+    } else if (estado === 'Confirmado') {
+      return `${baseClasses} bg-yellow-100 text-yellow-800`;
     } else if (estado === 'Completado') {
       return `${baseClasses} bg-green-100 text-green-800`;
     } else if (estado === 'Cancelado') {
       return `${baseClasses} bg-red-100 text-red-800`;
-    } else if (estado === 'Confirmado') {
-      return `${baseClasses} bg-yellow-100 text-yellow-800`;
     }
     return `${baseClasses} bg-gray-100 text-gray-800`;
   };
@@ -286,22 +289,21 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-2xl font-bold">Turnos del Día</h2>
-        <div className="flex gap-2 relative">
+        <div className="flex gap-2">
           <Popover>
             <PopoverTrigger asChild>
               <Button variant="outline" className="justify-start text-left font-normal">
-                <Calendar className="mr-2 h-4 w-4" />
-                {date ? format(date, 'PPP', { locale: es }) : <span>Seleccionar fecha</span>}
+                📅 {date ? format(date, 'PPP', { locale: es }) : <span>Seleccionar fecha</span>}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-auto p-0 z-50 bg-white shadow-lg border" align="start">
+            <PopoverContent className="w-auto p-0 z-[9999] bg-white shadow-lg border rounded-md" align="end">
               <Calendar
                 mode="single"
                 locale={es}
                 selected={date}
                 onSelect={setDate}
                 initialFocus
-                className="pointer-events-auto"
+                className="rounded-md"
               />
             </PopoverContent>
           </Popover>
@@ -322,86 +324,77 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-[120px]">Hora</TableHead>
-                  <TableHead>Cliente</TableHead>
-                  <TableHead>Servicio</TableHead>
-                  <TableHead>Barbero</TableHead>
-                  <TableHead>Estado</TableHead>
-                  <TableHead className="text-right">Acciones</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {turnos.map((turno) => (
-                  <TableRow key={turno.id}>
-                    <TableCell className="font-mono">
-                      {turno.horaInicio} - {turno.horaFin}
-                    </TableCell>
-                    <TableCell>
-                      <div>
-                        <div className="font-medium">{turno.nombre}</div>
-                        <div className="text-sm text-gray-500">${turno.valor.toLocaleString()}</div>
-                      </div>
-                    </TableCell>
-                    <TableCell>{turno.servicio}</TableCell>
-                    <TableCell>{turno.responsable}</TableCell>
-                    <TableCell>
-                      <span className={getEstadoBadge(turno.estado)}>
-                        {turno.estado}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        {turno.estado === 'Reservado' && (
-                          <>
-                            <Button
-                              onClick={() => confirmarTurno(turno.id)}
-                              size="sm"
-                              className="bg-yellow-600 hover:bg-yellow-700 text-white"
-                            >
-                              Confirmar
-                            </Button>
-                            <Button
-                              onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 border-red-600 hover:bg-red-50"
-                            >
-                              Cancelar
-                            </Button>
-                          </>
-                        )}
-                        {turno.estado === 'Confirmado' && (
-                          <>
-                            <Button
-                              onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
-                              size="sm"
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              Completar
-                            </Button>
-                            <Button
-                              onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
-                              size="sm"
-                              variant="outline"
-                              className="text-red-600 border-red-600 hover:bg-red-50"
-                            >
-                              Cancelar
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="space-y-4">
+          {turnos.map((turno) => (
+            <Card key={turno.id} className="p-4">
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 flex-1">
+                  <div>
+                    <p className="text-sm text-gray-500">Hora</p>
+                    <p className="font-mono text-lg">{turno.horaInicio} - {turno.horaFin}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Cliente</p>
+                    <p className="font-medium">{turno.nombre}</p>
+                    <p className="text-sm text-green-600 font-medium">${turno.valor.toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Servicio</p>
+                    <p className="font-medium">{turno.servicio}</p>
+                    <p className="text-sm text-gray-600">{turno.responsable}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Estado</p>
+                    <span className={getEstadoBadge(turno.estado)}>
+                      {turno.estado}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2 md:flex-col lg:flex-row">
+                  {turno.estado === 'Reservado' && (
+                    <>
+                      <Button
+                        onClick={() => confirmarTurno(turno.id)}
+                        size="sm"
+                        className="bg-yellow-600 hover:bg-yellow-700 text-white flex-1 md:flex-none"
+                      >
+                        Confirmar
+                      </Button>
+                      <Button
+                        onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-600 hover:bg-red-50 flex-1 md:flex-none"
+                      >
+                        Cancelar
+                      </Button>
+                    </>
+                  )}
+                  {turno.estado === 'Confirmado' && (
+                    <>
+                      <Button
+                        onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none"
+                      >
+                        Completar
+                      </Button>
+                      <Button
+                        onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
+                        size="sm"
+                        variant="outline"
+                        className="text-red-600 border-red-600 hover:bg-red-50 flex-1 md:flex-none"
+                      >
+                        Cancelar
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
 
       {mostrarAgregarTurno && (
