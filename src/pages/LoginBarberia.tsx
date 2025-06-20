@@ -30,60 +30,39 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
         url: GOOGLE_APPS_SCRIPT_URL
       });
       
-      // FORZAR SOLO GET PARA DEBUGGEAR
-      console.log('🔄 Usando GET request para debuggear...');
-      
-      const getUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=validarUsuario&apiKey=${encodeURIComponent(API_SECRET_KEY)}&usuario=${encodeURIComponent(usuario)}&password=${encodeURIComponent(password)}&timestamp=${Date.now()}`;
-      console.log('🔄 URL GET completa:', getUrl.replace(password, '[PASSWORD_OCULTO]'));
-      
-      const getResponse = await fetch(getUrl, {
-        method: 'GET',
+      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
+        method: 'POST',
         headers: {
-          'Accept': 'application/json',
-          'Cache-Control': 'no-cache'
-        }
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          action: 'validarUsuario',
+          apiKey: API_SECRET_KEY,
+          usuario: usuario,
+          password: password,
+          timestamp: Date.now().toString()
+        })
       });
       
-      console.log('📡 Estado de respuesta GET:', getResponse.status);
-      console.log('📡 Headers de respuesta:', Object.fromEntries(getResponse.headers.entries()));
-      
-      const responseText = await getResponse.text();
-      console.log('📄 Respuesta raw (texto):', responseText);
-      
-      let getData;
-      try {
-        getData = JSON.parse(responseText);
-        console.log('📄 Respuesta GET parseada:', getData);
-      } catch (parseError) {
-        console.error('❌ Error al parsear JSON:', parseError);
-        console.log('📄 Contenido que falló al parsear:', responseText);
-        return {
-          valido: false,
-          error: 'Error de formato en respuesta del servidor'
-        };
-      }
+      const data = await response.json();
+      console.log('📄 Respuesta:', data);
 
-      if (getData.success && getData.usuario) {
-        console.log('✅ GET request exitoso - usuario encontrado:', getData.usuario);
+      if (data.success && data.usuario) {
+        console.log('✅ Usuario validado exitosamente:', data.usuario.nombre);
         return {
           valido: true,
-          usuario: getData.usuario
+          usuario: data.usuario
         };
       } else {
-        console.log('❌ GET request falló:', {
-          success: getData.success,
-          error: getData.error,
-          usuario: getData.usuario
-        });
+        console.log('❌ Validación fallida:', data.error);
         return {
           valido: false,
-          error: getData.error || 'Usuario o contraseña incorrectos'
+          error: data.error || 'Usuario o contraseña incorrectos'
         };
       }
 
     } catch (error) {
       console.error('❌ Error de red al validar usuario:', error);
-      console.error('❌ Stack trace:', error.stack);
       return {
         valido: false,
         error: 'Error de conexión al validar usuario: ' + error.message
@@ -165,10 +144,6 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
               {cargando ? 'Validando...' : 'Iniciar Sesión'}
             </Button>
           </form>
-          
-          <div className="mt-4 text-xs text-center text-gray-500">
-            🔍 Modo debug activado - Revisa la consola
-          </div>
         </CardContent>
       </Card>
     </div>

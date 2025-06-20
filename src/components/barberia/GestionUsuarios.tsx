@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -78,17 +79,8 @@ const GestionUsuarios: React.FC<GestionUsuariosProps> = ({ onClose }) => {
     try {
       setCargando(true);
       
-      // SEGURIDAD MEJORADA: Usar POST para operaciones sensibles
-      const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: new URLSearchParams({
-          action: 'getUsuarios',
-          apiKey: API_SECRET_KEY,
-          timestamp: Date.now().toString()
-        })
+      const response = await fetch(`${GOOGLE_APPS_SCRIPT_URL}?action=getUsuarios&apiKey=${API_SECRET_KEY}&timestamp=${Date.now()}`, {
+        method: 'GET'
       });
       
       const data = await response.json();
