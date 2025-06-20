@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,68 +14,113 @@ const GeneraErrores: React.FC = () => {
 
   const erroresRapidos = [
     {
-      id: 'render-error',
-      nombre: 'Error de Renderizado',
-      descripcion: 'Rompe el renderizado del componente actual',
+      id: 'ui-break-error',
+      nombre: '💥 Romper UI de Usuarios',
+      descripcion: 'Rompe visualmente la interfaz de gestión de usuarios',
       icon: Bug,
       color: 'text-red-500',
-      instruccionDefault: 'El componente no se está renderizando correctamente debido a un error de JSX.',
+      instruccionDefault: 'La interfaz de usuarios tiene un problema visual que necesita ser corregido.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_RENDER_ERROR:', {
-          error: 'Cannot read properties of undefined (reading \'map\')',
-          component: 'GeneraErrores',
+        console.error('LOVABLE_UI_BREAK_ERROR:', {
+          error: 'UI component crashed - visual interface broken',
+          component: 'GeneraErrores -> GestionUsuarios UI',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length,
           timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - Tab Genera Errores'
+          ubicacion: '/gestion - Tab Genera Errores',
+          detalles: 'Error forzado para activar Try to Fix de Lovable'
         });
         
-        // Forzar error de renderizado inmediato
-        const datos: any = undefined;
-        return datos.map((item: any) => item.nombre);
+        // Romper el DOM directamente para que Lovable lo detecte
+        const headerElement = document.querySelector('h1');
+        if (headerElement) {
+          headerElement.innerHTML = `<div style="background: red; color: white; padding: 20px; position: fixed; top: 0; left: 0; right: 0; z-index: 9999; font-size: 18px; text-align: center;">
+            🚨 ERROR EJECUTADO: ${instruccion} | Imágenes: ${imagenesAdjuntas.length} | Lovable debe mostrar "Try to Fix" ahora
+          </div>` + headerElement.innerHTML;
+        }
+        
+        // También romper el componente actual
+        throw new Error(`UI_BREAK_FORCED: ${instruccion} - Imágenes adjuntas: ${imagenesAdjuntas.length}`);
       }
     },
     {
-      id: 'state-error', 
-      nombre: 'Error de Estado',
-      descripcion: 'Rompe el estado del componente',
+      id: 'text-corruption-error',
+      nombre: '📝 Corromper Texto de Página',
+      descripcion: 'Corrompe el texto visible de la página actual',
       icon: Zap,
-      color: 'text-yellow-600',
-      instruccionDefault: 'Hay un problema con el manejo del estado que está causando que el componente falle.',
+      color: 'text-orange-500',
+      instruccionDefault: 'El texto de la página se ha corrompido y necesita ser restaurado.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_STATE_ERROR:', {
-          error: 'TypeError: Cannot read properties of null',
-          component: 'GeneraErrores',
+        console.error('LOVABLE_TEXT_CORRUPTION_ERROR:', {
+          error: 'Page text corruption detected',
+          component: 'GeneraErrores -> Page Text',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length,
           timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - Tab Genera Errores'
+          ubicacion: '/gestion - Tab Genera Errores',
+          detalles: 'Texto corrompido intencionalmente'
         });
         
-        // Forzar error de estado
-        const estadoNulo: any = null;
-        throw new Error(`Cannot access property of null state - ${instruccion}`);
+        // Corromper todo el texto visible de la página
+        const allTextElements = document.querySelectorAll('p, h1, h2, h3, h4, h5, h6, span, div, button, label');
+        allTextElements.forEach((element, index) => {
+          if (element.textContent && element.textContent.length > 3 && index % 3 === 0) {
+            element.textContent = `🔥ERROR🔥 ${instruccion} [IMG:${imagenesAdjuntas.length}]`;
+          }
+        });
+        
+        throw new Error(`TEXT_CORRUPTION_FORCED: ${instruccion}`);
       }
     },
     {
-      id: 'hook-error',
-      nombre: 'Error de Hook',
-      descripcion: 'Rompe el uso de hooks de React',
+      id: 'layout-destroyer-error',
+      nombre: '🎨 Destruir Layout',
+      descripcion: 'Destruye completamente el layout de la página',
       icon: Network,
-      color: 'text-blue-600', 
-      instruccionDefault: 'Los hooks de React no se están usando correctamente en este componente.',
+      color: 'text-purple-600',
+      instruccionDefault: 'El layout de la página se ha roto y necesita ser reparado.',
       accion: (instruccion: string) => {
-        console.error('LOVABLE_HOOK_ERROR:', {
-          error: 'Invalid hook call. Hooks can only be called inside function components',
-          component: 'GeneraErrores',
+        console.error('LOVABLE_LAYOUT_DESTROYER_ERROR:', {
+          error: 'Page layout completely destroyed',
+          component: 'GeneraErrores -> Page Layout',
           instruccion_para_ai: instruccion,
           imagenes_adjuntas: imagenesAdjuntas.length,
           timestamp: new Date().toISOString(),
-          ubicacion: '/gestion - Tab Genera Errores'
+          ubicacion: '/gestion - Tab Genera Errores',
+          detalles: 'Layout destruido para forzar detección'
         });
         
-        // Forzar error de hook
-        throw new Error(`Hook error in component - ${instruccion}`);
+        // Destruir completamente el layout
+        const body = document.body;
+        const errorOverlay = document.createElement('div');
+        errorOverlay.innerHTML = `
+          <div style="
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100vw; 
+            height: 100vh; 
+            background: linear-gradient(45deg, red, orange, yellow); 
+            z-index: 999999; 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 24px; 
+            color: white; 
+            text-align: center;
+            font-weight: bold;
+          ">
+            <div>
+              🚨 LAYOUT DESTRUIDO 🚨<br/>
+              Instrucción: ${instruccion}<br/>
+              Imágenes: ${imagenesAdjuntas.length}<br/>
+              <small>Lovable debería mostrar "Try to Fix"</small>
+            </div>
+          </div>
+        `;
+        body.appendChild(errorOverlay);
+        
+        throw new Error(`LAYOUT_DESTROYED: ${instruccion} - Images: ${imagenesAdjuntas.length}`);
       }
     }
   ];
@@ -109,19 +153,22 @@ const GeneraErrores: React.FC = () => {
   const ejecutarErrorRapido = (error: typeof erroresRapidos[0]) => {
     const instruccionPersonalizada = instruccionesPersonalizadas[error.id] || error.instruccionDefault;
     
-    console.info('🚨 EJECUTANDO ERROR REAL EN PÁGINA ACTUAL:', {
+    console.info('🚨 EJECUTANDO ERROR REAL FORZADO:', {
       pagina: '/gestion',
       componente: 'GeneraErrores',
       error_tipo: error.nombre,
       instruccion: instruccionPersonalizada,
       imagenes: imagenesAdjuntas.length,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      mensaje: 'Este error DEBE romper la página y activar Try to Fix'
     });
 
     setErrorActivo(error.id);
     
-    // Ejecutar el error inmediatamente para romper la página
-    error.accion(instruccionPersonalizada);
+    // Pequeño delay para asegurar que el estado se actualice antes del error
+    setTimeout(() => {
+      error.accion(instruccionPersonalizada);
+    }, 100);
   };
 
   const actualizarInstruccion = (errorId: string, nuevaInstruccion: string) => {
@@ -144,9 +191,9 @@ const GeneraErrores: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">🚨 Genera Errores REALES que Rompan la Página</h2>
+        <h2 className="text-2xl font-bold mb-4">🚨 Genera Errores REALES Forzados</h2>
         <p className="text-gray-600 mb-6">
-          Estos botones van a generar errores reales que van a romper la página actual para que Lovable muestre automáticamente "Try to Fix".
+          Estos botones van a ROMPER VISUALMENTE la página actual para forzar que Lovable muestre "Try to Fix" inmediatamente.
         </p>
       </div>
 
@@ -204,24 +251,24 @@ const GeneraErrores: React.FC = () => {
           <AlertDescription className="text-red-800">
             <div className="flex justify-between items-start">
               <div className="flex-1">
-                <strong>🚨 ERROR REAL EJECUTADO:</strong> {erroresRapidos.find(e => e.id === errorActivo)?.nombre}
+                <strong>🚨 ERROR FORZADO EJECUTADO:</strong> {erroresRapidos.find(e => e.id === errorActivo)?.nombre}
                 <br />
-                <span className="text-sm">Si ves este mensaje, el error no rompió la página. Intenta con otro error.</span>
+                <span className="text-sm">Si ves este mensaje sin que la página se haya roto, algo falló.</span>
               </div>
               <Button 
-                onClick={limpiarTodo}
+                onClick={() => window.location.reload()}
                 variant="outline" 
                 size="sm"
                 className="ml-4 text-red-600 border-red-300 hover:bg-red-100"
               >
-                Limpiar Todo
+                Recargar Página
               </Button>
             </div>
           </AlertDescription>
         </Alert>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         {erroresRapidos.map((error) => {
           const IconComponent = error.icon;
           return (
@@ -230,7 +277,7 @@ const GeneraErrores: React.FC = () => {
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <IconComponent className={`h-5 w-5 ${error.color}`} />
                   {error.nombre}
-                  <span className="text-sm bg-red-100 text-red-700 px-2 py-1 rounded">ROMPE PÁGINA</span>
+                  <span className="text-sm bg-red-100 text-red-700 px-2 py-1 rounded">FORZADO</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
@@ -244,7 +291,10 @@ const GeneraErrores: React.FC = () => {
                   <Textarea
                     placeholder={error.instruccionDefault}
                     value={instruccionesPersonalizadas[error.id] || ''}
-                    onChange={(e) => actualizarInstruccion(error.id, e.target.value)}
+                    onChange={(e) => setInstruccionesPersonalizadas(prev => ({
+                      ...prev,
+                      [error.id]: e.target.value
+                    }))}
                     className="text-sm"
                     rows={3}
                   />
@@ -260,7 +310,7 @@ const GeneraErrores: React.FC = () => {
                     variant="destructive"
                   >
                     <Play className="h-4 w-4 mr-2" />
-                    💥 ROMPER PÁGINA AHORA
+                    💥 FORZAR ERROR AHORA
                   </Button>
                 </div>
                 
@@ -277,7 +327,7 @@ const GeneraErrores: React.FC = () => {
 
       <Card className="bg-gray-50">
         <CardHeader>
-          <CardTitle className="text-lg">🎯 Estado del Generador de Errores</CardTitle>
+          <CardTitle className="text-lg">🎯 Estado del Generador de Errores Forzados</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div><strong>Página actual:</strong> /gestion</div>
@@ -285,9 +335,9 @@ const GeneraErrores: React.FC = () => {
           <div><strong>Imágenes listas:</strong> {imagenesAdjuntas.length} imagen(es)</div>
           <div><strong>Instrucciones personalizadas:</strong> {Object.keys(instruccionesPersonalizadas).length} configurada(s)</div>
           <div><strong>Último error:</strong> {errorActivo || 'Ninguno'}</div>
-          <div><strong>Estado Lovable:</strong> Listo para detectar errores reales automáticamente</div>
-          <div className="text-xs text-orange-600 bg-orange-50 p-2 rounded mt-2">
-            ⚠️ <strong>ADVERTENCIA:</strong> Estos errores van a romper la página real. Lovable debería mostrar "Try to Fix" automáticamente.
+          <div><strong>Estado Lovable:</strong> Listo para detectar errores forzados</div>
+          <div className="text-xs text-red-600 bg-red-50 p-2 rounded mt-2">
+            ⚠️ <strong>NUEVO:</strong> Estos errores FUERZAN cambios visuales en la página para que Lovable detecte el problema inmediatamente.
           </div>
         </CardContent>
       </Card>
