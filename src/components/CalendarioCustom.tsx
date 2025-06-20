@@ -23,6 +23,8 @@ interface CalendarioCustomProps {
   servicioId: string;
   responsable: string;
   onReservaConfirmada: () => void;
+  // Nueva prop para forzar recarga externa
+  forceReload?: number;
 }
 
 // URL ACTUALIZADA de Google Apps Script
@@ -117,7 +119,8 @@ const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 const CalendarioCustom: React.FC<CalendarioCustomProps> = ({ 
   servicioId, 
   responsable, 
-  onReservaConfirmada 
+  onReservaConfirmada,
+  forceReload = 0
 }) => {
   const { contenido, config } = useBusiness();
   const { obtenerHorariosDisponibles } = useHorariosEspecialistas();
@@ -131,18 +134,27 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
   });
   const [cargando, setCargando] = useState(false);
   const [eventos, setEventos] = useState<EventoReserva[]>([]);
+  // Nuevo estado para forzar recargas
+  const [ultimaRecarga, setUltimaRecarga] = useState(0);
 
   const servicio = contenido?.find(s => s.id === servicioId);
   const duracionMinutos = parseInt(servicio?.detalles?.duracion?.replace('min', '') || '30');
 
-  // Cargar eventos desde Google Sheets con FORZAR RELOAD
+  // Cargar eventos desde Google Sheets con FORZAR RELOAD MEJORADO
   const cargarEventos = useCallback(async (forzarReload = false) => {
     try {
-      console.log('🔄 Cargando eventos desde Google Sheets...');
-      // Agregar timestamp único para evitar cache
+      console.log('🔄 === CARGANDO EVENTOS DESDE GOOGLE SHEETS ===');
+      console.log('🔄 Forzar reload:', forzarReload);
+      
+      // Agregar múltiples parámetros únicos para evitar cache
       const timestamp = Date.now();
       const randomParam = Math.random().toString(36).substring(7);
-      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${timestamp}&rand=${randomParam}&force=${forzarReload}`;
+      const reloadParam = forzarReload ? '&force=true' : '';
+      const ultimaRecargaParam = `&lastReload=${ultimaRecarga}`;
+      
+      const url = `${GOOGLE_APPS_SCRIPT_URL}?action=getEventos&apiKey=${API_SECRET_KEY}&timestamp=${timestamp}&rand=${randomParam}${reloadParam}${ultimaRecargaParam}`;
+      
+      console.log('📡 URL de carga:', url);
       
       const response = await fetch(url, {
         method: 'GET',
@@ -162,12 +174,11 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       const data = await response.json();
       
       if (data.success) {
-        console.log('📅 Eventos RAW recibidos:', data.eventos);
-        console.log('📊 Total de eventos recibidos:', data.eventos.length);
+        console.log('📅 Eventos RAW recibidos:', data.eventos?.length || 0);
         
         // Procesar eventos para normalizar formato de fecha
-        const eventosProcesados = data.eventos.map((evento: any) => {
-          console.log('🔍 Procesando evento original:', evento);
+        const eventosProcesados = (data.eventos || []).map((evento: any) => {
+          console.log('🔍 Procesando evento:', evento.Nombre_Cliente, evento.Estado, evento.Responsable);
           
           // Normalizar fecha - puede venir como Date object o string
           let fechaNormalizada = evento.Fecha;
@@ -177,17 +188,15 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
             fechaNormalizada = evento.Fecha.split('T')[0];
           }
 
-          const eventoNormalizado = {
+          return {
             ...evento,
             Fecha: fechaNormalizada
           };
-          
-          console.log('✅ Evento normalizado:', eventoNormalizado);
-          return eventoNormalizado;
         });
         
-        console.log('📋 Todos los eventos procesados:', eventosProcesados);
+        console.log('✅ Total eventos procesados:', eventosProcesados.length);
         setEventos(eventosProcesados);
+        setUltimaRecarga(Date.now());
       } else {
         console.error('❌ Error del servidor:', data.error);
         setEventos([]);
@@ -196,7 +205,7 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       console.error('❌ Error cargando eventos:', error);
       setEventos([]);
     }
-  }, []);
+  }, [ultimaRecarga]);
 
   // Función para obtener la fecha de hoy sin hora (solo año, mes, día)
   const obtenerFechaHoySoloFecha = () => {
@@ -227,17 +236,18 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     return false; // Para días futuros, ninguna hora ha pasado
   };
 
-  // Filtrado de horarios MEJORADO considerando duraciones reales y TODOS LOS ESTADOS ACTIVOS
+  // Filtrado de horarios MEJORADO con LOGS DETALLADOS
   useEffect(() => {
     if (!fechaSeleccionada) {
       setHorasDisponibles([]);
       return;
     }
 
-    console.log('🔍 === INICIO FILTRADO DE HORARIOS CON DURACIONES REALES ===');
+    console.log('🔍 === INICIO FILTRADO DE HORARIOS DETALLADO ===');
     console.log('🎯 Responsable buscado:', responsable);
     console.log('📅 Fecha seleccionada:', fechaSeleccionada.toISOString().split('T')[0]);
     console.log('⏱️ Duración nuevo servicio:', duracionMinutos, 'minutos');
+    console.log('📊 Total eventos cargados:', eventos.length);
     
     // 1. Obtener horarios laborales del especialista para esta fecha
     const horariosLaborales = obtenerHorariosDisponibles(responsable, fechaSeleccionada, duracionMinutos);
@@ -250,22 +260,31 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     console.log('⏰ Horarios laborales base:', horariosLaborales);
 
-    // 2. Filtrar eventos ocupados para esta fecha y responsable (TODOS LOS ESTADOS QUE OCUPAN HORARIO)
+    // 2. Filtrar eventos ocupados para esta fecha y responsable - SOLO EXCLUIR CANCELADOS
     const fechaSeleccionadaStr = fechaSeleccionada.toISOString().split('T')[0];
+    
+    console.log('🔍 === FILTRANDO EVENTOS PARA LA FECHA ===');
     const eventosRelevantes = eventos.filter(evento => {
-      // INCLUIR TODOS LOS ESTADOS QUE OCUPAN HORARIO: Confirmado, Completado, En proceso, etc.
-      // SOLO EXCLUIR: Cancelado
-      const esEstadoQueOcupa = evento.Estado !== 'Cancelado';
       const esDelResponsable = evento.Responsable === responsable;
       const esMismaFecha = evento.Fecha === fechaSeleccionadaStr;
+      const noEstaCancelado = evento.Estado !== 'Cancelado';
       
-      const esRelevante = esEstadoQueOcupa && esDelResponsable && esMismaFecha;
+      console.log(`📋 Evaluando evento: ${evento.Nombre_Cliente}`, {
+        responsable: evento.Responsable,
+        fecha: evento.Fecha,
+        estado: evento.Estado,
+        esDelResponsable,
+        esMismaFecha,
+        noEstaCancelado,
+        esRelevante: esDelResponsable && esMismaFecha && noEstaCancelado
+      });
+      
+      const esRelevante = esDelResponsable && esMismaFecha && noEstaCancelado;
       
       if (esRelevante) {
-        console.log('📍 Evento que OCUPA horario encontrado:', {
+        console.log('✅ EVENTO QUE OCUPA HORARIO:', {
           nombre: evento.Nombre_Cliente,
           estado: evento.Estado,
-          fecha: evento.Fecha,
           horaInicio: evento["Hora Inicio"],
           horaFin: evento["Hora Fin"],
           responsable: evento.Responsable
@@ -275,15 +294,14 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
       return esRelevante;
     });
 
-    console.log('✅ Eventos que ocupan horario:', eventosRelevantes.length);
-    console.log('📋 Detalle de eventos que ocupan horario:', eventosRelevantes);
+    console.log(`✅ EVENTOS ACTIVOS ENCONTRADOS: ${eventosRelevantes.length}`);
 
-    // 3. NUEVA LÓGICA: Verificar solapamientos considerando duraciones reales
+    // 3. Verificar solapamientos considerando duraciones reales
     const disponibles = horariosLaborales.filter(hora => {
       // Verificar si la hora ya pasó
       const yaPaso = yaEsHoraPasada(hora, fechaSeleccionada);
       if (yaPaso) {
-        console.log(`⏰ Hora ${hora} ya pasó`);
+        console.log(`⏰ Hora ${hora} ya pasó - DESCARTADA`);
         return false;
       }
 
@@ -293,40 +311,49 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
         const horaFinExistente = extraerHora(evento["Hora Fin"]);
         
         if (!horaInicioExistente || !horaFinExistente) {
-          console.log('⚠️ No se pudieron extraer horas del evento:', evento);
+          console.log('⚠️ No se pudieron extraer horas del evento:', evento.Nombre_Cliente);
           return false;
         }
 
         const solapamiento = verificarSolapamiento(hora, duracionMinutos, horaInicioExistente, horaFinExistente);
         
         if (solapamiento) {
-          console.log(`❌ CONFLICTO detectado: Nueva cita ${hora} (${duracionMinutos}min) vs Existente ${horaInicioExistente}-${horaFinExistente} (${evento.Nombre_Cliente} - ${evento.Estado})`);
+          console.log(`❌ CONFLICTO DETECTADO: Nueva cita ${hora} (${duracionMinutos}min) vs Turno existente ${horaInicioExistente}-${horaFinExistente} (${evento.Nombre_Cliente} - ${evento.Estado})`);
         }
         
         return solapamiento;
       });
 
       const disponible = !tieneSolapamiento;
-      console.log(`⏱️ Hora ${hora}: disponible=${disponible} (duración nueva: ${duracionMinutos}min)`);
+      console.log(`⏱️ Hora ${hora}: ${disponible ? 'DISPONIBLE' : 'OCUPADA'}`);
       
       return disponible;
     });
     
-    console.log('✅ === HORARIOS FINALES DISPONIBLES (INCLUYENDO COMPLETADOS) ===:', disponibles);
+    console.log('✅ === HORARIOS FINALES DISPONIBLES ===:', disponibles);
     console.log('🔍 === FIN FILTRADO DE HORARIOS ===');
     
     setHorasDisponibles(disponibles);
   }, [fechaSeleccionada, eventos, responsable, duracionMinutos, obtenerHorariosDisponibles]);
 
-  // Cargar eventos al montar y cuando cambie la fecha
+  // EFECTO PARA RECARGAS EXTERNAS (desde panel admin)
   useEffect(() => {
-    cargarEventos(true); // Forzar reload inicial
+    if (forceReload > 0) {
+      console.log('🔄 RECARGA EXTERNA SOLICITADA desde panel admin');
+      cargarEventos(true);
+    }
+  }, [forceReload, cargarEventos]);
+
+  // Cargar eventos al montar
+  useEffect(() => {
+    console.log('🚀 CARGA INICIAL DE EVENTOS');
+    cargarEventos(true);
   }, [cargarEventos]);
 
   // Recargar eventos cada vez que se selecciona una fecha
   useEffect(() => {
     if (fechaSeleccionada) {
-      console.log('📅 Fecha seleccionada cambió, recargando eventos...');
+      console.log('📅 FECHA CAMBIADA - Recargando eventos...');
       cargarEventos(true);
     }
   }, [fechaSeleccionada, cargarEventos]);

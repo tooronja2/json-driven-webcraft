@@ -1,11 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useHorariosEspecialistas } from '@/hooks/useHorariosEspecialistas';
-import { useToast } from '@/hooks/use-toast';
+import { X } from 'lucide-react';
+import CalendarioCustom from '@/components/CalendarioCustom';
 
 interface AgregarTurnoProps {
   onClose: () => void;
@@ -13,171 +10,91 @@ interface AgregarTurnoProps {
   fechaSeleccionada: Date;
 }
 
-// URL ACTUALIZADA de Google Apps Script
+// URL de Google Apps Script
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwlh4awkllCTVdxnVQkUWPfs-RVCYXQ9zwn3UpfKaCNiUEOEcTZdx61SVicn5boJf0p/exec';
+
+// 🔐 API KEY SECRETA
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
-// Usar los mismos servicios que están en servicios.json
-const SERVICIOS = [
-  { nombre: 'Corte de barba', precio: 6500, duracion: 15 },
-  { nombre: 'Corte de pelo', precio: 8500, duracion: 15 },
-  { nombre: 'Corte todo maquina', precio: 8000, duracion: 15 },
-  { nombre: 'Corte de pelo y barba', precio: 9500, duracion: 25 },
-  { nombre: 'Diseños y dibujos', precio: 6500, duracion: 15 }
-];
-
-const BARBEROS = ['Héctor Medina', 'Lucas Peralta', 'Camila González'];
-
-interface FormDataSimple {
-  servicio: string;
-  hora: string;
-  responsable: string;
-}
-
-// Función para generar email aleatorio
-const generarEmailAleatorio = (): string => {
-  const dominios = ['gmail.com', 'hotmail.com', 'yahoo.com', 'outlook.com'];
-  const nombres = ['turno', 'manual', 'cliente', 'atencion', 'barberia'];
-  const numeros = Math.floor(Math.random() * 9999) + 1000;
-  const dominio = dominios[Math.floor(Math.random() * dominios.length)];
-  const nombre = nombres[Math.floor(Math.random() * nombres.length)];
-  
-  return `${nombre}${numeros}@${dominio}`;
-};
-
-// Función para generar teléfono aleatorio
-const generarTelefonoAleatorio = (): string => {
-  const prefijos = ['11', '15', '351', '261', '341'];
-  const prefijo = prefijos[Math.floor(Math.random() * prefijos.length)];
-  const numero = Math.floor(Math.random() * 90000000) + 10000000;
-  return `${prefijo}${numero}`;
-};
-
 const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, fechaSeleccionada }) => {
-  const [formData, setFormData] = useState<FormDataSimple>({
-    servicio: '',
-    hora: '',
-    responsable: ''
+  const [servicioSeleccionado, setServicioSeleccionado] = useState('');
+  const [responsableSeleccionado, setResponsableSeleccionado] = useState('');
+  const [estadoSeleccionado, setEstadoSeleccionado] = useState('Confirmado');
+  const [horaSeleccionada, setHoraSeleccionada] = useState('');
+  const [datosCliente, setDatosCliente] = useState({
+    nombre: 'Turno manual',
+    email: 'manual@admin.com',
+    telefono: '00000000000'
   });
-  const [horariosDisponibles, setHorariosDisponibles] = useState<string[]>([]);
-  const [error, setError] = useState('');
-  const [mensajeExito, setMensajeExito] = useState('');
-  const [enviando, setEnviando] = useState(false);
-  const { obtenerHorariosDisponibles } = useHorariosEspecialistas();
-  const { toast } = useToast();
+  const [cargando, setCargando] = useState(false);
+  // Nuevo estado para forzar recarga del calendario
+  const [reloadCalendar, setReloadCalendar] = useState(0);
 
-  const calcularHoraFin = (horaInicio: string, servicio: string): string => {
-    const servicioSeleccionado = SERVICIOS.find(s => s.nombre === servicio);
-    const duracion = servicioSeleccionado?.duracion || 15;
+  const servicios = [
+    { id: 'corte-barba', nombre: 'Corte de barba', duracion: 15, precio: 6500 },
+    { id: 'corte-pelo', nombre: 'Corte de pelo', duracion: 15, precio: 8500 },
+    { id: 'todo-maquina', nombre: 'Corte todo maquina', duracion: 15, precio: 8000 },
+    { id: 'corte-pelo-barba', nombre: 'Corte de pelo y barba', duracion: 25, precio: 9500 },
+    { id: 'disenos-dibujos', nombre: 'Diseños y dibujos', duracion: 15, precio: 6500 }
+  ];
 
-    const [horas, minutos] = horaInicio.split(':').map(Number);
-    let nuevaHora = horas;
-    let nuevoMinuto = minutos + duracion;
+  const responsables = ['Lucas Peralta', 'Héctor Medina', 'Camila González'];
+  const estados = ['Confirmado', 'Completado', 'En proceso', 'Cancelado'];
 
-    if (nuevoMinuto >= 60) {
-      nuevaHora += Math.floor(nuevoMinuto / 60);
-      nuevoMinuto %= 60;
-    }
+  const servicio = servicios.find(s => s.id === servicioSeleccionado);
 
-    nuevaHora %= 24;
-    return `${String(nuevaHora).padStart(2, '0')}:${String(nuevoMinuto).padStart(2, '0')}`;
-  };
-
-  const filtrarHorariosPasados = (horarios: string[]): string[] => {
-    const ahora = new Date();
-    const horaActual = ahora.getHours();
-    const minutoActual = ahora.getMinutes();
-    
-    // Solo filtrar si la fecha seleccionada es hoy
-    const esHoy = fechaSeleccionada.toDateString() === ahora.toDateString();
-    
-    if (!esHoy) {
-      return horarios; // Si no es hoy, mostrar todos los horarios
-    }
-    
-    return horarios.filter(horario => {
-      const [hora, minuto] = horario.split(':').map(Number);
-      const horarioEnMinutos = hora * 60 + minuto;
-      const ahoreEnMinutos = horaActual * 60 + minutoActual;
-      
-      return horarioEnMinutos > ahoreEnMinutos;
-    });
-  };
-
-  const actualizarHorarios = () => {
-    if (formData.responsable && formData.servicio) {
-      const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
-      const duracion = servicioSeleccionado?.duracion || 15;
-      
-      const horariosCompletos = obtenerHorariosDisponibles(formData.responsable, fechaSeleccionada, duracion);
-      const horariosFiltrados = filtrarHorariosPasados(horariosCompletos);
-      
-      setHorariosDisponibles(horariosFiltrados);
-      
-      // Si el horario seleccionado ya no está disponible, limpiarlo
-      if (formData.hora && !horariosFiltrados.includes(formData.hora)) {
-        setFormData(prev => ({ ...prev, hora: '' }));
-      }
-    } else {
-      setHorariosDisponibles([]);
-    }
-  };
-
-  useEffect(() => {
-    actualizarHorarios();
-  }, [formData.responsable, formData.servicio, fechaSeleccionada]);
-
-  const enviarTurno = async () => {
-    if (!formData.servicio || !formData.hora || !formData.responsable) {
-      setError('Por favor completa todos los campos');
+  const crearTurnoManual = async () => {
+    if (!servicioSeleccionado || !responsableSeleccionado || !horaSeleccionada) {
+      alert('Por favor completa todos los campos obligatorios');
       return;
     }
 
-    setEnviando(true);
-    setError('');
+    setCargando(true);
 
     try {
-      const servicioSeleccionado = SERVICIOS.find(s => s.nombre === formData.servicio);
-      const fechaISO = fechaSeleccionada.toISOString().split('T')[0];
+      const duracionMinutos = servicio?.duracion || 15;
+      
+      // Calcular hora de fin
+      const [horas, minutos] = horaSeleccionada.split(':').map(Number);
+      const fechaFin = new Date();
+      fechaFin.setHours(horas, minutos + duracionMinutos);
+      const horaFin = `${fechaFin.getHours().toString().padStart(2, '0')}:${fechaFin.getMinutes().toString().padStart(2, '0')}`;
 
-      // Generar datos aleatorios para el turno manual
-      const emailAleatorio = generarEmailAleatorio();
-      const telefonoAleatorio = generarTelefonoAleatorio();
-
-      const reservaData = {
+      const turnoData = {
         ID_Evento: `evento_${Date.now()}`,
-        Titulo_Evento: formData.servicio,
-        Nombre_Cliente: 'Turno manual',
-        Email_Cliente: emailAleatorio,
-        Fecha: fechaISO,
-        Hora_Inicio: formData.hora,
-        Hora_Fin: calcularHoraFin(formData.hora, formData.servicio),
-        Descripcion: `${formData.servicio} - Tel: ${telefonoAleatorio}`,
-        Estado: 'Completado',
-        "Valor del turno": servicioSeleccionado?.precio || 0,
-        "Servicios incluidos": formData.servicio,
-        Responsable: formData.responsable
+        Titulo_Evento: servicio?.nombre || '',
+        Nombre_Cliente: datosCliente.nombre,
+        Email_Cliente: datosCliente.email,
+        Fecha: fechaSeleccionada.toISOString().split('T')[0],
+        Hora_Inicio: horaSeleccionada,
+        Hora_Fin: horaFin,
+        Descripcion: `${servicio?.nombre} - Tel: ${datosCliente.telefono}`,
+        Estado: estadoSeleccionado,
+        "Valor del turno": servicio?.precio || 0,
+        "Servicios incluidos": servicio?.nombre || '',
+        Responsable: responsableSeleccionado
       };
-
-      console.log('🚀 Enviando turno manual:', reservaData);
 
       const datos = {
         action: "crearReserva",
         apiKey: API_SECRET_KEY,
-        data: JSON.stringify(reservaData)
+        data: JSON.stringify(turnoData)
       };
 
-      const formDataToSend = new URLSearchParams();
+      const formData = new URLSearchParams();
       for (const key in datos) {
-        formDataToSend.append(key, datos[key]);
+        formData.append(key, datos[key]);
       }
+
+      console.log('🚀 Creando turno manual desde panel admin');
+      console.log('📦 Datos del turno:', turnoData);
 
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
-        body: formDataToSend
+        body: formData
       });
 
       if (!response.ok) {
@@ -185,144 +102,165 @@ const AgregarTurno: React.FC<AgregarTurnoProps> = ({ onClose, onTurnoAgregado, f
       }
 
       const result = await response.json();
-      console.log('Respuesta del servidor:', result);
-
+      
       if (result.success) {
-        setMensajeExito('Turno agregado exitosamente');
-        setFormData({
-          servicio: '',
-          hora: '',
-          responsable: ''
-        });
+        console.log('✅ Turno manual creado exitosamente');
         
-        toast({
-          title: "Turno agregado",
-          description: "El turno se agregó correctamente como completado.",
-        });
+        // FORZAR RECARGA INMEDIATA del calendario
+        setReloadCalendar(Date.now());
         
+        // Pequeña pausa para asegurar que la recarga se procese
         setTimeout(() => {
-          setMensajeExito('');
+          alert('¡Turno agregado exitosamente!');
           onTurnoAgregado();
           onClose();
-        }, 2000);
+        }, 500);
       } else {
-        setError(result.error || 'Error al agregar el turno');
-        toast({
-          title: "Error",
-          description: result.error || 'Error al agregar el turno',
-          variant: "destructive",
-        });
+        alert('Error al crear el turno: ' + (result.error || 'Error desconocido'));
       }
     } catch (error) {
-      console.error('Error:', error);
-      const errorMessage = 'Error de conexión. Inténtalo nuevamente.';
-      setError(errorMessage);
-      toast({
-        title: "Error de conexión",
-        description: errorMessage,
-        variant: "destructive",
-      });
+      console.error('❌ Error completo:', error);
+      alert('Error al procesar el turno: ' + error.message);
     } finally {
-      setEnviando(false);
+      setCargando(false);
     }
   };
 
+  const handleReservaConfirmada = () => {
+    console.log('✅ Reserva confirmada desde calendario');
+    // Forzar recarga del calendario después de crear reserva
+    setReloadCalendar(Date.now());
+    onTurnoAgregado();
+  };
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[80vh] overflow-y-auto">
-        <h2 className="text-lg font-semibold mb-4">Agregar Turno Completado</h2>
-        <p className="text-sm text-gray-600 mb-4">
-          Para atenciones directas sin reserva previa - Fecha: {fechaSeleccionada.toLocaleDateString('es-AR')}
-        </p>
-
-        {error && <div className="text-red-500 mb-4 text-sm">{error}</div>}
-        {mensajeExito && <div className="text-green-500 mb-4 text-sm">{mensajeExito}</div>}
-
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="responsable">Barbero Responsable</Label>
-            <Select onValueChange={(value) => setFormData({ ...formData, responsable: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un barbero" />
-              </SelectTrigger>
-              <SelectContent>
-                {BARBEROS.map((barbero) => (
-                  <SelectItem key={barbero} value={barbero}>{barbero}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="servicio">Tipo de Servicio</Label>
-            <Select onValueChange={(value) => setFormData({ ...formData, servicio: value })}>
-              <SelectTrigger>
-                <SelectValue placeholder="Selecciona un servicio" />
-              </SelectTrigger>
-              <SelectContent>
-                {SERVICIOS.map((servicio) => (
-                  <SelectItem key={servicio.nombre} value={servicio.nombre}>
-                    {servicio.nombre} (${servicio.precio.toLocaleString()})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div>
-            <Label htmlFor="hora">Hora de Inicio</Label>
-            {horariosDisponibles.length > 0 ? (
-              <Select onValueChange={(value) => setFormData({ ...formData, hora: value })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecciona un horario" />
-                </SelectTrigger>
-                <SelectContent>
-                  {horariosDisponibles.map((horario) => (
-                    <SelectItem key={horario} value={horario}>
-                      {horario} - {calcularHoraFin(horario, formData.servicio || '')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            ) : (
-              <div className="text-sm text-gray-500 p-2 border rounded">
-                {formData.responsable && formData.servicio 
-                  ? 'No hay horarios disponibles para esta fecha y especialista'
-                  : 'Selecciona primero el barbero y el servicio'
-                }
-              </div>
-            )}
-          </div>
-
-          {formData.servicio && formData.hora && (
-            <div className="bg-gray-50 p-3 rounded">
-              <p className="text-sm">
-                <strong>Hora de fin calculada:</strong> {calcularHoraFin(formData.hora, formData.servicio)}
-              </p>
-              <p className="text-sm">
-                <strong>Valor:</strong> ${SERVICIOS.find(s => s.nombre === formData.servicio)?.precio.toLocaleString()}
-              </p>
-              <p className="text-sm text-gray-600">
-                <strong>Datos que se generarán automáticamente:</strong><br/>
-                • Nombre: "Turno manual"<br/>
-                • Email: Generado aleatoriamente<br/>
-                • Teléfono: Generado aleatoriamente
-              </p>
-            </div>
-          )}
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-xl font-bold">Agregar Turno Manual</h2>
+          <Button onClick={onClose} variant="ghost" size="sm">
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
-        <div className="flex justify-end gap-2 mt-6">
-          <Button type="button" variant="secondary" onClick={onClose}>
-            Cancelar
-          </Button>
-          <Button 
-            type="button" 
-            onClick={enviarTurno} 
-            disabled={enviando || !formData.servicio || !formData.hora || !formData.responsable}
-          >
-            {enviando ? 'Guardando...' : 'Agregar Turno'}
-          </Button>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Formulario manual */}
+          <div className="space-y-4">
+            <h3 className="font-semibold">Crear turno manualmente</h3>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Servicio</label>
+              <select
+                value={servicioSeleccionado}
+                onChange={(e) => setServicioSeleccionado(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="">Seleccionar servicio</option>
+                {servicios.map(servicio => (
+                  <option key={servicio.id} value={servicio.id}>
+                    {servicio.nombre} ({servicio.duracion}min - ${servicio.precio})
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Responsable</label>
+              <select
+                value={responsableSeleccionado}
+                onChange={(e) => setResponsableSeleccionado(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                <option value="">Seleccionar responsable</option>
+                {responsables.map(responsable => (
+                  <option key={responsable} value={responsable}>
+                    {responsable}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Estado</label>
+              <select
+                value={estadoSeleccionado}
+                onChange={(e) => setEstadoSeleccionado(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              >
+                {estados.map(estado => (
+                  <option key={estado} value={estado}>
+                    {estado}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Hora</label>
+              <input
+                type="time"
+                value={horaSeleccionada}
+                onChange={(e) => setHoraSeleccionada(e.target.value)}
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Nombre Cliente</label>
+              <input
+                type="text"
+                value={datosCliente.nombre}
+                onChange={(e) => setDatosCliente({...datosCliente, nombre: e.target.value})}
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Email Cliente</label>
+              <input
+                type="email"
+                value={datosCliente.email}
+                onChange={(e) => setDatosCliente({...datosCliente, email: e.target.value})}
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Teléfono</label>
+              <input
+                type="tel"
+                value={datosCliente.telefono}
+                onChange={(e) => setDatosCliente({...datosCliente, telefono: e.target.value})}
+                className="w-full p-2 border rounded-md"
+              />
+            </div>
+
+            <Button 
+              onClick={crearTurnoManual} 
+              disabled={cargando || !servicioSeleccionado || !responsableSeleccionado || !horaSeleccionada}
+              className="w-full"
+            >
+              {cargando ? 'Agregando...' : 'Agregar Turno Manual'}
+            </Button>
+          </div>
+
+          {/* Calendario con disponibilidad */}
+          <div>
+            <h3 className="font-semibold mb-4">O usar el calendario (recomendado)</h3>
+            {servicioSeleccionado && responsableSeleccionado && (
+              <CalendarioCustom
+                servicioId={servicioSeleccionado}
+                responsable={responsableSeleccionado}
+                onReservaConfirmada={handleReservaConfirmada}
+                forceReload={reloadCalendar}
+              />
+            )}
+            {(!servicioSeleccionado || !responsableSeleccionado) && (
+              <p className="text-gray-500">
+                Selecciona un servicio y responsable para ver la disponibilidad
+              </p>
+            )}
+          </div>
         </div>
       </div>
     </div>
