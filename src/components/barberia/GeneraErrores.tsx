@@ -8,7 +8,6 @@ import { AlertTriangle, Bug, X, Edit3, Image, Play, Zap, Code } from 'lucide-rea
 import { useToast } from '@/hooks/use-toast';
 
 const GeneraErrores: React.FC = () => {
-  // RESETEAR COMPLETAMENTE TODOS LOS ESTADOS
   const [aplicandoCambio, setAplicandoCambio] = useState(false);
   const [errorEstadisticas, setErrorEstadisticas] = useState(false);
   const [solicitudesEnviadas, setSolicitudesEnviadas] = useState<string[]>([]);
@@ -16,20 +15,9 @@ const GeneraErrores: React.FC = () => {
   const [mensajeErrorPersonalizado, setMensajeErrorPersonalizado] = useState('');
   const [imagenesAdjuntas, setImagenesAdjuntas] = useState<{file: File, preview: string}[]>([]);
   const [mostrarAppsScript, setMostrarAppsScript] = useState(false);
-  const [sistemaBloqueado, setSistemaBloqueado] = useState(true);
+  const [sistemaBloqueado, setSistemaBloqueado] = useState(true); // BLOQUEAR SISTEMA POR DEFECTO
   const pasteAreaRef = useRef<HTMLDivElement>(null);
   const { toast } = useToast();
-
-  // FORZAR RESET INICIAL PARA EVITAR ERRORES PERSISTENTES
-  useEffect(() => {
-    console.log('🔄 FORZANDO RESET INICIAL del GeneraErrores');
-    setErrorEstadisticas(false);
-    setForceError(false);
-    setSolicitudesEnviadas([]);
-    setMensajeErrorPersonalizado('');
-    setImagenesAdjuntas([]);
-    setSistemaBloqueado(true);
-  }, []);
 
   // Manejar paste de imágenes
   useEffect(() => {
@@ -56,15 +44,21 @@ const GeneraErrores: React.FC = () => {
     return () => document.removeEventListener('paste', handlePaste);
   }, []);
 
+  // Función que aplica cambio con error controlado - PERMITE MÚLTIPLES SOLICITUDES
   const aplicarCambioConError = () => {
     if (!mensajeErrorPersonalizado.trim() || sistemaBloqueado) return;
 
     setAplicandoCambio(true);
+    
+    // Agregar a la lista de solicitudes enviadas (NO resetear las anteriores)
     setSolicitudesEnviadas(prev => [...prev, mensajeErrorPersonalizado]);
+    
+    // Activar error en estadísticas (componente aislado)
     setErrorEstadisticas(true);
-    setForceError(true);
+    setForceError(true); // Forzar error real
     setAplicandoCambio(false);
     
+    // Mostrar feedback
     toast({
       title: "Solicitud enviada",
       description: `Solicitud #${solicitudesEnviadas.length + 1} enviada. Usa 'Try to Fix' para procesar.`,
@@ -72,15 +66,15 @@ const GeneraErrores: React.FC = () => {
     });
   };
 
+  // Función que resetea COMPLETAMENTE el sistema
   const resetearSistema = () => {
-    console.log('🔄 RESETEANDO SISTEMA COMPLETO');
     setErrorEstadisticas(false);
     setForceError(false);
     setSolicitudesEnviadas([]);
     setMensajeErrorPersonalizado('');
     setImagenesAdjuntas([]);
     setMostrarAppsScript(false);
-    setSistemaBloqueado(true);
+    setSistemaBloqueado(true); // MANTENER BLOQUEADO
     
     toast({
       title: "Sistema reseteado",
@@ -88,6 +82,7 @@ const GeneraErrores: React.FC = () => {
     });
   };
 
+  // Función para desbloquear temporalmente el sistema
   const desbloquearSistema = () => {
     setSistemaBloqueado(false);
     toast({
@@ -96,15 +91,36 @@ const GeneraErrores: React.FC = () => {
     });
   };
 
+  // Función para limpiar solo el mensaje actual
   const limpiarMensaje = () => {
     setMensajeErrorPersonalizado('');
     setImagenesAdjuntas([]);
   };
 
-  // COMPONENTE COMPLETAMENTE DESHABILITADO - NO GENERAR ERRORES
+  // Componente de estadísticas que mantiene el error PERSISTENTE
   const renderEstadisticasAdmin = () => {
-    // ⚠️ COMPLETAMENTE DESHABILITADO - NO GENERAR NINGÚN ERROR
-    console.log('🛑 ESTADÍSTICAS ADMIN DESHABILITADAS - NO SE GENERAN ERRORES');
+    // SISTEMA BLOQUEADO - NO GENERAR ERRORES
+    if (sistemaBloqueado) {
+      return null;
+    }
+
+    // TEMPORALMENTE DESHABILITADO PARA MOSTRAR EL APPS SCRIPT
+    if (mostrarAppsScript) {
+      return null; // No generar error cuando se muestra el Apps Script
+    }
+
+    // MANTENER EL ERROR ACTIVO SOLO SI ESTÁ DESBLOQUEADO - No resetear automáticamente
+    if (errorEstadisticas && forceError && solicitudesEnviadas.length > 0) {
+      console.log('🔧 MÚLTIPLES SOLICITUDES ACTIVAS:', solicitudesEnviadas.length);
+      console.log('🔧 SOLICITUDES ENVIADAS:', solicitudesEnviadas);
+      console.log('🔧 IMÁGENES ADJUNTAS:', imagenesAdjuntas.length);
+      console.log('🔧 ESTADO: Sistema en modo error persistente para múltiples solicitudes');
+      
+      // Crear un error que contenga TODAS las solicitudes
+      const mensajeCompleto = `MÚLTIPLES SOLICITUDES: ${solicitudesEnviadas.join(' | ')} | Images: ${imagenesAdjuntas.length}`;
+      throw new Error(`CONTROLLED_ERROR: ${mensajeCompleto}`);
+    }
+
     return null;
   };
 
@@ -150,13 +166,16 @@ function doPost(e) {
 
   // MANEJAR TANTO PARÁMETROS URL COMO BODY JSON
   try {
+    // Intentar parsear el body como JSON primero
     if (e.postData && e.postData.contents) {
       const bodyData = JSON.parse(e.postData.contents);
       params = bodyData;
     } else if (e.parameter) {
+      // Fallback a parámetros URL
       params = e.parameter;
     }
   } catch (error) {
+    // Si falla el JSON, usar parámetros URL
     params = e.parameter || {};
   }
 
@@ -171,10 +190,12 @@ function doPost(e) {
   return outputJSONWithCORS(response);
 }
 
+// CORS COMPLETO para todas las solicitudes OPTIONS
 function doOptions() {
   const output = ContentService.createTextOutput('');
   output.setMimeType(ContentService.MimeType.TEXT);
   
+  // Headers CORS completos
   output.setHeaders({
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
@@ -185,10 +206,12 @@ function doOptions() {
   return output;
 }
 
+// FUNCIÓN PARA INCLUIR CORS EN TODAS LAS RESPUESTAS JSON
 function outputJSONWithCORS(data) {
   const output = ContentService.createTextOutput(JSON.stringify(data));
   output.setMimeType(ContentService.MimeType.JSON);
   
+  // Headers CORS en todas las respuestas
   output.setHeaders({
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET, POST, OPTIONS, PUT, DELETE',
@@ -198,6 +221,7 @@ function outputJSONWithCORS(data) {
   return output;
 }
 
+// FUNCIÓN LEGACY (mantener por compatibilidad)
 function outputJSON(data) {
   return outputJSONWithCORS(data);
 }
@@ -228,6 +252,7 @@ function getTurno(id) {
  * ──────────────────────────────────── */
 function crearReserva(d) {
   const sheet  = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
+  // Las reservas se crean con estado "Reservado" en lugar de "Confirmado"
   sheet.appendRow([
     d.ID_Evento, d.Titulo_Evento, d.Nombre_Cliente, d.Email_Cliente,
     d.Fecha, d.Hora_Inicio, d.Hora_Fin, d.Descripcion,
@@ -249,6 +274,7 @@ function cancelarTurno(id) {
   return { success:false, error:'Turno no encontrado' };
 }
 
+// Actualizar estado de turno desde el panel
 function updateEstadoTurno(id, nuevoEstado, origenPanel) {
   const s   = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
   const arr = s.getDataRange().getValues();
@@ -257,6 +283,7 @@ function updateEstadoTurno(id, nuevoEstado, origenPanel) {
     if (arr[i][0] === id){
       s.getRange(i+1,9).setValue(nuevoEstado);
       
+      // Si se está confirmando desde el panel y el cliente tiene email, enviar notificación
       if (nuevoEstado === 'Confirmado' && origenPanel && arr[i][3]) {
         enviarEmailConfirmacionPanel({
           ID_Evento: arr[i][0],
@@ -285,6 +312,7 @@ function enviarEmailConfirmacion(d) {
   const subject   = \`Reserva recibida - \${d.Titulo_Evento}\`;
   const ownerMail = 'tradeljakntnlatam@gmail.com';
 
+  /* === Cliente === */
   const htmlCliente = \`
 <!DOCTYPE html><html><head><meta charset="UTF-8"></head>
 <body style="margin:0;padding:0;background:#f2f0ed;font-family:'Roboto',Arial,sans-serif;">
@@ -317,6 +345,7 @@ function enviarEmailConfirmacion(d) {
   </table>
 </body></html>\`;
 
+  /* === Dueño === */
   const htmlOwner = \`
 <!DOCTYPE html><html><body style="font-family:Arial,Helvetica,sans-serif;color:#111;">
   <h2 style="text-align:center;margin:0 0 24px;">Nueva reserva recibida</h2>
@@ -335,6 +364,7 @@ function enviarEmailConfirmacion(d) {
   GmailApp.sendEmail(ownerMail, \`Nueva reserva - \${d.Titulo_Evento}\`, '', { htmlBody: htmlOwner });
 }
 
+// Email cuando se confirma desde el panel
 function enviarEmailConfirmacionPanel(d) {
   const subject = \`Turno confirmado - \${d.Titulo_Evento}\`;
   
@@ -368,6 +398,9 @@ function enviarEmailConfirmacionPanel(d) {
   GmailApp.sendEmail(d.Email_Cliente, subject, '', { htmlBody: htmlCliente });
 }
 
+/* ────────────────────────────────────
+ * ⏰  Recordatorio (1 día antes) - SOLO RESERVADOS
+ * ──────────────────────────────────── */
 function enviarRecordatorios() {
   const sheet = SpreadsheetApp.openById(SHEET_ID).getActiveSheet();
   const data  = sheet.getDataRange().getValues();
@@ -375,6 +408,7 @@ function enviarRecordatorios() {
 
   for (let i=1;i<data.length;i++){
     const [id,titulo,nombre,email,fecha,hInicio,, ,estado,, ,responsable] = data[i];
+    // Solo enviar recordatorios a turnos RESERVADOS (para que vengan)
     if (estado!=='Reservado') continue;
     const fechaTurno = new Date(fecha); fechaTurno.setHours(0,0,0,0);
     if ((fechaTurno - today)/(1000*60*60*24) !== 1) continue;
@@ -410,22 +444,21 @@ function enviarRecordatorios() {
       { htmlBody: html }
     );
   }
-}
   `.trim();
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4">🔧 SISTEMA COMPLETAMENTE RESETEADO</h2>
-        <Alert className="border-green-500 bg-green-50">
+        <h2 className="text-2xl font-bold mb-4">🔧 SISTEMA DE ERRORES BLOQUEADO</h2>
+        <Alert className="border-red-500 bg-red-50">
           <AlertTriangle className="h-4 w-4" />
-          <AlertDescription className="text-green-700 font-bold">
-            ✅ SISTEMA LIMPIO: Todos los errores controlados han sido eliminados. Ya puedes usar la aplicación normalmente.
+          <AlertDescription className="text-red-700 font-bold">
+            ⛔ SISTEMA BLOQUEADO: No se generarán errores controlados para evitar interferir con la depuración real.
           </AlertDescription>
         </Alert>
       </div>
 
-      {/* NO renderizar estadísticas que puedan fallar */}
+      {/* Renderizar estadísticas que NO pueden fallar */}
       {renderEstadisticasAdmin()}
 
       {/* Mostrar Apps Script completo */}
@@ -467,16 +500,16 @@ function enviarRecordatorios() {
         </Card>
       )}
 
-      <Card className="border-l-4 border-l-green-500 bg-green-50">
+      <Card className="border-l-4 border-l-red-500 bg-red-50">
         <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg text-green-700">
+          <CardTitle className="flex items-center gap-2 text-lg text-red-700">
             <Bug className="h-5 w-5" />
-            ✅ SISTEMA LIMPIO Y FUNCIONAL
+            🚫 SISTEMA BLOQUEADO PARA DEPURACIÓN
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-green-700 text-sm font-bold">
-            El generador de errores ha sido completamente reseteado. Ya no hay errores controlados activos.
+          <p className="text-red-700 text-sm font-bold">
+            El generador de errores está bloqueado para no interferir con la depuración del problema real del API key.
           </p>
           
           <div className="space-y-2">
@@ -490,37 +523,82 @@ function enviarRecordatorios() {
                 {mostrarAppsScript ? 'Ocultar' : 'Ver Apps Script'}
               </Button>
               <Button
+                onClick={desbloquearSistema}
+                size="sm"
+                className="bg-yellow-600 hover:bg-yellow-700"
+                disabled={!sistemaBloqueado}
+              >
+                🔓 Desbloquear (Solo para Testing)
+              </Button>
+              <Button
                 onClick={resetearSistema}
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-red-600 hover:bg-red-700"
               >
-                🔄 Confirmar Reset
+                Reset Total
               </Button>
             </div>
+            
+            {/* Solo mostrar si está desbloqueado */}
+            {!sistemaBloqueado && (
+              <>
+                <div className="flex items-center gap-2">
+                  <Edit3 className="h-4 w-4 text-gray-500" />
+                  <label className="text-sm font-medium">Nueva solicitud:</label>
+                </div>
+                <div className="flex gap-2">
+                  <Textarea
+                    placeholder="Describe qué quieres que implemente Lovable..."
+                    value={mensajeErrorPersonalizado}
+                    onChange={(e) => setMensajeErrorPersonalizado(e.target.value)}
+                    className="flex-1 px-3 py-2 border rounded-md text-sm"
+                    disabled={aplicandoCambio}
+                    rows={3}
+                  />
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    onClick={aplicarCambioConError}
+                    size="sm"
+                    className="bg-blue-600 hover:bg-blue-700"
+                    disabled={aplicandoCambio}
+                  >
+                    <Zap className="h-3 w-3 mr-1" />
+                    {aplicandoCambio ? 'Enviando...' : 'Enviar Solicitud'}
+                  </Button>
+                  <Button
+                    onClick={limpiarMensaje}
+                    size="sm"
+                    variant="outline"
+                  >
+                    Limpiar
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
           
           <div className="text-xs text-gray-500 bg-gray-100 p-2 rounded border">
-            <strong>🔒 ESTADO:</strong> LIMPIO Y FUNCIONAL<br/>
+            <strong>🔒 ESTADO:</strong> {sistemaBloqueado ? 'BLOQUEADO' : 'DESBLOQUEADO'}<br/>
             <strong>Solicitudes enviadas:</strong> {solicitudesEnviadas.length}<br/>
             <strong>Imágenes:</strong> {imagenesAdjuntas.length}<br/>
-            <strong>Error activo:</strong> {forceError ? 'SÍ' : 'NO'}<br/>
-            <strong>Propósito:</strong> Evitar errores controlados que interfieran con la aplicación
+            <strong>Propósito:</strong> Evitar interferir con depuración del API key
           </div>
         </CardContent>
       </Card>
 
       <Card className="bg-blue-50 border-blue-300">
         <CardHeader>
-          <CardTitle className="text-lg text-blue-800">📋 Sistema listo para usar</CardTitle>
+          <CardTitle className="text-lg text-blue-800">📋 Próximos pasos para resolver el problema real</CardTitle>
         </CardHeader>
         <CardContent className="space-y-2 text-sm">
           <div className="text-blue-700">
-            <p className="font-semibold mb-2">El error controlado ha sido eliminado completamente. Ahora puedes:</p>
+            <p className="font-semibold mb-2">El error controlado ha sido eliminado. Ahora puedes:</p>
             <ol className="list-decimal list-inside space-y-1">
-              <li>Ir a la pestaña "Turnos del Día" sin problemas</li>
-              <li>Verificar si las llamadas al API funcionan correctamente</li>
-              <li>Revisar en las herramientas de desarrollador si hay errores reales</li>
-              <li>Usar todas las funciones del panel de gestión normalmente</li>
+              <li>Ir a la pestaña "Turnos del Día" para ver si carga correctamente</li>
+              <li>Verificar en las herramientas de desarrollador (F12 → Network) las llamadas al API</li>
+              <li>Revisar si las hojas de Google Sheets tienen los nombres correctos: "Turnos", "Horarios_Especialistas", "Dias_Libres"</li>
+              <li>Confirmar que el API_SECRET_KEY es idéntico en el Apps Script y en la aplicación</li>
             </ol>
           </div>
         </CardContent>
