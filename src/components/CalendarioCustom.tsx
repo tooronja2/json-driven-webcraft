@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import { Button } from '@/components/ui/button';
@@ -80,6 +81,50 @@ const extraerHora = (horaInput: string | Date): string => {
   
   console.log('⚠️ No se pudo extraer hora de:', horaInput);
   return '';
+};
+
+// Función para convertir HH:MM a minutos desde medianoche
+const horaAMinutos = (hora: string): number => {
+  const [horas, minutos] = hora.split(':').map(Number);
+  return horas * 60 + minutos;
+};
+
+// Función para convertir minutos desde medianoche a HH:MM
+const minutosAHora = (minutos: number): string => {
+  const horas = Math.floor(minutos / 60);
+  const mins = minutos % 60;
+  return `${horas.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+};
+
+// Función para obtener la duración de un servicio por su nombre
+const obtenerDuracionServicio = (nombreServicio: string, contenido: any[]): number => {
+  const servicio = contenido?.find(s => s.nombre === nombreServicio);
+  if (servicio?.detalles?.duracion) {
+    return parseInt(servicio.detalles.duracion.replace('min', '')) || 30;
+  }
+  
+  // Duraciones por defecto basadas en nombres comunes
+  const nombreLower = nombreServicio.toLowerCase();
+  if (nombreLower.includes('pelo') && nombreLower.includes('barba')) return 25;
+  if (nombreLower.includes('barba')) return 15;
+  if (nombreLower.includes('pelo')) return 15;
+  if (nombreLower.includes('diseño')) return 15;
+  
+  return 30; // Duración por defecto
+};
+
+// Función para generar todos los intervalos ocupados por un turno
+const generarIntervalosOcupados = (horaInicio: string, duracionMinutos: number): string[] => {
+  const intervalos = [];
+  const inicioMinutos = horaAMinutos(horaInicio);
+  
+  // Generar intervalos de 15 minutos (el slot mínimo) dentro de la duración del servicio
+  for (let i = 0; i < duracionMinutos; i += 15) {
+    const minutoActual = inicioMinutos + i;
+    intervalos.push(minutosAHora(minutoActual));
+  }
+  
+  return intervalos;
 };
 
 // 🔐 API KEY SECRETA - CAMBIAR ESTE VALOR POR UNO ÚNICO
@@ -191,14 +236,42 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
     return false; // Para días futuros, ninguna hora ha pasado
   };
 
-  // Filtrado de horarios mejorado con memoización
+  // Función mejorada para verificar si un horario se superpone con un turno existente
+  const verificarSuperposicion = (horaInicio: string, duracionNueva: number, eventoExistente: EventoReserva): boolean => {
+    const horaInicioExistente = extraerHora(eventoExistente["Hora Inicio"]);
+    if (!horaInicioExistente) return false;
+
+    // Obtener duración del servicio existente
+    const duracionExistente = obtenerDuracionServicio(eventoExistente.Titulo_Evento, contenido || []);
+    
+    // Convertir a minutos desde medianoche
+    const inicioNuevo = horaAMinutos(horaInicio);
+    const finNuevo = inicioNuevo + duracionNueva;
+    const inicioExistente = horaAMinutos(horaInicioExistente);
+    const finExistente = inicioExistente + duracionExistente;
+
+    // Verificar superposición: hay superposición si el inicio de uno es antes del fin del otro
+    const haySuperposicion = inicioNuevo < finExistente && finNuevo > inicioExistente;
+    
+    if (haySuperposicion) {
+      console.log(`❌ SUPERPOSICIÓN detectada:`, {
+        nuevoTurno: `${horaInicio} (${duracionNueva}min) -> ${minutosAHora(finNuevo)}`,
+        turnoExistente: `${horaInicioExistente} (${duracionExistente}min) -> ${minutosAHora(finExistente)}`,
+        servicio: eventoExistente.Titulo_Evento
+      });
+    }
+
+    return haySuperposicion;
+  };
+
+  // Filtrado de horarios mejorado con consideración de duración real de servicios
   useEffect(() => {
     if (!fechaSeleccionada) {
       setHorasDisponibles([]);
       return;
     }
 
-    console.log('🔍 === INICIO FILTRADO DE HORARIOS CON HORARIOS LABORALES ===');
+    console.log('🔍 === INICIO FILTRADO MEJORADO DE HORARIOS ===');
     
     // 1. Obtener horarios laborales del especialista para esta fecha
     const horariosLaborales = obtenerHorariosDisponibles(responsable, fechaSeleccionada, duracionMinutos);
@@ -221,29 +294,34 @@ const CalendarioCustom: React.FC<CalendarioCustomProps> = ({
 
     console.log('✅ Eventos ocupados relevantes:', eventosRelevantes);
 
-    // 3. Extraer horarios ocupados
-    const horariosOcupados = eventosRelevantes
-      .map(evento => extraerHora(evento["Hora Inicio"]))
-      .filter(hora => hora !== '');
-
-    const horariosOcupadosUnicos = [...new Set(horariosOcupados)];
-    console.log('⏰ Horarios ocupados:', horariosOcupadosUnicos);
-
-    // 4. Filtrar horarios laborales que no estén ocupados Y que no hayan pasado (si es el día actual)
+    // 3. Filtrar horarios laborales considerando superposición con turnos existentes
     const disponibles = horariosLaborales.filter(hora => {
-      const estaOcupado = horariosOcupadosUnicos.includes(hora);
+      // Verificar si ya pasó la hora (solo para el día actual)
       const yaPaso = yaEsHoraPasada(hora, fechaSeleccionada);
-      
-      console.log(`⏱️ Hora ${hora}: ocupada=${estaOcupado}, ya pasó=${yaPaso}, disponible=${!estaOcupado && !yaPaso}`);
-      
-      return !estaOcupado && !yaPaso;
+      if (yaPaso) {
+        console.log(`⏰ Hora ${hora} ya pasó`);
+        return false;
+      }
+
+      // Verificar superposición con eventos existentes
+      const tieneSuperposicion = eventosRelevantes.some(evento => 
+        verificarSuperposicion(hora, duracionMinutos, evento)
+      );
+
+      if (tieneSuperposicion) {
+        console.log(`❌ Hora ${hora} tiene superposición con turnos existentes`);
+        return false;
+      }
+
+      console.log(`✅ Hora ${hora} disponible`);
+      return true;
     });
     
     console.log('✅ === HORARIOS FINALES DISPONIBLES ===:', disponibles);
-    console.log('🔍 === FIN FILTRADO DE HORARIOS ===');
+    console.log('🔍 === FIN FILTRADO MEJORADO ===');
     
     setHorasDisponibles(disponibles);
-  }, [fechaSeleccionada, eventos, responsable, duracionMinutos, obtenerHorariosDisponibles]);
+  }, [fechaSeleccionada, eventos, responsable, duracionMinutos, obtenerHorariosDisponibles, contenido]);
 
   useEffect(() => {
     cargarEventos();
