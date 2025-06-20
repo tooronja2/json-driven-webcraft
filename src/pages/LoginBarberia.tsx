@@ -22,7 +22,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
   const validarUsuarioEnGoogleSheets = async (usuario: string, password: string) => {
     try {
       console.log('🔄 Validando usuario en Google Sheets...');
-      console.log('📋 Datos a enviar:', { 
+      console.log('📋 Datos enviados:', { 
         action: 'validarUsuario', 
         usuario: usuario, 
         password: '[OCULTO]',
@@ -30,77 +30,63 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
         url: GOOGLE_APPS_SCRIPT_URL
       });
       
-      // INTENTAR PRIMERO CON POST (más seguro)
-      const postData = new URLSearchParams({
-        action: 'validarUsuario',
-        apiKey: API_SECRET_KEY,
-        usuario: usuario,
-        password: password,
-        timestamp: Date.now().toString()
-      });
-
-      console.log('🔄 Intentando POST request...');
-      const postResponse = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-        method: 'POST',
+      // FORZAR SOLO GET PARA DEBUGGEAR
+      console.log('🔄 Usando GET request para debuggear...');
+      
+      const getUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=validarUsuario&apiKey=${encodeURIComponent(API_SECRET_KEY)}&usuario=${encodeURIComponent(usuario)}&password=${encodeURIComponent(password)}&timestamp=${Date.now()}`;
+      console.log('🔄 URL GET completa:', getUrl.replace(password, '[PASSWORD_OCULTO]'));
+      
+      const getResponse = await fetch(getUrl, {
+        method: 'GET',
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: postData
+          'Accept': 'application/json',
+          'Cache-Control': 'no-cache'
+        }
       });
       
-      const postData_response = await postResponse.json();
-      console.log('📄 Respuesta POST:', postData_response);
-
-      // Si POST funciona, usar esa respuesta
-      if (postData_response.success && postData_response.usuario) {
-        console.log('✅ POST request exitoso');
+      console.log('📡 Estado de respuesta GET:', getResponse.status);
+      console.log('📡 Headers de respuesta:', Object.fromEntries(getResponse.headers.entries()));
+      
+      const responseText = await getResponse.text();
+      console.log('📄 Respuesta raw (texto):', responseText);
+      
+      let getData;
+      try {
+        getData = JSON.parse(responseText);
+        console.log('📄 Respuesta GET parseada:', getData);
+      } catch (parseError) {
+        console.error('❌ Error al parsear JSON:', parseError);
+        console.log('📄 Contenido que falló al parsear:', responseText);
         return {
-          valido: true,
-          usuario: postData_response.usuario
+          valido: false,
+          error: 'Error de formato en respuesta del servidor'
         };
       }
 
-      // Si POST no funciona, intentar con GET como fallback
-      if (postData_response.error === 'Acción no válida' || !postData_response.success) {
-        console.log('⚠️ POST falló, intentando GET como fallback...');
-        
-        const getUrl = `${GOOGLE_APPS_SCRIPT_URL}?action=validarUsuario&apiKey=${encodeURIComponent(API_SECRET_KEY)}&usuario=${encodeURIComponent(usuario)}&password=${encodeURIComponent(password)}&timestamp=${Date.now()}`;
-        console.log('🔄 URL GET construida (password oculta)');
-        
-        const getResponse = await fetch(getUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json',
-          }
+      if (getData.success && getData.usuario) {
+        console.log('✅ GET request exitoso - usuario encontrado:', getData.usuario);
+        return {
+          valido: true,
+          usuario: getData.usuario
+        };
+      } else {
+        console.log('❌ GET request falló:', {
+          success: getData.success,
+          error: getData.error,
+          usuario: getData.usuario
         });
-        
-        const getData = await getResponse.json();
-        console.log('📄 Respuesta GET:', getData);
-
-        if (getData.success && getData.usuario) {
-          console.log('✅ GET request exitoso');
-          return {
-            valido: true,
-            usuario: getData.usuario
-          };
-        } else {
-          return {
-            valido: false,
-            error: getData.error || 'Usuario o contraseña incorrectos'
-          };
-        }
+        return {
+          valido: false,
+          error: getData.error || 'Usuario o contraseña incorrectos'
+        };
       }
 
-      return {
-        valido: false,
-        error: postData_response.error || 'Error de autenticación'
-      };
-
     } catch (error) {
-      console.error('❌ Error al validar usuario:', error);
+      console.error('❌ Error de red al validar usuario:', error);
+      console.error('❌ Stack trace:', error.stack);
       return {
         valido: false,
-        error: 'Error de conexión al validar usuario'
+        error: 'Error de conexión al validar usuario: ' + error.message
       };
     }
   };
@@ -112,7 +98,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
 
     console.log('🔐 Intentando login con:', { usuario: usuario, password: '***' });
     
-    // SEGURIDAD MEJORADA: Solo validación vía Google Sheets (sin admin hardcodeado)
+    // VALIDACIÓN DIRECTA VÍA GOOGLE SHEETS
     const validacionGoogleSheets = await validarUsuarioEnGoogleSheets(usuario, password);
     
     if (validacionGoogleSheets.valido && validacionGoogleSheets.usuario) {
@@ -181,7 +167,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
           </form>
           
           <div className="mt-4 text-xs text-center text-gray-500">
-            🔒 Autenticación segura con fallback automático
+            🔍 Modo debug activado - Revisa la consola
           </div>
         </CardContent>
       </Card>
