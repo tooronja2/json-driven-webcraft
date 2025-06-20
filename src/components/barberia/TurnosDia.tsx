@@ -50,7 +50,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         console.log('⚙️ Options:', options);
         
         const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 segundos timeout
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 segundos timeout aumentado
         
         const response = await fetch(url, {
           ...options,
@@ -60,7 +60,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         clearTimeout(timeoutId);
         
         console.log('📡 Response status:', response.status);
-        console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+        console.log('📡 Response ok:', response.ok);
         
         if (!response.ok) {
           throw new Error(`HTTP ${response.status}: ${response.statusText}`);
@@ -72,7 +72,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
         console.error(`❌ Error en intento ${intento}:`, error);
         
         if (intento < maxReintentos) {
-          const delay = intento * 1000;
+          const delay = intento * 2000; // Aumentar delay entre reintentos
           console.log(`⏳ Reintentando en ${delay}ms...`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -95,7 +95,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       console.log('📄 Datos recibidos:', data);
 
       if (data.success) {
-        // ... keep existing code (conversion logic for turnosConvertidos)
         const turnosConvertidos = data.eventos.map((evento: any) => {
           let fechaEvento, horaInicio, horaFin;
           
@@ -124,14 +123,8 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             horaFin = new Date();
           }
           
-          // NUEVA LÓGICA: Las reservas de la web deben aparecer como "Reservado"
-          // Solo las que se confirman desde el panel aparecen como "Confirmado"
+          // Las reservas web se muestran como "Confirmado" según el Apps Script
           let estadoMapeado = evento.Estado;
-          
-          // Si viene "Confirmado" pero no es desde el panel, es una reserva web -> "Reservado"
-          if (evento.Estado === 'Confirmado' && !evento.origen_panel) {
-            estadoMapeado = 'Reservado';
-          }
           
           return {
             id: evento.ID_Evento,
@@ -193,16 +186,15 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     }
   };
 
-  const actualizarEstadoTurno = async (turnoId: string, nuevoEstado: string) => {
+  // Función de cancelación simplificada que replica la lógica del email
+  const cancelarTurno = async (turnoId: string) => {
     try {
-      console.log('🔄 Actualizando turno:', { turnoId, nuevoEstado });
+      console.log('🔄 Cancelando turno:', turnoId);
       
-      // Usar POST con JSON Body
+      // Usar POST con JSON Body como en el Apps Script
       const requestBodyJSON = {
-        action: 'updateEstado',
+        action: 'cancelarTurno',
         id: turnoId,
-        estado: nuevoEstado,
-        origen_panel: true,
         apiKey: API_SECRET_KEY
       };
 
@@ -220,31 +212,32 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       console.log('✅ Response result:', result);
 
       if (result.success) {
+        // Actualizar el estado local del turno
         setTurnos(prevTurnos =>
           prevTurnos.map(turno =>
-            turno.id === turnoId ? { ...turno, estado: nuevoEstado } : turno
+            turno.id === turnoId ? { ...turno, estado: 'Cancelado' } : turno
           )
         );
         
         toast({
-          title: "Estado actualizado",
-          description: `El turno se ha ${nuevoEstado.toLowerCase()} correctamente.`,
+          title: "Turno cancelado",
+          description: "El turno se ha cancelado correctamente.",
         });
       } else {
         throw new Error(result.error || 'Error desconocido del servidor');
       }
 
     } catch (error) {
-      console.error('❌ Error completo al actualizar el estado del turno:', error);
+      console.error('❌ Error completo al cancelar el turno:', error);
       
-      let errorMessage = 'Error de conexión al actualizar el turno';
+      let errorMessage = 'Error de conexión al cancelar el turno';
       if (error instanceof Error) {
         if (error.name === 'AbortError') {
-          errorMessage = 'Tiempo de espera agotado al actualizar el turno';
+          errorMessage = 'Tiempo de espera agotado al cancelar el turno';
         } else if (error.message.includes('fetch')) {
-          errorMessage = 'Error de red al actualizar el turno. Verifique su conexión.';
+          errorMessage = 'Error de red al cancelar el turno. Verifique su conexión.';
         } else {
-          errorMessage = `Error al actualizar: ${error.message}`;
+          errorMessage = `Error al cancelar: ${error.message}`;
         }
       }
       
@@ -262,7 +255,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
     const turnosDelDia = turnos.filter(turno => turno.fecha === fechaSeleccionada);
 
-    const reservados = turnosDelDia.filter(t => t.estado === 'Reservado').length;
     const confirmados = turnosDelDia.filter(t => t.estado === 'Confirmado').length;
     const completados = turnosDelDia.filter(t => t.estado === 'Completado').length;
     const cancelados = turnosDelDia.filter(t => t.estado === 'Cancelado').length;
@@ -273,7 +265,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
     return {
       totalTurnos: turnosDelDia.length,
-      reservados,
       confirmados,
       completados,
       cancelados,
@@ -286,15 +277,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm text-blue-800">Reservados</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-2xl font-bold text-blue-600">{stats.reservados}</p>
-          </CardContent>
-        </Card>
-        
         <Card className="bg-yellow-50 border-yellow-200">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm text-yellow-800">Confirmados</CardTitle>
@@ -346,14 +328,14 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const getEstadoBadge = (estado: string) => {
     const baseClasses = "px-3 py-1 rounded-full text-xs font-medium";
     
-    if (estado === 'Reservado') {
-      return `${baseClasses} bg-blue-100 text-blue-800`;
-    } else if (estado === 'Confirmado') {
+    if (estado === 'Confirmado') {
       return `${baseClasses} bg-yellow-100 text-yellow-800`;
     } else if (estado === 'Completado') {
       return `${baseClasses} bg-green-100 text-green-800`;
     } else if (estado === 'Cancelado') {
       return `${baseClasses} bg-red-100 text-red-800`;
+    } else if (estado === 'Cliente Ausente') {
+      return `${baseClasses} bg-orange-100 text-orange-800`;
     }
     return `${baseClasses} bg-gray-100 text-gray-800`;
   };
@@ -455,31 +437,15 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 </div>
                 
                 <div className="flex gap-2 md:flex-col lg:flex-row">
-                  {(turno.estado === 'Reservado' || turno.estado === 'Confirmado') && (
-                    <>
-                      <Button
-                        onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
-                        size="sm"
-                        className="bg-green-600 hover:bg-green-700 text-white flex-1 md:flex-none"
-                      >
-                        Completar
-                      </Button>
-                      <Button
-                        onClick={() => actualizarEstadoTurno(turno.id, 'Cliente Ausente')}
-                        size="sm"
-                        className="bg-orange-600 hover:bg-orange-700 text-white flex-1 md:flex-none"
-                      >
-                        Cliente Ausente
-                      </Button>
-                      <Button
-                        onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-600 hover:bg-red-50 flex-1 md:flex-none"
-                      >
-                        Cancelar
-                      </Button>
-                    </>
+                  {(turno.estado === 'Confirmado') && (
+                    <Button
+                      onClick={() => cancelarTurno(turno.id)}
+                      size="sm"
+                      variant="outline"
+                      className="text-red-600 border-red-600 hover:bg-red-50 flex-1 md:flex-none"
+                    >
+                      Cancelar
+                    </Button>
                   )}
                 </div>
               </div>
