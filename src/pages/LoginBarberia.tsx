@@ -9,16 +9,7 @@ interface LoginBarberiaProps {
   onLogin: (usuario: string, rol: string, permisos: string[]) => void;
 }
 
-// Usuario admin principal (mantener como fallback de emergencia)
-const ADMIN_USER = {
-  usuario: 'tomasradeljakadmin',
-  password: 'tr4d3lJaK4Dm1N',
-  nombre: 'Tomás Radelj',
-  rol: 'Administrador',
-  permisos: ['admin', 'crear_usuarios', 'ver_todos', 'eliminar']
-};
-
-// URLs de Google Apps Script - ACTUALIZADA
+// URLs de Google Apps Script
 const GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz1YdmiFjMpQ0kVfClFRkXskNMNZXOl5iZ-04BRXOk_McN5sNeEZemg8xE8NP0CaN5Y/exec';
 const API_SECRET_KEY = 'barberia_estilo_2025_secure_api_xyz789';
 
@@ -66,18 +57,7 @@ const LoginBarberia: React.FC<LoginBarberiaProps> = ({ onLogin }) => {
 
     console.log('🔐 Intentando login con:', { usuario: usuario, password: '***' });
     
-    // 1. Verificar admin principal (fallback de emergencia)
-    if (usuario === ADMIN_USER.usuario && password === ADMIN_USER.password) {
-      console.log('✅ Login exitoso como admin principal');
-      localStorage.setItem('barberia_usuario', ADMIN_USER.nombre);
-      localStorage.setItem('barberia_rol', ADMIN_USER.rol);
-      localStorage.setItem('barberia_permisos', JSON.stringify(ADMIN_USER.permisos));
-      onLogin(ADMIN_USER.nombre, ADMIN_USER.rol, ADMIN_USER.permisos);
-      setCargando(false);
-      return;
-    }
-
-    // 2. Validar en Google Sheets (método principal y único)
+    // Validar en Google Sheets (método único)
     const validacionGoogleSheets = await validarUsuarioEnGoogleSheets(usuario, password);
     
     if (validacionGoogleSheets.valido && validacionGoogleSheets.usuario) {
