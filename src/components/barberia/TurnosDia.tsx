@@ -1,20 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCheck, ChevronsUpDown, UserRoundCheck, UserRoundX } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AgregarTurno from './AgregarTurno';
 
 interface Turno {
@@ -55,20 +47,16 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       const data = await response.json();
 
       if (data.success) {
-        // Convertir los datos de Google Sheets al formato que esperamos
         const turnosConvertidos = data.eventos.map((evento: any) => {
-          // Parsear fechas correctamente
           let fechaEvento, horaInicio, horaFin;
           
           try {
-            // Si la fecha viene en formato ISO, usar directamente
             if (typeof evento.Fecha === 'string' && evento.Fecha.includes('T')) {
               fechaEvento = new Date(evento.Fecha);
             } else {
               fechaEvento = new Date(evento.Fecha);
             }
 
-            // Para las horas, crear fechas base y extraer solo la hora
             if (typeof evento['Hora Inicio'] === 'string' && evento['Hora Inicio'].includes('T')) {
               horaInicio = new Date(evento['Hora Inicio']);
             } else {
@@ -82,7 +70,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             }
           } catch (e) {
             console.error('Error parsing dates for event:', evento, e);
-            // Valores por defecto si hay error
             fechaEvento = new Date();
             horaInicio = new Date();
             horaFin = new Date();
@@ -92,7 +79,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             id: evento.ID_Evento,
             nombre: evento.Nombre_Cliente,
             email: evento.Email_Cliente,
-            fecha: fechaEvento.toISOString().split('T')[0], // formato YYYY-MM-DD
+            fecha: fechaEvento.toISOString().split('T')[0],
             horaInicio: horaInicio.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
             horaFin: horaFin.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false }),
             servicio: evento.Titulo_Evento || evento['Servicios incluidos'],
@@ -104,9 +91,11 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           };
         });
 
-        // Filtrar por la fecha seleccionada
         const fechaSeleccionada = date ? format(date, 'yyyy-MM-dd') : format(new Date(), 'yyyy-MM-dd');
         const turnosFiltrados = turnosConvertidos.filter((turno: Turno) => turno.fecha === fechaSeleccionada);
+        
+        // Ordenar por hora de inicio
+        turnosFiltrados.sort((a: Turno, b: Turno) => a.horaInicio.localeCompare(b.horaInicio));
         
         setTurnos(turnosFiltrados);
       } else {
@@ -138,7 +127,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
       const result = await response.json();
 
       if (result.success) {
-        // Actualizar el estado localmente
         setTurnos(prevTurnos =>
           prevTurnos.map(turno =>
             turno.id === turnoId ? { ...turno, estado: nuevoEstado } : turno
@@ -157,8 +145,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const fechaHoy = format(new Date(), 'yyyy-MM-dd');
     const turnosHoy = turnos.filter(turno => turno.fecha === fechaHoy);
 
-    // Categorías actualizadas según la solicitud
-    const reservados = turnosHoy.filter(t => t.estado === 'Confirmado' && t.origen === 'reserva').length;
+    const reservados = turnosHoy.filter(t => t.estado === 'Reservado' && t.origen === 'reserva').length;
     const completadosConReserva = turnosHoy.filter(t => t.estado === 'Completado' && t.origen === 'reserva').length;
     const completadosSinReserva = turnosHoy.filter(t => t.estado === 'Completado' && t.origen === 'manual').length;
     const cancelados = turnosHoy.filter(t => t.estado === 'Cancelado').length;
@@ -181,38 +168,77 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     const stats = calcularEstadisticas();
 
     return (
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-blue-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-blue-800">Turnos Reservados</h3>
-          <p className="text-2xl font-bold text-blue-600">{stats.reservados}</p>
-        </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-6">
+        <Card className="bg-blue-50 border-blue-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-blue-800">Turnos Reservados</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-blue-600">{stats.reservados}</p>
+          </CardContent>
+        </Card>
         
-        <div className="bg-green-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-green-800">Completados con Reserva</h3>
-          <p className="text-2xl font-bold text-green-600">{stats.completadosConReserva}</p>
-        </div>
+        <Card className="bg-green-50 border-green-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-green-800">Completados c/Reserva</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-green-600">{stats.completadosConReserva}</p>
+          </CardContent>
+        </Card>
         
-        <div className="bg-purple-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-purple-800">Completados sin Reserva</h3>
-          <p className="text-2xl font-bold text-purple-600">{stats.completadosSinReserva}</p>
-        </div>
+        <Card className="bg-purple-50 border-purple-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-purple-800">Completados s/Reserva</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-purple-600">{stats.completadosSinReserva}</p>
+          </CardContent>
+        </Card>
         
-        <div className="bg-red-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-red-800">Turnos Cancelados</h3>
-          <p className="text-2xl font-bold text-red-600">{stats.cancelados}</p>
-        </div>
+        <Card className="bg-red-50 border-red-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-red-800">Turnos Cancelados</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-red-600">{stats.cancelados}</p>
+          </CardContent>
+        </Card>
         
-        <div className="bg-yellow-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-yellow-800">Total Turnos Hoy</h3>
-          <p className="text-2xl font-bold text-yellow-600">{stats.totalTurnos}</p>
-        </div>
+        <Card className="bg-yellow-50 border-yellow-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-yellow-800">Total Turnos Hoy</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-yellow-600">{stats.totalTurnos}</p>
+          </CardContent>
+        </Card>
         
-        <div className="bg-indigo-50 p-4 rounded-lg">
-          <h3 className="font-semibold text-indigo-800">Ingresos del Día</h3>
-          <p className="text-2xl font-bold text-indigo-600">${stats.ingresosDia.toLocaleString()}</p>
-        </div>
+        <Card className="bg-indigo-50 border-indigo-200">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm text-indigo-800">Ingresos del Día</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold text-indigo-600">${stats.ingresosDia.toLocaleString()}</p>
+          </CardContent>
+        </Card>
       </div>
     );
+  };
+
+  const getEstadoBadge = (estado: string, origen: string) => {
+    const baseClasses = "px-3 py-1 rounded-full text-xs font-medium";
+    
+    if (estado === 'Reservado') {
+      return `${baseClasses} bg-blue-100 text-blue-800`;
+    } else if (estado === 'Completado') {
+      return `${baseClasses} bg-green-100 text-green-800`;
+    } else if (estado === 'Cancelado') {
+      return `${baseClasses} bg-red-100 text-red-800`;
+    } else if (estado === 'Confirmado') {
+      return `${baseClasses} bg-yellow-100 text-yellow-800`;
+    }
+    return `${baseClasses} bg-gray-100 text-gray-800`;
   };
 
   useEffect(() => {
@@ -220,100 +246,133 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   }, [date]);
 
   if (cargando) {
-    return <div className="text-center">Cargando turnos...</div>;
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="text-lg">Cargando turnos...</div>
+      </div>
+    );
   }
 
   if (error) {
-    return <div className="text-red-500 text-center">Error: {error}</div>;
+    return (
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+        <div className="text-red-800 font-medium">Error: {error}</div>
+        <Button 
+          onClick={obtenerTurnos} 
+          className="mt-2" 
+          size="sm"
+          variant="outline"
+        >
+          Reintentar
+        </Button>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       {permisos.includes('admin') && renderEstadisticasAdmin()}
       
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-semibold">Turnos del Día</h2>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant={"outline"}
-              className={format(date || new Date(), 'PPP', { locale: es }) ? "justify-start text-left font-normal" : "justify-start text-left font-normal text-muted-foreground"}
-            >
-              <Calendar className="mr-2 h-4 w-4" />
-              {date ? format(date, 'PPP', { locale: es }) : <span>Seleccionar fecha</span>}
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              locale={es}
-              selected={date}
-              onSelect={setDate}
-              initialFocus
-            />
-          </PopoverContent>
-        </Popover>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <h2 className="text-2xl font-bold">Turnos del Día</h2>
+        <div className="flex gap-2">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className="justify-start text-left font-normal">
+                <Calendar className="mr-2 h-4 w-4" />
+                {date ? format(date, 'PPP', { locale: es }) : <span>Seleccionar fecha</span>}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar
+                mode="single"
+                locale={es}
+                selected={date}
+                onSelect={setDate}
+                initialFocus
+              />
+            </PopoverContent>
+          </Popover>
+          
+          <Button 
+            onClick={() => setMostrarAgregarTurno(true)}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            + Turno
+          </Button>
+        </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead className="bg-gray-50">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Hora
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Nombre
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Servicio
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Responsable
-              </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Estado
-              </th>
-              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Acciones
-              </th>
-            </tr>
-          </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {turnos.map((turno) => (
-              <tr key={turno.id}>
-                <td className="px-6 py-4 whitespace-nowrap">{turno.horaInicio} - {turno.horaFin}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{turno.nombre}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{turno.servicio}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{turno.responsable}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{turno.estado}</td>
-                <td className="px-6 py-4 whitespace-nowrap text-right space-x-2">
-                  {turno.estado === 'Confirmado' && (
-                    <>
-                      <Button
-                        onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
-                        size="sm"
-                        variant="outline"
-                        className="text-green-600 border-green-600 hover:bg-green-50"
-                      >
-                        Completar
-                      </Button>
-                      <Button
-                        onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 border-red-600 hover:bg-red-50"
-                      >
-                        Cancelar
-                      </Button>
-                    </>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      {turnos.length === 0 ? (
+        <Card>
+          <CardContent className="flex items-center justify-center py-8">
+            <p className="text-gray-500">No hay turnos para esta fecha</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <Card>
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-[120px]">Hora</TableHead>
+                  <TableHead>Cliente</TableHead>
+                  <TableHead>Servicio</TableHead>
+                  <TableHead>Barbero</TableHead>
+                  <TableHead>Estado</TableHead>
+                  <TableHead className="text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {turnos.map((turno) => (
+                  <TableRow key={turno.id}>
+                    <TableCell className="font-mono">
+                      {turno.horaInicio} - {turno.horaFin}
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <div className="font-medium">{turno.nombre}</div>
+                        <div className="text-sm text-gray-500">${turno.valor.toLocaleString()}</div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{turno.servicio}</TableCell>
+                    <TableCell>{turno.responsable}</TableCell>
+                    <TableCell>
+                      <span className={getEstadoBadge(turno.estado, turno.origen)}>
+                        {turno.estado}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        {(turno.estado === 'Reservado' || turno.estado === 'Confirmado') && (
+                          <>
+                            <Button
+                              onClick={() => actualizarEstadoTurno(turno.id, 'Completado')}
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              Completar
+                            </Button>
+                            <Button
+                              onClick={() => actualizarEstadoTurno(turno.id, 'Cancelado')}
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 border-red-600 hover:bg-red-50"
+                            >
+                              Cancelar
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
+
       {mostrarAgregarTurno && (
         <AgregarTurno
           onClose={() => setMostrarAgregarTurno(false)}
@@ -323,7 +382,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
           }}
         />
       )}
-      <Button onClick={() => setMostrarAgregarTurno(true)}>Agregar Turno</Button>
     </div>
   );
 };
