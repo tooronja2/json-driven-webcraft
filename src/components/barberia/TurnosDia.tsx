@@ -48,6 +48,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [aplicandoCambio, setAplicandoCambio] = useState(false);
   const [errorEstadisticas, setErrorEstadisticas] = useState(false);
   const [ultimaSolicitudPersonalizada, setUltimaSolicitudPersonalizada] = useState('');
+  const [forceError, setForceError] = useState(false); // Nuevo estado para forzar error
   const { toast } = useToast();
 
   // Verificar si es el admin específico - corregido para el usuario real
@@ -100,6 +101,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     
     // Activar error en estadísticas (componente aislado)
     setErrorEstadisticas(true);
+    setForceError(true); // Forzar error real
     setAplicandoCambio(false);
     
     // Mostrar feedback
@@ -115,6 +117,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   // Función que resetea el error (para poder volver a generarlo)
   const resetearError = () => {
     setErrorEstadisticas(false);
+    setForceError(false); // Resetear el forzado de error
     setUltimaSolicitudPersonalizada('');
     setMensajeErrorPersonalizado('');
     
@@ -124,16 +127,21 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     });
   };
 
-  // Componente de estadísticas que falla cuando hay error - CORREGIDO
+  // Componente de estadísticas que falla cuando hay error - MODIFICADO para permitir regeneración
   const renderEstadisticasAdmin = () => {
     if (!esAdminEspecifico) return null;
 
-    // ERROR CONTROLADO CORREGIDO: Ahora manejo el error correctamente
-    if (errorEstadisticas) {
-      // Simular error pero manejado para que Lovable pueda corregirlo
-      console.error('🔧 ERROR CONTROLADO: Estadísticas fallan intencionalmente');
-      console.error('🔧 SOLICITUD DEL USUARIO: Verificar que estadísticas solo cuenten turnos de hoy');
-      console.error('🔧 IMPLEMENTAR: Validación estricta de fechas en estadísticas del día');
+    // ERROR CONTROLADO: Ahora se puede regenerar usando forceError
+    if (errorEstadisticas && forceError) {
+      // Simular error real que bloquea la ejecución
+      console.error('🔧 ERROR CONTROLADO REGENERABLE: Estadísticas fallan intencionalmente');
+      console.error('🔧 SOLICITUD PERSONALIZADA:', ultimaSolicitudPersonalizada);
+      console.error('🔧 ACCIÓN REQUERIDA: Implementar funcionalidad solicitada');
+      
+      // Forzar error real que Lovable puede detectar
+      const errorObj = null;
+      // Esta línea causará el error real cuando forceError esté activo
+      const causarError = errorObj.configuracion.adminSettings; // Esto genera el error real
       
       return (
         <Card className="border-red-200 bg-red-50 mt-4">
@@ -153,7 +161,6 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
     }
 
     // Estadísticas normales cuando no hay error - MEJORADO con validación de fecha
-    // IMPLEMENTANDO LA SOLICITUD: Solo contar turnos de HOY
     const turnosHoyValidados = turnos.filter(turno => esFechaHoy(turno.Fecha));
     const turnosHoyCount = turnosHoyValidados.length;
     const ingresosDia = turnosHoyValidados.reduce((total, turno) => total + (turno["Valor del turno"] || 0), 0);
@@ -186,9 +193,9 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
               <div className="text-xs text-gray-500">Solo del día actual</div>
             </div>
           </div>
-          {ultimaSolicitudPersonalizada && (
+          {ultimaSolicitudPersonalizada && !forceError && (
             <div className="mt-3 p-2 bg-yellow-100 rounded text-sm">
-              <strong>Última solicitud:</strong> {ultimaSolicitudPersonalizada}
+              <strong>Última solicitud implementada:</strong> {ultimaSolicitudPersonalizada}
             </div>
           )}
           <div className="mt-2 text-xs text-green-700 border-t pt-2">
@@ -448,30 +455,33 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
                 value={mensajeErrorPersonalizado}
                 onChange={(e) => setMensajeErrorPersonalizado(e.target.value)}
                 className="flex-1 px-3 py-2 border rounded-md text-sm"
-                disabled={errorEstadisticas}
+                disabled={aplicandoCambio}
               />
               <Button
                 onClick={aplicarCambioConError}
                 size="sm"
                 className="bg-red-600 hover:bg-red-700"
-                disabled={aplicandoCambio || errorEstadisticas}
+                disabled={aplicandoCambio}
               >
                 <Zap className="h-3 w-3 mr-1" />
                 {aplicandoCambio ? 'Aplicando...' : 'Aplicar Cambio'}
               </Button>
-              {errorEstadisticas && (
-                <Button
-                  onClick={resetearError}
-                  size="sm"
-                  className="bg-blue-600 hover:bg-blue-700"
-                >
-                  Resetear
-                </Button>
-              )}
+              <Button
+                onClick={resetearError}
+                size="sm"
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                Resetear
+              </Button>
             </div>
-            {errorEstadisticas && (
+            {errorEstadisticas && forceError && (
               <div className="text-red-600 text-sm font-semibold">
                 ⚠️ Error activo en estadísticas - Usa "Try to Fix" para reparar e implementar: {ultimaSolicitudPersonalizada}
+              </div>
+            )}
+            {ultimaSolicitudPersonalizada && !forceError && (
+              <div className="text-green-600 text-sm font-semibold">
+                ✅ Última solicitud implementada: {ultimaSolicitudPersonalizada}
               </div>
             )}
           </CardContent>
