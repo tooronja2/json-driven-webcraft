@@ -1,4 +1,3 @@
-
 import SEOHead from "@/components/SEOHead";
 import BannerHero from "@/components/BannerHero";
 import { useBusiness } from "@/context/BusinessContext";
@@ -45,7 +44,7 @@ const Home = () => {
             <div className="flex items-center gap-2 mb-3">
               <span className="h-5 w-1 rounded bg-emerald-400/80 block" />
               <h2 className="text-lg md:text-xl font-bold text-zinc-900 tracking-tight">
-                Sobre nosotros
+                About Us
               </h2>
             </div>
             <div className="w-full flex flex-col items-center gap-2">
@@ -170,4 +169,3 @@ const Home = () => {
 };
 
 export default Home;
-
