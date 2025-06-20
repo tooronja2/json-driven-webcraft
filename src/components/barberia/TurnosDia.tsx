@@ -7,6 +7,7 @@ import { es } from 'date-fns/locale';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import AgregarTurno from './AgregarTurno';
+import { useToast } from '@/hooks/use-toast';
 
 interface Turno {
   id: string;
@@ -37,6 +38,7 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
   const [error, setError] = useState('');
   const [date, setDate] = React.useState<Date | undefined>(new Date());
   const [mostrarAgregarTurno, setMostrarAgregarTurno] = useState(false);
+  const { toast } = useToast();
 
   const obtenerTurnos = async () => {
     setCargando(true);
@@ -119,21 +121,35 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
 
   const actualizarEstadoTurno = async (turnoId: string, nuevoEstado: string) => {
     try {
+      console.log('Actualizando turno:', { turnoId, nuevoEstado });
+      
+      const requestBody = {
+        action: 'updateEstado',
+        id: turnoId,
+        estado: nuevoEstado,
+        origen_panel: true,
+        apiKey: API_SECRET_KEY
+      };
+
+      console.log('Request body:', requestBody);
+
       const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          action: 'updateEstado',
-          id: turnoId,
-          estado: nuevoEstado,
-          origen_panel: true, // Marcar que viene del panel
-          apiKey: API_SECRET_KEY
-        })
+        body: JSON.stringify(requestBody)
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response ok:', response.ok);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
       const result = await response.json();
+      console.log('Response result:', result);
 
       if (result.success) {
         setTurnos(prevTurnos =>
@@ -141,12 +157,32 @@ const TurnosDia: React.FC<TurnosDiaProps> = ({ permisos, usuario }) => {
             turno.id === turnoId ? { ...turno, estado: nuevoEstado } : turno
           )
         );
+        
+        toast({
+          title: "Estado actualizado",
+          description: `El turno se ha ${nuevoEstado.toLowerCase()} correctamente.`,
+        });
       } else {
-        setError(result.error || 'Error al actualizar el estado del turno');
+        const errorMsg = result.error || 'Error desconocido al actualizar el estado del turno';
+        console.error('Error from API:', errorMsg);
+        setError(errorMsg);
+        
+        toast({
+          title: "Error al actualizar",
+          description: errorMsg,
+          variant: "destructive",
+        });
       }
     } catch (error) {
-      console.error('Error al actualizar el estado del turno:', error);
-      setError('Error de conexión al actualizar el turno.');
+      console.error('Error completo al actualizar el estado del turno:', error);
+      const errorMessage = error instanceof Error ? error.message : 'Error de conexión al actualizar el turno';
+      setError(errorMessage);
+      
+      toast({
+        title: "Error de conexión",
+        description: "No se pudo conectar con el servidor. Inténtalo de nuevo.",
+        variant: "destructive",
+      });
     }
   };
 

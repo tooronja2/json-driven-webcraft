@@ -68,6 +68,7 @@ const GeneraErrores: React.FC = () => {
     setForceError(false); // Resetear el forzado de error
     setUltimaSolicitudPersonalizada('');
     setMensajeErrorPersonalizado('');
+    setImagenesAdjuntas([]); // Limpiar imágenes también
     
     toast({
       title: "Error reseteado",
@@ -77,8 +78,8 @@ const GeneraErrores: React.FC = () => {
 
   // Componente de estadísticas que falla cuando hay error - CORREGIDO COMPLETAMENTE
   const renderEstadisticasAdmin = () => {
-    // ERROR CONTROLADO: Generar error real cuando forceError está activo
-    if (errorEstadisticas && forceError) {
+    // ERROR CONTROLADO: Solo generar error si está activo Y hay mensaje personalizado
+    if (errorEstadisticas && forceError && ultimaSolicitudPersonalizada) {
       // Simular error real que bloquea la ejecución
       console.error('🔧 ERROR CONTROLADO REGENERABLE: Estadísticas fallan intencionalmente');
       console.error('🔧 SOLICITUD PERSONALIZADA:', ultimaSolicitudPersonalizada);
